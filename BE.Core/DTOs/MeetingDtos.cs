@@ -21,6 +21,10 @@ public sealed class MeetingSettingsDto
     public bool AiMinutesEnabled { get; set; } = true;
     public string MinutesTemplateId { get; set; } = string.Empty;
     public string PasswordHash { get; set; } = string.Empty;
+    // Cờ FE gửi lên khi bật "Yêu cầu mật khẩu" (JSON camelCase: hasPassword).
+    // Lưu độc lập với PasswordHash để việc xóa hash khi trả về client
+    // (trong ToDetail) không làm mất cờ này.
+    public bool HasPassword { get; set; }
 }
 
 public sealed class MeetingParticipantInputDto
@@ -155,6 +159,17 @@ public sealed class MeetingDetailDto : MeetingListItemDto
     public List<MeetingAuditDto> Activity { get; set; } = new();
     public string RowVersion { get; set; } = string.Empty;
     public bool CanManage { get; set; }
+}
+
+public sealed class MeetingJoinInfoDto
+{
+    public string MeetingId { get; set; } = string.Empty;
+    public string RoomName { get; set; } = string.Empty;
+    public string Domain { get; set; } = string.Empty;
+    public string DisplayName { get; set; } = string.Empty;
+    public bool IsModerator { get; set; }
+    public bool StartWithAudioMuted { get; set; }
+    public bool StartWithVideoMuted { get; set; } = true;
 }
 
 public sealed class MeetingDashboardDto

@@ -1,0 +1,14 @@
+.dockerignore
+.env
+.git
+.gitignore
+.vs
+.vscode
+.idea
+*/bin
+*/obj
+bin
+obj
+*.user
+*.suo
+*.md

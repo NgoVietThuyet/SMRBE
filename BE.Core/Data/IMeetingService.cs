@@ -18,6 +18,7 @@ public interface IMeetingService
     Task RemoveParticipant(RemoveMeetingParticipantDto dto, string actorUserName, CancellationToken ct = default);
     Task StartMeeting(string meetingId, string userName, CancellationToken ct = default);
     Task EndMeeting(string meetingId, string userName, CancellationToken ct = default);
+    Task<MeetingJoinInfoDto> GetJoinInfo(string meetingId, string userName, CancellationToken ct = default);
     Task IntoTheMeeting(string meetingId, string userName, CancellationToken ct = default);
     Task ExitTheMeeting(string meetingId, string userName, CancellationToken ct = default);
     Task<List<object>> GetMessages(string meetingId, string userName, CancellationToken ct = default);

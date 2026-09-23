@@ -1,8 +1,10 @@
+using BE.API.Hubs;
 using BE.Core.Data;
 using BE.Core.DTOs;
 using BE.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using System;
 using System.Threading.Tasks;
 
@@ -17,7 +19,8 @@ namespace BE.API.Controllers
     public class MeetingController : ControllerBase
     {
         private readonly IMeetingService _service;
-        public MeetingController(IMeetingService service) => _service = service;
+        private readonly IHubContext<MeetingHub> _hub;
+        public MeetingController(IMeetingService service, IHubContext<MeetingHub> hub) { _service = service; _hub = hub; }
         private string CurrentUser => User.Identity?.Name ?? throw new UnauthorizedAccessException();
 
         [HttpGet("dashboard")]
@@ -80,10 +83,15 @@ namespace BE.API.Controllers
             return Ok(ResponseService.Success(null, "Xóa người tham gia thành công."));
         });
 
+        [HttpGet("{meetingId}/join-info")]
+        public Task<IActionResult> JoinInfo(string meetingId, CancellationToken ct) => Execute(async () =>
+            Ok(ResponseService.Success(await _service.GetJoinInfo(meetingId, CurrentUser, ct))));
+
         [HttpPost("{meetingId}/start")]
         public Task<IActionResult> StartById(string meetingId, CancellationToken ct) => Execute(async () =>
         {
             await _service.StartMeeting(meetingId, CurrentUser, ct);
+            await _hub.Clients.Group(meetingId).SendAsync("MeetingStatusChanged", new { meetingId, status = 2, action = "started" }, ct);
             return Ok(ResponseService.Success(null, "Bắt đầu cuộc họp thành công."));
         });
 
@@ -91,154 +99,45 @@ namespace BE.API.Controllers
         public Task<IActionResult> EndById(string meetingId, CancellationToken ct) => Execute(async () =>
         {
             await _service.EndMeeting(meetingId, CurrentUser, ct);
+            await _hub.Clients.Group(meetingId).SendAsync("MeetingStatusChanged", new { meetingId, status = 3, action = "ended" }, ct);
+            await _hub.Clients.Group(meetingId).SendAsync("PresenceChanged", new { meetingId, action = "ended" }, ct);
             return Ok(ResponseService.Success(null, "Kết thúc cuộc họp thành công."));
         });
 
-        /// <summary>
-        /// Lấy tất cả danh sách cuộc họp của người dùng hiện tại (bản cũ).
-        /// </summary>
-        [HttpGet("GetMeetings")]
-        public Task<IActionResult> GetMeetings() => Execute(async () => Ok(ResponseService.Success(await _service.GetMeetings(CurrentUser))));
-
-        /// <summary>
-        /// Tìm kiếm cuộc họp nâng cao, hỗ trợ phân trang và phân nhóm Tab.
-        /// </summary>
-        [HttpPost("Search")]
-        public Task<IActionResult> Search([FromBody] MeetingSearchDto dto) => Execute(async () =>
+        [HttpPost("quick")]
+        public Task<IActionResult> CreateQuick([FromBody] QuickMeetingDto dto, CancellationToken ct) => Execute(async () =>
         {
-            var result = await _service.SearchMeetings(dto, CurrentUser);
-            return Ok(ResponseService.Success(result, "Tìm kiếm cuộc họp thành công."));
-        });
-
-        /// <summary>
-        /// Lấy thông tin chi tiết của một cuộc họp cụ thể.
-        /// </summary>
-        [HttpGet("GetInfoMeeting/{meetingId}")]
-        public Task<IActionResult> GetInfoMeeting(string meetingId) => Execute(async () =>
-            await _service.GetInfoMeeting(meetingId, CurrentUser) is { } meeting
-                ? Ok(ResponseService.Success(meeting, "Lấy thông tin chi tiết cuộc họp thành công."))
-                : NotFound(ResponseService.Fail("Không tìm thấy cuộc họp hoặc bạn không có quyền xem.")));
-
-        /// <summary>
-        /// Lấy danh sách những người tham gia vào cuộc họp.
-        /// </summary>
-        [HttpGet("GetPersonalMeeting/{meetingId}")]
-        public Task<IActionResult> GetPersonalMeeting(string meetingId) => Execute(async () =>
-            Ok(ResponseService.Success(await _service.GetPersonalMeeting(meetingId, CurrentUser))));
-
-        /// <summary>
-        /// Tạo cuộc họp mới theo lịch dự kiến.
-        /// </summary>
-        [HttpPost("CreateMeeting")]
-        public Task<IActionResult> CreateMeeting([FromBody] CreateMeetingDto dto) => Execute(async () =>
-        {
-            var meeting = await _service.CreateMeeting(dto, CurrentUser);
-            return Ok(ResponseService.Success(meeting, "Tạo cuộc họp thành công."));
-        });
-
-        /// <summary>
-        /// Tạo nhanh cuộc họp mới bắt đầu ngay lập tức.
-        /// </summary>
-        [HttpPost("Quick")]
-        public Task<IActionResult> CreateQuick([FromBody] QuickMeetingDto dto) => Execute(async () =>
-        {
-            var meeting = await _service.CreateQuickMeeting(dto, CurrentUser);
+            var meeting = await _service.CreateQuickMeeting(dto, CurrentUser, ct);
             return Ok(ResponseService.Success(meeting, "Tạo nhanh cuộc họp thành công."));
         });
 
-        /// <summary>
-        /// Cập nhật thông tin chi tiết cuộc họp (chỉ chủ trì được phép).
-        /// </summary>
-        [HttpPost("Update")]
-        public Task<IActionResult> Update([FromBody] UpdateMeetingDto dto) => Execute(async () =>
+        [HttpPost("{meetingId}/join")]
+        public Task<IActionResult> Join(string meetingId, CancellationToken ct) => Execute(async () =>
         {
-            var meeting = await _service.UpdateMeeting(dto, CurrentUser);
-            return Ok(ResponseService.Success(meeting, "Cập nhật cuộc họp thành công."));
-        });
-
-        /// <summary>
-        /// Hủy cuộc họp chưa diễn ra kèm lý do.
-        /// </summary>
-        [HttpPost("Cancel")]
-        public Task<IActionResult> Cancel([FromBody] CancelMeetingDto dto) => Execute(async () =>
-        {
-            await _service.CancelMeeting(dto, CurrentUser);
-            return Ok(ResponseService.Success(null, "Hủy cuộc họp thành công."));
-        });
-
-        /// <summary>
-        /// Thêm thành phần tham gia cuộc họp.
-        /// </summary>
-        [HttpPost("AddParticipants")]
-        public Task<IActionResult> AddParticipants([FromBody] UpdateMeetingParticipantsDto dto) => Execute(async () =>
-        {
-            await _service.AddParticipants(dto, CurrentUser);
-            return Ok(ResponseService.Success(await _service.GetPersonalMeeting(dto.MeetingId, CurrentUser), "Thêm thành viên thành công."));
-        });
-
-        /// <summary>
-        /// Xóa người tham gia khỏi cuộc họp.
-        /// </summary>
-        [HttpDelete("RemoveParticipant")]
-        public Task<IActionResult> RemoveParticipant([FromBody] RemoveMeetingParticipantDto dto) => Execute(async () =>
-        {
-            await _service.RemoveParticipant(dto, CurrentUser);
-            return Ok(ResponseService.Success(null, "Xóa thành viên thành công."));
-        });
-
-        /// <summary>
-        /// Bắt đầu tiến hành cuộc họp (Chuyển trạng thái sang đang diễn ra).
-        /// </summary>
-        [HttpPost("StartMeeting")]
-        public Task<IActionResult> StartMeeting([FromBody] MeetingActionDto dto) => Execute(async () =>
-        {
-            await _service.StartMeeting(dto.MeetingId, CurrentUser);
-            return Ok(ResponseService.Success(null, "Bắt đầu cuộc họp thành công."));
-        });
-
-        /// <summary>
-        /// Kết thúc cuộc họp (Chuyển trạng thái sang đã kết thúc).
-        /// </summary>
-        [HttpPost("EndMeeting")]
-        public Task<IActionResult> EndMeeting([FromBody] MeetingActionDto dto) => Execute(async () =>
-        {
-            await _service.EndMeeting(dto.MeetingId, CurrentUser);
-            return Ok(ResponseService.Success(null, "Kết thúc cuộc họp thành công."));
-        });
-
-        /// <summary>
-        /// Người tham dự tiến vào phòng họp.
-        /// </summary>
-        [HttpPost("IntoTheMeeting")]
-        public Task<IActionResult> IntoTheMeeting([FromBody] MeetingActionDto dto) => Execute(async () =>
-        {
-            await _service.IntoTheMeeting(dto.MeetingId, CurrentUser);
+            await _service.IntoTheMeeting(meetingId, CurrentUser, ct);
+            await _hub.Clients.Group(meetingId).SendAsync("PresenceChanged", new { meetingId, userName = CurrentUser, action = "joined" }, ct);
             return Ok(ResponseService.Success(null, "Đã vào phòng họp."));
         });
 
-        /// <summary>
-        /// Người tham dự rời khỏi phòng họp.
-        /// </summary>
-        [HttpPost("ExitTheMeeting")]
-        public Task<IActionResult> ExitTheMeeting([FromBody] MeetingActionDto dto) => Execute(async () =>
+        [HttpPost("{meetingId}/leave")]
+        public Task<IActionResult> Leave(string meetingId, CancellationToken ct) => Execute(async () =>
         {
-            await _service.ExitTheMeeting(dto.MeetingId, CurrentUser);
+            await _service.ExitTheMeeting(meetingId, CurrentUser, ct);
+            await _hub.Clients.Group(meetingId).SendAsync("PresenceChanged", new { meetingId, userName = CurrentUser, action = "left" }, ct);
             return Ok(ResponseService.Success(null, "Đã rời phòng họp."));
         });
 
-        /// <summary>
-        /// Lấy danh sách tin nhắn chat của cuộc họp.
-        /// </summary>
-        [HttpGet("GetMessages/{meetingId}")]
-        public Task<IActionResult> GetMessages(string meetingId) => Execute(async () =>
-            Ok(ResponseService.Success(await _service.GetMessages(meetingId, CurrentUser))));
+        [HttpGet("{meetingId}/messages")]
+        public Task<IActionResult> GetMessages(string meetingId, CancellationToken ct) => Execute(async () =>
+            Ok(ResponseService.Success(await _service.GetMessages(meetingId, CurrentUser, ct))));
 
-        /// <summary>
-        /// Gửi tin nhắn chat vào phòng họp.
-        /// </summary>
-        [HttpPost("SendMessage")]
-        public Task<IActionResult> SendMessage([FromBody] SendMeetingMessageDto dto) => Execute(async () =>
-            Ok(ResponseService.Success(await _service.SendMessage(dto.MeetingId, CurrentUser, dto.MessageText))));
+        [HttpPost("{meetingId}/messages")]
+        public Task<IActionResult> SendMessage(string meetingId, [FromBody] SendMeetingMessageDto dto, CancellationToken ct) => Execute(async () =>
+        {
+            var msg = await _service.SendMessage(meetingId, CurrentUser, dto.MessageText, ct);
+            await _hub.Clients.Group(meetingId).SendAsync("ReceiveMessage", msg, ct);
+            return Ok(ResponseService.Success(msg));
+        });
 
         private static async Task<IActionResult> Execute(Func<Task<IActionResult>> action)
         {

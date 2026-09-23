@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 
 namespace BE.API.Hubs
 {
+    [Microsoft.AspNetCore.Authorization.Authorize]
     public class MeetingHub : Hub
     {
         private readonly ILogger<MeetingHub> _logger;
@@ -18,6 +19,7 @@ namespace BE.API.Hubs
             await Groups.AddToGroupAsync(Context.ConnectionId, meetingId);
             _logger.LogInformation($"Client {Context.ConnectionId} joined meeting group {meetingId}");
             await Clients.Group(meetingId).SendAsync("ParticipantJoined", Context.ConnectionId);
+            await Clients.Group(meetingId).SendAsync("PresenceChanged", new { meetingId, action = "hub_joined", connectionId = Context.ConnectionId });
         }
 
         public async Task LeaveMeeting(string meetingId)
@@ -25,6 +27,7 @@ namespace BE.API.Hubs
             await Groups.RemoveFromGroupAsync(Context.ConnectionId, meetingId);
             _logger.LogInformation($"Client {Context.ConnectionId} left meeting group {meetingId}");
             await Clients.Group(meetingId).SendAsync("ParticipantLeft", Context.ConnectionId);
+            await Clients.Group(meetingId).SendAsync("PresenceChanged", new { meetingId, action = "hub_left", connectionId = Context.ConnectionId });
         }
 
         public async Task SendMessage(string meetingId, object messageEnvelope)

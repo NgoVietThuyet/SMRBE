@@ -1,0 +1,11 @@
+  Determining projects to restore...
+  Restored d:\ky1nam4\KLTN\SMR\BE\BE.csproj (in 366 ms).
+d:\ky1nam4\KLTN\SMR\BE\Program.cs(11,25): error CS0234: The type or namespace name 'Models' does not exist in the namespace 'Microsoft.OpenApi' (are you missing an assembly reference?) [d:\ky1nam4\KLTN\SMR\BE\BE.csproj]
+
+Build FAILED.
+
+d:\ky1nam4\KLTN\SMR\BE\Program.cs(11,25): error CS0234: The type or namespace name 'Models' does not exist in the namespace 'Microsoft.OpenApi' (are you missing an assembly reference?) [d:\ky1nam4\KLTN\SMR\BE\BE.csproj]
+    0 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:01.59

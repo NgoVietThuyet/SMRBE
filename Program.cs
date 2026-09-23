@@ -8,13 +8,39 @@ using BE.Service.Services;
 using BE.API.Authorization;
 using BE.API.Hubs;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Description = "Nhập token bằng mẫu: Bearer {token của bạn}",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "Bearer"
+    });
+
+    c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+    {
+        {
+            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+            {
+                Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                {
+                    Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
 builder.Services.AddSignalR();
 
 // Database
@@ -25,6 +51,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 // Application Services
 builder.Services.AddScoped<IMeetingService, MeetingService>();
+builder.Services.AddScoped<ITaskService, TaskService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddSingleton<IObjectStorageService, MinioObjectStorageService>();
 builder.Services.AddScoped<IPermissionService, PermissionService>();
@@ -49,6 +76,16 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
         options.Events = new JwtBearerEvents
         {
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Query["access_token"];
+                var path = context.HttpContext.Request.Path;
+                if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/meetinghub"))
+                {
+                    context.Token = accessToken;
+                }
+                return Task.CompletedTask;
+            },
             OnTokenValidated = async context =>
             {
                 var principal = context.Principal;
@@ -79,6 +116,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFE", policy =>
         policy.WithOrigins(
+            "http://localhost:4200",  // Angular dev server mặc định
             "http://localhost:5173",  // Vite dev server mặc định
             "http://localhost:3000"
         )
@@ -107,6 +145,12 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.MapHub<MeetingHub>("/meetinghub");
+
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.Migrate();
+}
 
 await DbSeeder.SeedAsync(app.Services);
 

@@ -19,6 +19,8 @@ namespace BE.Infrastructure
         public DbSet<MeetingPersonal> MeetingPersonals { get; set; }
         public DbSet<MeetingMessage> MeetingMessages { get; set; }
         public DbSet<MeetingAuditLog> MeetingAuditLogs { get; set; }
+        public DbSet<MeetingTask> MeetingTasks { get; set; }
+        public DbSet<MeetingTaskShare> MeetingTaskShares { get; set; }
         public DbSet<CmFile> CmFiles { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -46,6 +48,23 @@ namespace BE.Infrastructure
             modelBuilder.Entity<MeetingAuditLog>().HasKey(e => e.Id);
             modelBuilder.Entity<MeetingAuditLog>().HasIndex(e => new { e.MeetingId, e.OccurredAt });
             modelBuilder.Entity<MeetingAuditLog>().HasOne<MeetingInfo>().WithMany().HasForeignKey(e => e.MeetingId).OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<MeetingTask>().HasKey(e => e.Id);
+            modelBuilder.Entity<MeetingTask>().Property(e => e.Title).HasMaxLength(300);
+            modelBuilder.Entity<MeetingTask>().Property(e => e.Description).HasMaxLength(4000);
+            modelBuilder.Entity<MeetingTask>().Property(e => e.Status).HasDefaultValue(0);
+            modelBuilder.Entity<MeetingTask>().Property(e => e.Priority).HasDefaultValue(1);
+            modelBuilder.Entity<MeetingTask>().Property(e => e.IsPublic).HasDefaultValue(false);
+            modelBuilder.Entity<MeetingTask>().HasIndex(e => e.MeetingId);
+            modelBuilder.Entity<MeetingTask>().HasIndex(e => e.AssigneeUserName);
+            modelBuilder.Entity<MeetingTask>().HasIndex(e => e.DueDate);
+            modelBuilder.Entity<MeetingTask>().HasIndex(e => e.ParentId);
+            modelBuilder.Entity<MeetingTask>().HasIndex(e => e.Level);
+            modelBuilder.Entity<MeetingTask>().HasOne(e => e.Meeting).WithMany().HasForeignKey(e => e.MeetingId).OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<MeetingTask>().HasOne(e => e.Parent).WithMany(e => e.Children).HasForeignKey(e => e.ParentId).OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<MeetingTaskShare>().HasKey(e => e.Id);
+            modelBuilder.Entity<MeetingTaskShare>().HasIndex(e => new { e.TaskId, e.UserName }).IsUnique();
+            // Gắn vào navigation e.Task (không dùng HasOne<MeetingTask>() rỗng vì sẽ tạo quan hệ thứ hai tách khỏi property TaskId).
+            modelBuilder.Entity<MeetingTaskShare>().HasOne(e => e.Task).WithMany().HasForeignKey(e => e.TaskId).OnDelete(DeleteBehavior.Cascade);
             modelBuilder.Entity<CmFile>().HasKey(e => e.Id);
             modelBuilder.Entity<CmFile>().Property(e => e.FileSize).HasColumnType("decimal(18,2)");
         }

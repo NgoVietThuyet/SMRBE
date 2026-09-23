@@ -7,15 +7,21 @@ using BE.Core.Entities.AD;
 using BE.Core.Entities.MT;
 using BE.Infrastructure;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 
 namespace BE.Service.Services;
 
 public sealed class MeetingService : IMeetingService
 {
     private readonly AppDbContext _db;
+    private readonly IConfiguration _config;
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
-    public MeetingService(AppDbContext db) => _db = db;
+    public MeetingService(AppDbContext db, IConfiguration config)
+    {
+        _db = db;
+        _config = config;
+    }
 
     public async Task<MeetingDashboardDto> GetDashboard(string userName, CancellationToken ct = default)
     {
@@ -78,6 +84,29 @@ public sealed class MeetingService : IMeetingService
         return await ToDetail(meeting, userName, ct);
     }
 
+    public async Task<MeetingJoinInfoDto> GetJoinInfo(string meetingId, string userName, CancellationToken ct = default)
+    {
+        var member = await EnsureMember(meetingId, userName, ct);
+        var meeting = await _db.MeetingInfos.AsNoTracking().FirstOrDefaultAsync(x => x.Id == meetingId && !x.IsDeleted, ct)
+            ?? throw new KeyNotFoundException("Không tìm thấy cuộc họp.");
+        if (meeting.Status is (int)MeetingStatus.Ended or (int)MeetingStatus.Cancelled or (int)MeetingStatus.Archived)
+            throw new InvalidOperationException("Cuộc họp đã kết thúc nên không thể tham gia.");
+        var account = await _db.AdAccounts.AsNoTracking().FirstOrDefaultAsync(x => x.UserName == userName, ct);
+        // Room Jitsi: tiền tố theo AppId + RoomCode để tránh trùng với phòng khác trên cùng server.
+        // Server hiện tại (meet.d2s.vn) chưa bật JWT auth nên BE chỉ cần cấp đúng room + cờ moderator.
+        var prefix = (_config["Jitsi:AppId"] ?? "smr").Trim().ToLowerInvariant();
+        return new MeetingJoinInfoDto
+        {
+            MeetingId = meeting.Id,
+            RoomName = $"{prefix}_{meeting.RoomCode}".ToLowerInvariant(),
+            Domain = (_config["Jitsi:Domain"] ?? "meet.d2s.vn").Trim(),
+            DisplayName = account?.FullName ?? userName,
+            IsModerator = member.IsChuTri || member.Type == (int)MeetingParticipantRole.CoHost,
+            StartWithAudioMuted = false,
+            StartWithVideoMuted = true
+        };
+    }
+
     public async Task<MeetingDetailDto> CreateMeeting(CreateMeetingDto dto, string creatorUserName, CancellationToken ct = default)
     {
         ValidateSchedule(dto.Name, dto.ExpectedStartTime, dto.ExpectedEndTime, dto.SaveAsDraft);
@@ -110,7 +139,8 @@ public sealed class MeetingService : IMeetingService
             Version = 1
         };
         meeting.JoinUrl = $"/meet/{meeting.Id}";
-        await using var tx = await _db.Database.BeginTransactionAsync(ct);
+        // SaveChanges tự bọc transaction; không dùng BeginTransaction trực tiếp
+        // vì xung đột với SqlServerRetryingExecutionStrategy (EnableRetryOnFailure).
         _db.MeetingInfos.Add(meeting);
         foreach (var item in requested)
         {
@@ -119,7 +149,6 @@ public sealed class MeetingService : IMeetingService
         }
         AddAudit(meeting, "meeting.created", creatorUserName, new { dto.PublishInvitation });
         await _db.SaveChangesAsync(ct);
-        await tx.CommitAsync(ct);
         return await ToDetail(meeting, creatorUserName, ct);
     }
 
@@ -243,15 +272,22 @@ public sealed class MeetingService : IMeetingService
     public async Task<MeetingInfo?> GetInfoMeeting(string meetingId, string userName, CancellationToken ct = default) { await EnsureMember(meetingId, userName, ct); return await _db.MeetingInfos.AsNoTracking().FirstOrDefaultAsync(x => x.Id == meetingId && !x.IsDeleted, ct); }
     public async Task<List<MeetingPersonal>> GetPersonalMeeting(string meetingId, string userName, CancellationToken ct = default) { await EnsureMember(meetingId, userName, ct); return await _db.MeetingPersonals.AsNoTracking().Where(x => x.MeetingId == meetingId).OrderByDescending(x => x.IsChuTri).ThenBy(x => x.FullName).ToListAsync(ct); }
 
-    private record MeetingScope(MeetingInfo Meeting, MeetingPersonal Member);
-    private IQueryable<MeetingScope> MemberMeetings(string userName) => from meeting in _db.MeetingInfos.AsNoTracking() join member in _db.MeetingPersonals.AsNoTracking() on meeting.Id equals member.MeetingId where member.UserName == userName && !meeting.IsDeleted select new MeetingScope(meeting, member);
+    // Dùng class + object initializer thay cho record positional: EF Core không
+    // inline được `new MeetingScope(m, p).Meeting.X` trong các Where ghép sau,
+    // gây lỗi "could not be translated" ở GetDashboard/SearchMeetings.
+    private sealed class MeetingScope
+    {
+        public MeetingInfo Meeting { get; set; } = null!;
+        public MeetingPersonal Member { get; set; } = null!;
+    }
+    private IQueryable<MeetingScope> MemberMeetings(string userName) => from meeting in _db.MeetingInfos.AsNoTracking() join member in _db.MeetingPersonals.AsNoTracking() on meeting.Id equals member.MeetingId where member.UserName == userName && !meeting.IsDeleted select new MeetingScope { Meeting = meeting, Member = member };
     private IQueryable<MeetingListItemDto> ProjectList(IQueryable<MeetingScope> query, string userName) => query.Select(x => new MeetingListItemDto { Id = x.Meeting.Id, Name = x.Meeting.Name, Description = x.Meeting.MeetContent, ExpectedStartTime = x.Meeting.ExpectedStartTime, ExpectedEndTime = x.Meeting.ExpectedEndTime, Status = (MeetingStatus)x.Meeting.Status, Visibility = (MeetingVisibility)x.Meeting.Visibility, RoomCode = x.Meeting.RoomCode, JoinUrl = x.Meeting.JoinUrl, IsHost = x.Member.IsChuTri, ParticipantCount = _db.MeetingPersonals.Count(p => p.MeetingId == x.Meeting.Id), HostName = _db.MeetingPersonals.Where(p => p.MeetingId == x.Meeting.Id && p.IsChuTri).Select(p => p.FullName).FirstOrDefault() ?? string.Empty });
 
     private async Task<MeetingDetailDto> ToDetail(MeetingInfo meeting, string userName, CancellationToken ct)
     {
         var participants = await _db.MeetingPersonals.AsNoTracking().Where(x => x.MeetingId == meeting.Id).OrderByDescending(x => x.IsChuTri).ThenBy(x => x.FullName).Select(x => new MeetingParticipantDto { UserName = x.UserName, FullName = x.FullName, Email = x.Email, OrganizationId = x.OrgId, TitleCode = x.TitleCode, Role = (MeetingParticipantRole)x.Type, IsJoined = x.IsJoined, JoinTime = x.JoinTime }).ToListAsync(ct);
         var activity = await _db.MeetingAuditLogs.AsNoTracking().Where(x => x.MeetingId == meeting.Id).OrderByDescending(x => x.OccurredAt).Select(x => new MeetingAuditDto { Id = x.Id, Action = x.Action, ActorId = x.ActorId, OccurredAt = x.OccurredAt, Version = x.Version, PayloadJson = x.PayloadJson }).ToListAsync(ct);
-        var settings = JsonSerializer.Deserialize<MeetingSettingsDto>(meeting.SettingsJson, JsonOptions) ?? new(); settings.PasswordHash = string.Empty;
+        var settings = JsonSerializer.Deserialize<MeetingSettingsDto>(meeting.SettingsJson, JsonOptions) ?? new(); settings.PasswordHash = string.Empty; // Không trả hash về client; FE đọc cờ HasPassword.
         var host = participants.FirstOrDefault(x => x.Role == MeetingParticipantRole.Host);
         return new MeetingDetailDto { Id = meeting.Id, Name = meeting.Name, Description = meeting.MeetContent, Agenda = meeting.Agenda, ExpectedStartTime = meeting.ExpectedStartTime, ExpectedEndTime = meeting.ExpectedEndTime, TimeZone = meeting.TimeZone, Status = (MeetingStatus)meeting.Status, Visibility = (MeetingVisibility)meeting.Visibility, RoomCode = meeting.RoomCode, JoinUrl = meeting.JoinUrl, ParticipantCount = participants.Count, HostName = host?.FullName ?? string.Empty, IsHost = host?.UserName.Equals(userName, StringComparison.OrdinalIgnoreCase) == true, CanManage = participants.Any(x => x.UserName.Equals(userName, StringComparison.OrdinalIgnoreCase) && x.Role is MeetingParticipantRole.Host or MeetingParticipantRole.CoHost), CancellationReason = meeting.CancellationReason, Settings = settings, Participants = participants, Activity = activity, RowVersion = meeting.RowVersion.Length == 0 ? string.Empty : Convert.ToBase64String(meeting.RowVersion) };
     }
@@ -268,5 +304,4 @@ public sealed class MeetingService : IMeetingService
     private void AddAudit(MeetingInfo meeting, string action, string actor, object? payload) => _db.MeetingAuditLogs.Add(new MeetingAuditLog { Id = Guid.NewGuid().ToString("N"), MeetingId = meeting.Id, Action = action, ActorId = actor, OccurredAt = DateTime.UtcNow, CorrelationId = Activity.Current?.Id ?? Guid.NewGuid().ToString("N"), Version = meeting.Version, PayloadJson = payload == null ? "{}" : JsonSerializer.Serialize(payload, JsonOptions) });
     private async Task<string> NewRoomCode(CancellationToken ct) { const string chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; for (var attempt = 0; attempt < 5; attempt++) { var bytes = RandomNumberGenerator.GetBytes(10); var code = new string(bytes.Select(x => chars[x % chars.Length]).ToArray()); if (!await _db.MeetingInfos.AnyAsync(x => x.RoomCode == code, ct)) return code; } throw new InvalidOperationException("Không thể cấp mã phòng họp."); }
 
-    private sealed record MeetingJoin(MeetingInfo Meeting, MeetingPersonal Member);
 }

@@ -13,7 +13,7 @@ namespace BE.Service
         /// <param name="data">Dữ liệu trả về cho client.</param>
         /// <param name="message">Thông điệp thông báo.</param>
         /// <returns>Đối tượng ResponseDto được điền đầy đủ dữ liệu.</returns>
-        public static ResponseDto Success(object data = null, string message = "Thao tác thành công.")
+        public static ResponseDto Success(object? data = null, string message = "Thao tác thành công.")
         {
             return new ResponseDto
             {
@@ -29,7 +29,7 @@ namespace BE.Service
         /// <param name="message">Thông điệp báo lỗi.</param>
         /// <param name="data">Dữ liệu bổ sung nếu có.</param>
         /// <returns>Đối tượng ResponseDto được điền đầy đủ dữ liệu lỗi.</returns>
-        public static ResponseDto Fail(string message = "Thao tác thất bại.", object data = null)
+        public static ResponseDto Fail(string message = "Thao tác thất bại.", object? data = null)
         {
             return new ResponseDto
             {
