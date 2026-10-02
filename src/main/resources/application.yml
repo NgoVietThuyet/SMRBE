@@ -1,0 +1,56 @@
+spring:
+  application:
+    name: smr-backend
+  datasource:
+    url: ${DB_URL:jdbc:sqlserver://sso.d2s.com.vn:2025;databaseName=KLTNSMR;encrypt=true;trustServerCertificate=true}
+    username: ${DB_USERNAME:sa}
+    password: ${DB_PASSWORD:sa@d2s.com.vn}
+    driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+    properties:
+      hibernate:
+        use_nationalized_character_data: true
+
+server:
+  port: ${SERVER_PORT:5228}
+
+smr:
+  jwt:
+    key: ${JWT_KEY:SMR-Development-Only-Key-Change-Before-Production-2026}
+    issuer: ${JWT_ISSUER:SMR.Api}
+    audience: ${JWT_AUDIENCE:SMR.Web}
+    access-token-expiration-minutes: ${JWT_ACCESS_EXPIRES_MINUTES:1440}
+    refresh-token-expiration-days: ${JWT_REFRESH_EXPIRES_DAYS:7}
+    reset-token-expiration-minutes: ${JWT_RESET_EXPIRES_MINUTES:15}
+  auth:
+    public-registration: ${PUBLIC_REGISTRATION:false}
+    registration-org-id: ${REGISTRATION_ORG_ID:}
+    registration-title-code: ${REGISTRATION_TITLE_CODE:}
+    expose-reset-token: ${EXPOSE_RESET_TOKEN:false}
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:4200,http://localhost:5173,http://localhost:3000}
+  minio:
+    endpoint: ${MINIO_ENDPOINT:minio.d2s.vn}
+    port: ${MINIO_PORT:443}
+    access-key: ${MINIO_ACCESS_KEY:admin}
+    secret-key: ${MINIO_SECRET_KEY:admin123}
+    use-ssl: ${MINIO_USE_SSL:true}
+    bucket-name: ${MINIO_BUCKET:KLTN}
+  jitsi:
+    domain: ${JITSI_DOMAIN:meet.d2s.vn}
+    app-id: ${JITSI_APP_ID:smr}
+    external-api-url: ${JITSI_EXTERNAL_API_URL:https://meet.d2s.vn/external_api.js}
+  llm:
+    url: ${LLM_URL:http://115.146.121.185:8311/v1/chat/completions}
+    api-key: ${LLM_API_KEY:d2s_llm_test}
+    model: ${LLM_MODEL:default}
+    bypass-auth: ${LLM_BYPASS_AUTH:true}
+    system-prompt: ${LLM_SYSTEM_PROMPT:Bạn là AI của hệ thống TMS hỗ trợ người dùng về mọi thứ liên quan đến cuộc họp}
+    connect-timeout-ms: ${LLM_CONNECT_TIMEOUT_MS:5000}
+    read-timeout-ms: ${LLM_READ_TIMEOUT_MS:30000}
+
