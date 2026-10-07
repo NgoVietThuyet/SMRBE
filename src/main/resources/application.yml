@@ -46,11 +46,11 @@ smr:
     app-id: ${JITSI_APP_ID:smr}
     external-api-url: ${JITSI_EXTERNAL_API_URL:https://meet.d2s.vn/external_api.js}
   llm:
-    url: ${LLM_URL:http://115.146.121.185:8311/v1/chat/completions}
+    url: ${LLM_URL:https://llm.d2s.vn/v1/chat/completions}
     api-key: ${LLM_API_KEY:d2s_llm_test}
     model: ${LLM_MODEL:default}
     bypass-auth: ${LLM_BYPASS_AUTH:true}
-    system-prompt: ${LLM_SYSTEM_PROMPT:Bạn là AI của hệ thống TMS hỗ trợ người dùng về mọi thứ liên quan đến cuộc họp}
+    system-prompt: ${LLM_SYSTEM_PROMPT:Bạn là AI của hệ thống SMR hỗ trợ người dùng về mọi thứ liên quan đến cuộc họp}
     connect-timeout-ms: ${LLM_CONNECT_TIMEOUT_MS:5000}
     read-timeout-ms: ${LLM_READ_TIMEOUT_MS:30000}
 

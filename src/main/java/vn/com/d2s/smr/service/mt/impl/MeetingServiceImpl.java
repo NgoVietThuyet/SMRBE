@@ -3,6 +3,7 @@ package vn.com.d2s.smr.service.mt.impl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -56,6 +57,8 @@ public class MeetingServiceImpl implements MeetingService {
     private final AdAccountRepository accountRepository;
     private final ObjectMapper objectMapper;
     private final Clock clock;
+    private final String jitsiDomain;
+    private final String jitsiExternalApiUrl;
 
     @Autowired
     public MeetingServiceImpl(
@@ -64,7 +67,9 @@ public class MeetingServiceImpl implements MeetingService {
             MeetingAuditLogRepository meetingAuditLogRepository,
             MeetingMessageRepository meetingMessageRepository,
             AdAccountRepository accountRepository,
-            ObjectMapper objectMapper
+            ObjectMapper objectMapper,
+            @Value("${smr.jitsi.domain:meet.d2s.vn}") String jitsiDomain,
+            @Value("${smr.jitsi.external-api-url:https://meet.d2s.vn/external_api.js}") String jitsiExternalApiUrl
     ) {
         this(
                 meetingInfoRepository,
@@ -73,7 +78,9 @@ public class MeetingServiceImpl implements MeetingService {
                 meetingMessageRepository,
                 accountRepository,
                 objectMapper,
-                Clock.systemUTC()
+                Clock.systemUTC(),
+                jitsiDomain,
+                jitsiExternalApiUrl
         );
     }
 
@@ -84,7 +91,9 @@ public class MeetingServiceImpl implements MeetingService {
             MeetingMessageRepository meetingMessageRepository,
             AdAccountRepository accountRepository,
             ObjectMapper objectMapper,
-            Clock clock
+            Clock clock,
+            String jitsiDomain,
+            String jitsiExternalApiUrl
     ) {
         this.meetingInfoRepository = meetingInfoRepository;
         this.meetingPersonalRepository = meetingPersonalRepository;
@@ -93,6 +102,8 @@ public class MeetingServiceImpl implements MeetingService {
         this.accountRepository = accountRepository;
         this.objectMapper = objectMapper;
         this.clock = clock;
+        this.jitsiDomain = jitsiDomain;
+        this.jitsiExternalApiUrl = jitsiExternalApiUrl;
     }
 
     @Override
@@ -648,6 +659,9 @@ public class MeetingServiceImpl implements MeetingService {
                 .findFirst()
                 .orElseThrow(() -> new SecurityException("Bạn không có quyền tham gia cuộc họp này."));
 
+        boolean isHost = personal.isChairperson();
+        boolean isGuest = personal.getType() == 3 || userName.startsWith("guest_");
+
         return new MeetingJoinInfoResponse(
                 meeting.getId(),
                 meeting.getName(),
@@ -656,11 +670,16 @@ public class MeetingServiceImpl implements MeetingService {
                 meeting.getStatus(),
                 meeting.getExpectedStartTime(),
                 meeting.getExpectedEndTime(),
-                "meet.jit.si",
+                jitsiDomain,
                 meeting.getRoomCode(),
                 personal.getFullName(),
-                personal.isChairperson(),
-                personal.getType() == 3 || userName.startsWith("guest_")
+                isHost,
+                isGuest,
+                jitsiDomain,
+                isHost,
+                false,
+                false,
+                jitsiExternalApiUrl
         );
     }
 

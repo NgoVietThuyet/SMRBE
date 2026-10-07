@@ -76,7 +76,9 @@ class MeetingServiceImplTest {
                 meetingMessageRepository,
                 accountRepository,
                 new ObjectMapper(),
-                Clock.fixed(NOW, ZoneOffset.UTC)
+                Clock.fixed(NOW, ZoneOffset.UTC),
+                "meet.d2s.vn",
+                "https://meet.d2s.vn/external_api.js"
         );
     }
 
@@ -298,6 +300,9 @@ class MeetingServiceImplTest {
         assertThat(response.meetingId()).isEqualTo("m1");
         assertThat(response.roomName()).isEqualTo("room1234");
         assertThat(response.host()).isTrue();
+        assertThat(response.domain()).isEqualTo("meet.d2s.vn");
+        assertThat(response.jitsiDomain()).isEqualTo("meet.d2s.vn");
+        assertThat(response.externalApiUrl()).isEqualTo("https://meet.d2s.vn/external_api.js");
     }
 
     @Test

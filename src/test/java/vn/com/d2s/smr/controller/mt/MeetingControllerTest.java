@@ -256,14 +256,16 @@ class MeetingControllerTest {
         MeetingJoinInfoResponse joinInfo = new MeetingJoinInfoResponse(
                 "m1", "Họp A", "room123", "/meeting/room123", 1,
                 LocalDateTime.now(), LocalDateTime.now().plusHours(1),
-                "meet.jit.si", "room123", "User 1", true, false
+                "meet.d2s.vn", "room123", "User 1", true, false
         );
         when(meetingService.getJoinInfo("user1", "m1")).thenReturn(joinInfo);
 
         mockMvc.perform(get("/api/Meeting/m1/join-info").principal(() -> "user1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value(true))
-                .andExpect(jsonPath("$.data.roomName").value("room123"));
+                .andExpect(jsonPath("$.data.roomName").value("room123"))
+                .andExpect(jsonPath("$.data.domain").value("meet.d2s.vn"))
+                .andExpect(jsonPath("$.data.externalApiUrl").value("https://meet.d2s.vn/external_api.js"));
     }
 
     @Test

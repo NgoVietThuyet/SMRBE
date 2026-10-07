@@ -91,11 +91,10 @@ public class SignalRMeetingEventPublisher extends TextWebSocketHandler implement
         }
 
         if (invocationId != null) {
-            Map<String, Object> response = Map.of(
-                    "type", 3,
-                    "invocationId", invocationId,
-                    "result", null
-            );
+            Map<String, Object> response = new java.util.HashMap<>();
+            response.put("type", 3);
+            response.put("invocationId", invocationId);
+            response.put("result", null);
             session.sendMessage(new TextMessage(objectMapper.writeValueAsString(response) + RECORD_SEPARATOR));
         }
     }

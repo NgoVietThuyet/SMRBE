@@ -580,7 +580,7 @@ public class TaskServiceImpl implements TaskService {
     private Specification<MeetingTask> viewableTasksSpec(String userName) {
         return (root, query, cb) -> {
             Predicate pCreateBy = cb.equal(root.get("createBy"), userName);
-            Predicate pPublic = cb.isTrue(root.get("isPublic"));
+            Predicate pPublic = cb.isTrue(root.get("publicTask"));
             Predicate pAssignee = cb.equal(root.get("assigneeUserName"), userName);
 
             Subquery<String> shareSubquery = query.subquery(String.class);
