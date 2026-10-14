@@ -355,12 +355,21 @@ class MeetingControllerTest {
                 "m1", true, 8, LocalDateTime.now(), "8 chunks"
         );
         when(ragService.syncKnowledgeBase("m1", "user1")).thenReturn(statusResp);
+        when(meetingService.getMeetingDetail("user1", "m1")).thenReturn(Optional.of(sampleDetail("m1")));
 
         mockMvc.perform(post("/api/Meeting/m1/ai/sync").principal(() -> "user1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value(true))
                 .andExpect(jsonPath("$.data.chunkCount").value(8))
                 .andExpect(jsonPath("$.message").value("Đồng bộ cơ sở tri thức cuộc họp thành công."));
+    }
+
+    @Test
+    void syncAiRagForbiddenForNonModerator() throws Exception {
+        when(meetingService.getMeetingDetail("user2", "m1")).thenReturn(Optional.empty());
+
+        mockMvc.perform(post("/api/Meeting/m1/ai/sync").principal(() -> "user2"))
+                .andExpect(status().isForbidden());
     }
 
     @Test

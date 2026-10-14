@@ -47,7 +47,7 @@ class PermissionServiceImplTest {
         AdAccount account = account();
         account.setPermissionJson("{\"version\":1,\"permissions\":{\"HR_VIEW\":\"Deny\"}}");
         MdTitle title = title();
-        title.setPermissionJson("{\"version\":1,\"permissions\":{\"HR_VIEW\":\"Allow\",\"MEETING_CREATE\":\"Allow\"}}");
+        title.setPermissionJson("{\"version\":1,\"permissions\":{\"HR_VIEW\":\"Allow\",\"MEETING_RECORD\":\"Allow\",\"MEETING_CREATE\":\"Allow\"}}");
         MdOrganize organization = organization();
         organization.setPermissionJson("{\"version\":1,\"permissions\":{\"FILE_UPLOAD\":\"Allow\"}}");
         stubHierarchy(account, title, organization);
@@ -57,7 +57,9 @@ class PermissionServiceImplTest {
         EffectivePermissionResponse hrView = permission(result, "HR_VIEW");
         assertThat(hrView.allowed()).isFalse();
         assertThat(hrView.sourceType()).isEqualTo("USER");
-        assertThat(permission(result, "MEETING_CREATE").sourceType()).isEqualTo("TITLE");
+        assertThat(permission(result, "MEETING_RECORD").sourceType()).isEqualTo("TITLE");
+        // Mã đã gỡ (MEETING_CREATE) trong JSON cũ bị bỏ qua, không gây lỗi.
+        assertThat(result).noneMatch(r -> "MEETING_CREATE".equals(r.code()));
         assertThat(permission(result, "FILE_UPLOAD").sourceType()).isEqualTo("ORGANIZATION");
         assertThat(permission(result, "AI_SUMMARY").sourceType()).isEqualTo("DEFAULT");
     }
@@ -70,7 +72,7 @@ class PermissionServiceImplTest {
 
         List<EffectivePermissionResponse> result = service.getEffectivePermissions("admin");
 
-        assertThat(result).hasSize(26).allMatch(EffectivePermissionResponse::allowed);
+        assertThat(result).hasSize(24).allMatch(EffectivePermissionResponse::allowed);
         assertThat(result).allMatch(permission -> "ROLE".equals(permission.sourceType()));
     }
 

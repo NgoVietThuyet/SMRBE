@@ -11,16 +11,20 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import vn.com.d2s.smr.config.audit.Audited;
 import vn.com.d2s.smr.dto.common.ApiResponse;
 import vn.com.d2s.smr.dto.common.PagedResultResponse;
 import vn.com.d2s.smr.dto.mt.meeting.CancelMeetingRequest;
 import vn.com.d2s.smr.dto.mt.meeting.CreateMeetingRequest;
+import vn.com.d2s.smr.dto.mt.meeting.MeetingCodeLookupResponse;
 import vn.com.d2s.smr.dto.mt.meeting.MeetingDashboardResponse;
 import vn.com.d2s.smr.dto.mt.meeting.MeetingDetailResponse;
 import vn.com.d2s.smr.dto.mt.meeting.MeetingJoinInfoResponse;
 import vn.com.d2s.smr.dto.mt.meeting.MeetingListItemResponse;
 import vn.com.d2s.smr.dto.mt.meeting.MeetingSearchRequest;
 import vn.com.d2s.smr.dto.mt.meeting.QuickMeetingRequest;
+import vn.com.d2s.smr.dto.mt.meeting.ScheduleConflictRequest;
+import vn.com.d2s.smr.dto.mt.meeting.ScheduleConflictResponse;
 import vn.com.d2s.smr.dto.mt.meeting.UpdateMeetingParticipantsRequest;
 import vn.com.d2s.smr.dto.mt.meeting.UpdateMeetingRequest;
 import vn.com.d2s.smr.dto.mt.message.MeetingMessageResponse;
@@ -93,6 +97,7 @@ public class MeetingController {
         }
     }
 
+    @Audited(category = "MEETING", action = "CREATE", targetType = "MEETING")
     @PostMapping
     public ResponseEntity<ApiResponse<MeetingDetailResponse>> createMeeting(
             Principal principal,
@@ -124,6 +129,7 @@ public class MeetingController {
         }
     }
 
+    @Audited(category = "MEETING", action = "DELETE", targetType = "MEETING", targetPathVariable = "meetingId")
     @DeleteMapping("/{meetingId}")
     public ResponseEntity<ApiResponse<Void>> deleteMeeting(
             Principal principal,
@@ -141,6 +147,7 @@ public class MeetingController {
         }
     }
 
+    @Audited(category = "MEETING", action = "CANCEL", targetType = "MEETING", targetPathVariable = "meetingId")
     @PostMapping("/{meetingId}/cancel")
     public ResponseEntity<ApiResponse<Void>> cancelMeeting(
             Principal principal,
@@ -157,6 +164,7 @@ public class MeetingController {
         }
     }
 
+    @Audited(category = "MEETING", action = "ARCHIVE", targetType = "MEETING", targetPathVariable = "meetingId")
     @PostMapping("/{meetingId}/archive")
     public ResponseEntity<ApiResponse<Void>> archiveMeeting(
             Principal principal,
@@ -172,6 +180,7 @@ public class MeetingController {
         }
     }
 
+    @Audited(category = "MEETING", action = "CREATE_QUICK", targetType = "MEETING")
     @PostMapping("/quick")
     public ResponseEntity<ApiResponse<MeetingDetailResponse>> createQuickMeeting(
             Principal principal,
@@ -185,6 +194,7 @@ public class MeetingController {
         }
     }
 
+    @Audited(category = "MEETING", action = "ADD_PARTICIPANTS", targetType = "MEETING", targetPathVariable = "meetingId")
     @PostMapping("/{meetingId}/participants")
     public ResponseEntity<ApiResponse<MeetingDetailResponse>> addParticipants(
             Principal principal,
@@ -201,6 +211,7 @@ public class MeetingController {
         }
     }
 
+    @Audited(category = "MEETING", action = "REMOVE_PARTICIPANT", targetType = "MEETING", targetPathVariable = "meetingId")
     @DeleteMapping("/{meetingId}/participants/{participantUserName}")
     public ResponseEntity<ApiResponse<Void>> removeParticipant(
             Principal principal,
@@ -217,6 +228,24 @@ public class MeetingController {
         }
     }
 
+    /** Cảnh báo trùng lịch khi tạo/sửa cuộc họp: luôn trả 200, danh sách rỗng = không trùng. */
+    @PostMapping("/schedule-conflicts")
+    public ResponseEntity<ApiResponse<List<ScheduleConflictResponse>>> findScheduleConflicts(
+            Principal principal,
+            @RequestBody ScheduleConflictRequest request
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(meetingService.findScheduleConflicts(principal.getName(), request), null));
+    }
+
+    /** "Tham gia bằng mã": luôn trả 200; không tìm thấy / không được mời thể hiện qua reason. */
+    @GetMapping("/by-code/{roomCode}")
+    public ResponseEntity<ApiResponse<MeetingCodeLookupResponse>> lookupByRoomCode(
+            Principal principal,
+            @PathVariable String roomCode
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(meetingService.lookupByRoomCode(principal.getName(), roomCode), null));
+    }
+
     @GetMapping("/{meetingId}/join-info")
     public ResponseEntity<ApiResponse<MeetingJoinInfoResponse>> getJoinInfo(
             Principal principal,
@@ -227,11 +256,14 @@ public class MeetingController {
             return ResponseEntity.ok(ApiResponse.success(joinInfo, null));
         } catch (SecurityException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.failure(e.getMessage()));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(ApiResponse.failure(e.getMessage()));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.failure(e.getMessage()));
         }
     }
 
+    @Audited(category = "MEETING", action = "START", targetType = "MEETING", targetPathVariable = "meetingId")
     @PostMapping("/{meetingId}/start")
     public ResponseEntity<ApiResponse<Void>> startMeeting(
             Principal principal,
@@ -247,6 +279,7 @@ public class MeetingController {
         }
     }
 
+    @Audited(category = "MEETING", action = "END", targetType = "MEETING", targetPathVariable = "meetingId")
     @PostMapping("/{meetingId}/end")
     public ResponseEntity<ApiResponse<Void>> endMeeting(
             Principal principal,
@@ -381,7 +414,11 @@ public class MeetingController {
             @PathVariable String meetingId
     ) {
         try {
-            meetingService.getMeetingDetail(principal.getName(), meetingId);
+            boolean canManage = meetingService.getMeetingDetail(principal.getName(), meetingId)
+                    .map(MeetingDetailResponse::canManage).orElse(false);
+            if (!canManage) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.failure("Chỉ chủ trì được đồng bộ lại tri thức AI."));
+            }
             if (ragService == null) {
                 return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(ApiResponse.failure("Dịch vụ RAG chưa sẵn sàng."));
             }

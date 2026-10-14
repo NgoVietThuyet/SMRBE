@@ -36,7 +36,7 @@ public interface AdAccountRepository extends JpaRepository<AdAccount, String> {
             select new vn.com.d2s.smr.dto.ad.employee.EmployeeItemResponse(
                 a.userName, a.fullName, a.email, a.phone, a.address,
                 a.orgId, o.name, a.titleCode, t.name,
-                a.active, a.mustChangePassword, a.lastLoginAt, a.createDate
+                a.active, a.mustChangePassword, a.lastLoginAt, a.createDate, a.roleCodes
             )
             from AdAccount a
             left join MdOrganize o on a.orgId = o.id

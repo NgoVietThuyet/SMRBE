@@ -81,7 +81,7 @@ class EmployeeServiceImplTest {
         EmployeeItemResponse item = new EmployeeItemResponse(
                 "john", "John Doe", "john@example.com", "0123456789", "Hanoi",
                 "org1", "Ban Giám đốc", "DEV", "Lập trình viên",
-                true, false, null, LocalDateTime.now()
+                true, false, null, LocalDateTime.now(), "USER"
         );
         when(adAccountRepository.findEmployees(eq("org1"), eq("DEV"), eq(true), eq("john"), any(Pageable.class)))
                 .thenReturn(List.of(item));
@@ -179,6 +179,7 @@ class EmployeeServiceImplTest {
         CreatedDirectoryEmployeeResponse res = service.createDirectoryEmployee(req, "admin");
 
         assertThat(res.userName()).isEqualTo("a01");
+        assertThat(res.temporaryPassword()).isNotBlank().doesNotEndWith("@123");
         verify(adAccountRepository).save(any(AdAccount.class));
     }
 

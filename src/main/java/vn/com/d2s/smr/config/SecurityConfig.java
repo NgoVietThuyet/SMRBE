@@ -41,7 +41,9 @@ public class SecurityConfig {
             HttpSecurity http,
             JwtDecoder jwtDecoder,
             JwtAuthenticationConverter jwtAuthenticationConverter,
-            ObjectMapper objectMapper
+            ObjectMapper objectMapper,
+            AdminAccess adminAccess,
+            GuestScope guestScope
     ) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
@@ -56,8 +58,19 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/Auth/GuestSession").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/File/UploadFilesRecord").permitAll()
                         .requestMatchers("/meetinghub/**").permitAll()
+                        // P10: màn /join/:roomCode cho khách chưa đăng nhập
+                        .requestMatchers(HttpMethod.GET, "/api/Meeting/public/*").permitAll()
                         .requestMatchers("/error").permitAll()
-                        .anyRequest().authenticated())
+                        // Quản trị: chỉ SUPER_ADMIN được ghi dữ liệu nhân sự và xem/gán quyền của người khác.
+                        // Các GET danh mục (summary, organization-tree, titles, employees) vẫn mở cho người đã đăng nhập.
+                        .requestMatchers("/api/admin/**").access(adminAccess)
+                        .requestMatchers(HttpMethod.POST, "/api/human-resources/**").access(adminAccess)
+                        .requestMatchers(HttpMethod.PUT, "/api/human-resources/**").access(adminAccess)
+                        .requestMatchers(HttpMethod.DELETE, "/api/human-resources/**").access(adminAccess)
+                        .requestMatchers(HttpMethod.GET, "/api/human-resources/*/*/permissions").access(adminAccess)
+                        .requestMatchers(HttpMethod.GET, "/api/human-resources/employees/*/effective-permissions").access(adminAccess)
+                        // Token khách chỉ dùng được cho đúng cuộc họp của nó.
+                        .anyRequest().access(guestScope))
                 .oauth2ResourceServer(oauth -> oauth.jwt(jwt -> jwt
                         .decoder(jwtDecoder)
                         .jwtAuthenticationConverter(jwtAuthenticationConverter)))

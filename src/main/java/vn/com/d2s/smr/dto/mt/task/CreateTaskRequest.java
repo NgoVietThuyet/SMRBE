@@ -19,6 +19,15 @@ public record CreateTaskRequest(
         int status,
         int priority,
         boolean isPublic,
-        String sourceRef
+        String sourceRef,
+        /** P12 */
+        LocalDateTime startDate,
+        String color
 ) {
+    public CreateTaskRequest(String meetingId, String parentId, int level, String title, String description,
+                             String assigneeUserName, LocalDateTime dueDate, int status, int priority, boolean isPublic,
+                             String sourceRef) {
+        this(meetingId, parentId, level, title, description, assigneeUserName, dueDate, status, priority, isPublic,
+                sourceRef, null, null);
+    }
 }

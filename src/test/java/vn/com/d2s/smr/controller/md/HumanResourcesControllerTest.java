@@ -242,7 +242,7 @@ class HumanResourcesControllerTest {
         EmployeeItemResponse item = new EmployeeItemResponse(
                 "john", "John Doe", "john@example.com", "0123456789", "Hanoi",
                 "org1", "Ban Giám đốc", "DEV", "Lập trình viên",
-                true, false, null, LocalDateTime.now()
+                true, false, null, LocalDateTime.now(), "USER"
         );
         PagedResultResponse<EmployeeItemResponse> paged = new PagedResultResponse<>(
                 List.of(item), 1, 20, 1, 1
@@ -263,7 +263,7 @@ class HumanResourcesControllerTest {
         EmployeeDetailResponse detail = new EmployeeDetailResponse(
                 "john", "John Doe", "john@example.com", "0123456789", "Hanoi",
                 "org1", "Ban Giám đốc", "DEV", "Lập trình viên",
-                true, false, null, LocalDateTime.now(), LocalDateTime.now()
+                true, false, null, LocalDateTime.now(), LocalDateTime.now(), "USER"
         );
         when(employeeService.getEmployee("john")).thenReturn(detail);
 
@@ -291,7 +291,7 @@ class HumanResourcesControllerTest {
     @Test
     void createDirectoryEmployeeReturns200() throws Exception {
         CreateDirectoryEmployeeRequest req = new CreateDirectoryEmployeeRequest("Nguyen Van A", "a.nguyen@example.com", "0123456789", "Hanoi", "org1", "DEV");
-        CreatedDirectoryEmployeeResponse resp = new CreatedDirectoryEmployeeResponse("a");
+        CreatedDirectoryEmployeeResponse resp = new CreatedDirectoryEmployeeResponse("a", "Tmp#12345");
         when(employeeService.createDirectoryEmployee(any(CreateDirectoryEmployeeRequest.class), eq("admin"))).thenReturn(resp);
 
         mockMvc.perform(post("/api/human-resources/directory-employees")

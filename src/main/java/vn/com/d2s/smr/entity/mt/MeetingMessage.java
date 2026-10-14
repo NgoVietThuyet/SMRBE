@@ -20,7 +20,7 @@ public class MeetingMessage extends BaseEntity {
     @Column(name = "Id", nullable = false, length = 450)
     private String id;
 
-    @Column(name = "MeetingId", nullable = false, columnDefinition = "nvarchar(max)")
+    @Column(name = "MeetingId", nullable = false, length = 450)
     private String meetingId = "";
 
     @Column(name = "SenderUserId", nullable = false, columnDefinition = "nvarchar(max)")

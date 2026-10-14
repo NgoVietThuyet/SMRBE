@@ -11,14 +11,17 @@ import vn.com.d2s.smr.service.mt.impl.SignalRMeetingEventPublisher;
 public class WebSocketConfig implements WebSocketConfigurer {
 
     private final SignalRMeetingEventPublisher signalRPublisher;
+    private final HubAuthHandshakeInterceptor authInterceptor;
 
-    public WebSocketConfig(SignalRMeetingEventPublisher signalRPublisher) {
+    public WebSocketConfig(SignalRMeetingEventPublisher signalRPublisher, HubAuthHandshakeInterceptor authInterceptor) {
         this.signalRPublisher = signalRPublisher;
+        this.authInterceptor = authInterceptor;
     }
 
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
         registry.addHandler(signalRPublisher, "/meetinghub")
+                .addInterceptors(authInterceptor)
                 .setAllowedOriginPatterns("*");
     }
 }

@@ -109,7 +109,8 @@ public class EmployeeServiceImpl implements EmployeeService {
                 a.isMustChangePassword(),
                 a.getLastLoginAt(),
                 a.getCreateDate(),
-                a.getUpdateDate()
+                a.getUpdateDate(),
+                a.getRoleCodes()
         );
     }
 
@@ -160,7 +161,8 @@ public class EmployeeServiceImpl implements EmployeeService {
         while (adAccountRepository.existsById(userName)) {
             userName = baseName + String.format("%02d", i++);
         }
-        String rawPassword = baseName + "@123";
+        // Mật khẩu tạm ngẫu nhiên (trước đây là "<username>@123" → đoán được). Chỉ trả về một lần.
+        String rawPassword = generatePassword();
         LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
 
         AdAccount a = new AdAccount();
@@ -181,7 +183,7 @@ public class EmployeeServiceImpl implements EmployeeService {
         a.setUpdateDate(now);
 
         adAccountRepository.save(a);
-        return new CreatedDirectoryEmployeeResponse(userName);
+        return new CreatedDirectoryEmployeeResponse(userName, rawPassword);
     }
 
     @Override

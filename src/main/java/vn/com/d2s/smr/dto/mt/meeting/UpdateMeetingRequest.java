@@ -17,6 +17,15 @@ public record UpdateMeetingRequest(
         MeetingSettingsDto settings,
         String rowVersion,
         String meetContent,
-        String notes
+        String notes,
+        /** true: phát hành bản nháp (trạng thái 0 → 1) và gửi lời mời. */
+        boolean publish
 ) {
+    public UpdateMeetingRequest(String id, String name, String description, String agenda,
+                                LocalDateTime expectedStartTime, LocalDateTime expectedEndTime, String timeZone,
+                                int visibility, MeetingSettingsDto settings, String rowVersion,
+                                String meetContent, String notes) {
+        this(id, name, description, agenda, expectedStartTime, expectedEndTime, timeZone, visibility, settings,
+                rowVersion, meetContent, notes, false);
+    }
 }

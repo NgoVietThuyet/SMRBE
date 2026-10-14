@@ -157,7 +157,8 @@ public class PermissionServiceImpl implements PermissionService {
             throw new IllegalArgumentException("Phiên bản permission JSON không được hỗ trợ.");
         }
         List<String> invalid = document.permissions().keySet().stream()
-                .filter(code -> !PermissionCatalog.ALL_CODES.contains(code.toUpperCase(Locale.ROOT)))
+                .map(code -> code.toUpperCase(Locale.ROOT))
+                .filter(code -> !PermissionCatalog.ALL_CODES.contains(code) && !PermissionCatalog.RETIRED_CODES.contains(code))
                 .toList();
         if (!invalid.isEmpty()) {
             throw new IllegalArgumentException("Mã quyền không hợp lệ: " + String.join(", ", invalid));
@@ -166,9 +167,13 @@ public class PermissionServiceImpl implements PermissionService {
 
     private static PermissionDocument normalize(PermissionDocument document) {
         Map<String, PermissionEffect> normalized = new LinkedHashMap<>();
-        document.permissions().forEach((code, effect) ->
-                normalized.put(code.toUpperCase(Locale.ROOT), effect)
-        );
+        document.permissions().forEach((code, effect) -> {
+            String upper = code.toUpperCase(Locale.ROOT);
+            // Mã đã gỡ khỏi danh mục: bỏ khỏi tài liệu khi đọc / lưu.
+            if (!PermissionCatalog.RETIRED_CODES.contains(upper)) {
+                normalized.put(upper, effect);
+            }
+        });
         return new PermissionDocument(document.version(), normalized);
     }
 

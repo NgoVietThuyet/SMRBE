@@ -1,5 +1,6 @@
 package vn.com.d2s.smr.controller.ad;
 
+import vn.com.d2s.smr.config.audit.Audited;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -55,6 +56,7 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success(result, result.message()));
     }
 
+    @Audited(category = "AUTH", action = "LOGIN", targetType = "ACCOUNT", targetBodyField = "userName")
     @PostMapping("/Login")
     public ResponseEntity<ApiResponse<AuthResultResponse>> login(@Valid @RequestBody LoginRequest request) {
         AuthResultResponse result = authService.login(request);
@@ -83,6 +85,7 @@ public class AuthController {
                         .body(ApiResponse.failure("Không tìm thấy thông tin người dùng.")));
     }
 
+    @Audited(category = "ACCOUNT", action = "UPDATE_PROFILE")
     @PutMapping("/Profile")
     public ResponseEntity<ApiResponse<UserProfileResponse>> updateProfile(
             Principal principal,
@@ -97,6 +100,7 @@ public class AuthController {
                         .body(ApiResponse.failure("Không tìm thấy thông tin người dùng.")));
     }
 
+    @Audited(category = "AUTH", action = "CHANGE_PASSWORD")
     @PostMapping("/ChangePassword")
     public ResponseEntity<ApiResponse<Void>> changePassword(
             Principal principal,
@@ -105,6 +109,7 @@ public class AuthController {
         return actionResponse(authService.changePassword(principal.getName(), request));
     }
 
+    @Audited(category = "AUTH", action = "LOGOUT")
     @PostMapping("/Logout")
     public ResponseEntity<ApiResponse<Void>> logout(
             Principal principal,
@@ -113,6 +118,7 @@ public class AuthController {
         return actionResponse(authService.logout(principal.getName(), request));
     }
 
+    @Audited(category = "AUTH", action = "FORGOT_PASSWORD", targetType = "EMAIL", targetBodyField = "email")
     @PostMapping("/ForgotPassword")
     public ResponseEntity<ApiResponse<String>> forgotPassword(
             @Valid @RequestBody ForgotPasswordRequest request
@@ -121,6 +127,7 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success(result.resetToken(), result.message()));
     }
 
+    @Audited(category = "AUTH", action = "RESET_PASSWORD")
     @PostMapping("/ResetPassword")
     public ResponseEntity<ApiResponse<Void>> resetPassword(
             @Valid @RequestBody ResetPasswordRequest request

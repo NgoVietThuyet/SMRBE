@@ -17,6 +17,8 @@ public record EmployeeDetailResponse(
         boolean mustChangePassword,
         LocalDateTime lastLoginAt,
         LocalDateTime createDate,
-        LocalDateTime updateDate
+        LocalDateTime updateDate,
+        /** AdAccounts.RoleCodes — chứa SUPER_ADMIN là Admin. */
+        String roleCodes
 ) {
 }

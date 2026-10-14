@@ -40,6 +40,11 @@ public class LlmClientServiceImpl implements LlmClientService {
 
     @Override
     public String generateAnswer(String systemPrompt, String userPrompt) {
+        return generate(systemPrompt, userPrompt, 0.5, 2000);
+    }
+
+    @Override
+    public String generate(String systemPrompt, String userPrompt, double temperature, int maxTokens) {
         String url = llmProperties.url();
         log.info("Gửi yêu cầu tới LLM endpoint: {}", url);
 
@@ -63,8 +68,8 @@ public class LlmClientServiceImpl implements LlmClientService {
             Map<String, Object> requestPayload = new HashMap<>();
             requestPayload.put("model", llmProperties.model());
             requestPayload.put("messages", messages);
-            requestPayload.put("temperature", 0.5);
-            requestPayload.put("max_tokens", 2000);
+            requestPayload.put("temperature", temperature);
+            requestPayload.put("max_tokens", maxTokens);
 
             HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestPayload, headers);
             String responseStr = restTemplate.postForObject(url, entity, String.class);

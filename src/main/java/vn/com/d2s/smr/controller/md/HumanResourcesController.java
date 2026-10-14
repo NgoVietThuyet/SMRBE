@@ -1,5 +1,6 @@
 package vn.com.d2s.smr.controller.md;
 
+import vn.com.d2s.smr.config.audit.Audited;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -66,6 +67,7 @@ public class HumanResourcesController {
         return hrMasterDataService.getOrganizationTree();
     }
 
+    @Audited(category = "ORGANIZATION", action = "CREATE", targetType = "ORGANIZATION", targetBodyField = "name")
     @PostMapping("/organizations")
     public OrganizationResponse createOrg(
             Principal principal,
@@ -74,6 +76,7 @@ public class HumanResourcesController {
         return hrMasterDataService.createOrganization(request, principal.getName());
     }
 
+    @Audited(category = "ORGANIZATION", action = "UPDATE", targetType = "ORGANIZATION", targetPathVariable = "id")
     @PutMapping("/organizations/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void updateOrg(
@@ -84,6 +87,7 @@ public class HumanResourcesController {
         hrMasterDataService.updateOrganization(id, request, principal.getName());
     }
 
+    @Audited(category = "ORGANIZATION", action = "MOVE", targetType = "ORGANIZATION", targetPathVariable = "id")
     @PutMapping("/organizations/{id}/move")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void moveOrg(
@@ -94,6 +98,7 @@ public class HumanResourcesController {
         hrMasterDataService.moveOrganization(id, request, principal.getName());
     }
 
+    @Audited(category = "ORGANIZATION", action = "DELETE", targetType = "ORGANIZATION", targetPathVariable = "id")
     @DeleteMapping("/organizations/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteOrg(@PathVariable String id) {
@@ -105,6 +110,7 @@ public class HumanResourcesController {
         return hrMasterDataService.getTitles();
     }
 
+    @Audited(category = "TITLE", action = "CREATE", targetType = "TITLE", targetBodyField = "code")
     @PostMapping("/titles")
     public TitleDetailResponse createTitle(
             Principal principal,
@@ -113,6 +119,7 @@ public class HumanResourcesController {
         return hrMasterDataService.createTitle(request, principal.getName());
     }
 
+    @Audited(category = "TITLE", action = "UPDATE", targetType = "TITLE", targetPathVariable = "code")
     @PutMapping("/titles/{code}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void updateTitle(
@@ -123,6 +130,7 @@ public class HumanResourcesController {
         hrMasterDataService.updateTitle(code, request, principal.getName());
     }
 
+    @Audited(category = "TITLE", action = "DELETE", targetType = "TITLE", targetPathVariable = "code")
     @DeleteMapping("/titles/{code}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteTitle(@PathVariable String code) {
@@ -146,6 +154,7 @@ public class HumanResourcesController {
         return employeeService.getEmployee(userName);
     }
 
+    @Audited(category = "ACCOUNT", action = "CREATE", targetType = "ACCOUNT", targetBodyField = "userName")
     @PostMapping("/employees")
     public CreatedEmployeeResponse createEmployee(
             Principal principal,
@@ -154,6 +163,7 @@ public class HumanResourcesController {
         return employeeService.createEmployee(request, principal.getName());
     }
 
+    @Audited(category = "ACCOUNT", action = "CREATE", targetType = "ACCOUNT", targetBodyField = "email")
     @PostMapping("/directory-employees")
     public CreatedDirectoryEmployeeResponse createDirectoryEmployee(
             Principal principal,
@@ -162,6 +172,7 @@ public class HumanResourcesController {
         return employeeService.createDirectoryEmployee(request, principal.getName());
     }
 
+    @Audited(category = "ACCOUNT", action = "UPDATE", targetType = "ACCOUNT", targetPathVariable = "userName")
     @PutMapping("/employees/{userName}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void updateEmployee(
@@ -172,6 +183,7 @@ public class HumanResourcesController {
         employeeService.updateEmployee(userName, request, principal.getName());
     }
 
+    @Audited(category = "ACCOUNT", action = "TRANSFER", targetType = "ACCOUNT", targetPathVariable = "userName")
     @PutMapping("/employees/{userName}/organization")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void transferEmployee(
@@ -182,6 +194,7 @@ public class HumanResourcesController {
         employeeService.transferEmployee(userName, request, principal.getName());
     }
 
+    @Audited(category = "ACCOUNT", action = "CHANGE_TITLE", targetType = "ACCOUNT", targetPathVariable = "userName")
     @PutMapping("/employees/{userName}/title")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void changeTitle(
@@ -192,6 +205,7 @@ public class HumanResourcesController {
         employeeService.changeEmployeeTitle(userName, request, principal.getName());
     }
 
+    @Audited(category = "ACCOUNT", action = "CHANGE_STATUS", targetType = "ACCOUNT", targetPathVariable = "userName")
     @PutMapping("/employees/{userName}/status")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void changeStatus(
@@ -202,6 +216,7 @@ public class HumanResourcesController {
         employeeService.changeEmployeeStatus(userName, request, principal.getName());
     }
 
+    @Audited(category = "ACCOUNT", action = "RESET_PASSWORD", targetType = "ACCOUNT", targetPathVariable = "userName")
     @PostMapping("/employees/{userName}/reset-password")
     public ResetEmployeePasswordResponse resetPassword(
             Principal principal,
@@ -218,6 +233,7 @@ public class HumanResourcesController {
         return employeeService.getPermission(type, id);
     }
 
+    @Audited(category = "PERMISSION", action = "UPDATE", targetType = "PERMISSION", targetPathVariable = "id", snapshotPermission = true)
     @PutMapping("/{type}/{id}/permissions")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void savePermission(

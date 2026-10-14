@@ -16,6 +16,8 @@ public record EmployeeItemResponse(
         @JsonProperty("isActive") boolean active,
         boolean mustChangePassword,
         LocalDateTime lastLoginAt,
-        LocalDateTime createDate
+        LocalDateTime createDate,
+        /** AdAccounts.RoleCodes — chứa SUPER_ADMIN là Admin. */
+        String roleCodes
 ) {
 }

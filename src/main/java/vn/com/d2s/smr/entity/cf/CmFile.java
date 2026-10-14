@@ -40,7 +40,7 @@ public class CmFile extends BaseEntity {
     @Column(name = "Icon", nullable = false, columnDefinition = "nvarchar(max)")
     private String icon = "";
 
-    @Column(name = "RefrenceFileId", nullable = false, columnDefinition = "nvarchar(max)")
+    @Column(name = "RefrenceFileId", nullable = false, length = 450)
     private String referenceFileId = "";
 
     @Column(name = "IsBienBan", nullable = false)

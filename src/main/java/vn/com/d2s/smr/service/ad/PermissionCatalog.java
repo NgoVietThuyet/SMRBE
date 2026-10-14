@@ -31,8 +31,6 @@ public final class PermissionCatalog {
             permission("HR_ACCOUNT_TRANSFER", "Điều chuyển phòng ban", "Tài khoản"),
             permission("HR_ACCOUNT_CHANGE_TITLE", "Đổi chức danh", "Tài khoản"),
             permission("HR_ACCOUNT_PERMISSION", "Phân quyền tài khoản", "Tài khoản"),
-            permission("MEETING_CREATE", "Tạo cuộc họp", "Cuộc họp"),
-            permission("MEETING_INVITE", "Mời tham gia", "Cuộc họp"),
             permission("MEETING_RECORD", "Ghi hình", "Cuộc họp"),
             permission("FILE_UPLOAD", "Tải file lên", "Tài liệu"),
             permission("FILE_DOWNLOAD", "Tải file xuống", "Tài liệu"),
@@ -43,6 +41,12 @@ public final class PermissionCatalog {
     public static final Set<String> ALL_CODES = DEFINITIONS.stream()
             .map(PermissionDefinition::code)
             .collect(Collectors.toUnmodifiableSet());
+
+    /**
+     * Mã đã gỡ: ai cũng tạo được cuộc họp và mời thành viên (người tạo là chủ trì) nên không còn phân quyền.
+     * PermissionJson cũ còn chứa các mã này vẫn đọc / lưu được — chúng bị bỏ qua.
+     */
+    public static final Set<String> RETIRED_CODES = Set.of("MEETING_CREATE", "MEETING_INVITE");
 
     private PermissionCatalog() {
     }

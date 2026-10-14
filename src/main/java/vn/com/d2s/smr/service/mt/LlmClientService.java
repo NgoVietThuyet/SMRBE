@@ -13,6 +13,11 @@ public interface LlmClientService {
      */
     String generateAnswer(String systemPrompt, String userPrompt);
 
+    /** P13: như generateAnswer nhưng tự chọn nhiệt độ / số token (sinh biên bản cần ổn định, dài hơn). */
+    default String generate(String systemPrompt, String userPrompt, double temperature, int maxTokens) {
+        return generateAnswer(systemPrompt, userPrompt);
+    }
+
     /**
      * Kiểm tra trạng thái sẵn sàng kết nối của mô hình LLM.
      */

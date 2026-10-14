@@ -42,6 +42,8 @@ import java.util.UUID;
 @Service
 public class AuthServiceImpl implements AuthService {
 
+    private static final com.fasterxml.jackson.databind.ObjectMapper guestJson = new com.fasterxml.jackson.databind.ObjectMapper();
+
     private final AdAccountRepository accountRepository;
     private final MdOrganizeRepository organizeRepository;
     private final MdTitleRepository titleRepository;
@@ -337,8 +339,18 @@ public class AuthServiceImpl implements AuthService {
         if (meeting == null) {
             return AuthResultResponse.failure("Cuộc họp không tồn tại.");
         }
-        if (meeting.getStatus() == 3) {
-            return AuthResultResponse.failure("Cuộc họp đã kết thúc. Khách không thể tham gia.");
+        if (meeting.getStatus() != 1 && meeting.getStatus() != 2) {
+            return AuthResultResponse.failure(meeting.getStatus() == 4
+                    ? "Cuộc họp đã bị hủy."
+                    : "Cuộc họp đã kết thúc hoặc chưa phát hành. Khách không thể tham gia.");
+        }
+        // Khách chỉ vào được cuộc họp Công khai có bật "Cho phép khách" (P10).
+        var settings = vn.com.d2s.smr.dto.mt.meeting.MeetingSettingsDto.fromJson(meeting.getSettingsJson(), guestJson);
+        if (meeting.getVisibility() != 2 || !settings.allowGuests()) {
+            return AuthResultResponse.failure("Cuộc họp không cho phép khách tham gia.");
+        }
+        if (displayName.length() > 100) {
+            displayName = displayName.substring(0, 100);
         }
 
         String guestUserName = "guest_" + UUID.randomUUID().toString().replace("-", "").substring(0, 8);
@@ -355,10 +367,10 @@ public class AuthServiceImpl implements AuthService {
         guestPersonal.setOrgId("");
         guestPersonal.setTitleCode("");
         guestPersonal.setReferenceFileId(meeting.getReferenceFileId() != null ? meeting.getReferenceFileId() : "");
-        guestPersonal.setType(3);
+        // Type 5 "Tùy chọn" — khách nhận biết bằng tiền tố guest_ (Type 3 là Thư ký). Vào phòng mới tính là đã vào.
+        guestPersonal.setType(5);
         guestPersonal.setChairperson(false);
-        guestPersonal.setJoined(true);
-        guestPersonal.setJoinTime(now);
+        guestPersonal.setJoined(false);
         guestPersonal.setCreateBy(guestUserName);
         guestPersonal.setCreateDate(now);
         guestPersonal.setUpdateBy(guestUserName);

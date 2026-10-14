@@ -17,6 +17,16 @@ public record UpdateTaskRequest(
         int priority,
         String sourceRef,
         String parentId,
-        Integer level
+        Integer level,
+        /** P12 — null = giữ nguyên. */
+        LocalDateTime startDate,
+        String color,
+        Boolean isArchived,
+        /** P12: true = xoá ngày bắt đầu/hạn (vì null nghĩa là giữ nguyên với startDate). */
+        Boolean clearDates
 ) {
+    public UpdateTaskRequest(String title, String description, String assigneeUserName, LocalDateTime dueDate,
+                             int status, int priority, String sourceRef, String parentId, Integer level) {
+        this(title, description, assigneeUserName, dueDate, status, priority, sourceRef, parentId, level, null, null, null, null);
+    }
 }

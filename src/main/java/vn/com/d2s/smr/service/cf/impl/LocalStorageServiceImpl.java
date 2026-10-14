@@ -58,4 +58,13 @@ public class LocalStorageServiceImpl implements ObjectStorageService {
     public String getBucketName() {
         return bucketName;
     }
+
+    @Override
+    public InputStream download(String objectName) {
+        try {
+            return Files.newInputStream(this.rootLocation.resolve(objectName));
+        } catch (IOException e) {
+            throw new RuntimeException("Không đọc được file: " + e.getMessage(), e);
+        }
+    }
 }

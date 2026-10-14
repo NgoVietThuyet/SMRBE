@@ -26,6 +26,7 @@ import vn.com.d2s.smr.repository.mt.MeetingInfoRepository;
 import vn.com.d2s.smr.repository.mt.MeetingPersonalRepository;
 import vn.com.d2s.smr.repository.mt.MeetingTaskRepository;
 import vn.com.d2s.smr.repository.mt.MeetingTaskShareRepository;
+import vn.com.d2s.smr.service.nt.event.NotificationEvents;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -158,6 +159,18 @@ class TaskServiceImplTest {
 
         assertThat(task.getStatus()).isEqualTo(2);
         verify(taskRepository).save(task);
+    }
+
+    @Test
+    void updateTaskStatusPublishesNotificationEvent() {
+        List<Object> published = new java.util.ArrayList<>();
+        taskService.setEventPublisher(published::add);
+        MeetingTask task = sampleTask("t1", "user1", 0);
+        when(taskRepository.findOne(any(Specification.class))).thenReturn(Optional.of(task));
+
+        taskService.updateTaskStatus("user1", "t1", new UpdateTaskStatusRequest(2));
+
+        assertThat(published).containsExactly(new NotificationEvents.TaskStatusChanged("t1", "user1", 0, 2));
     }
 
     @Test

@@ -71,6 +71,22 @@ public class MeetingTask extends BaseEntity {
     @Column(name = "SourceRef", columnDefinition = "nvarchar(max)")
     private String sourceRef;
 
+    /** P12: ngày bắt đầu (Timeline). */
+    @Column(name = "StartDate", columnDefinition = "datetime2")
+    private LocalDateTime startDate;
+
+    /** P12: thứ tự cột (cấp 1) / thẻ (cấp 2) trong cha. */
+    @Column(name = "SortOrder", nullable = false)
+    private int sortOrder;
+
+    /** P12: màu nền bảng (chỉ cấp 0). */
+    @Column(name = "Color", length = 20)
+    private String color;
+
+    /** P12: thẻ đã lưu trữ (ẩn khỏi bảng). */
+    @Column(name = "IsArchived", nullable = false)
+    private boolean archived;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "MeetingId", referencedColumnName = "Id", insertable = false, updatable = false)
     private MeetingInfo meeting;

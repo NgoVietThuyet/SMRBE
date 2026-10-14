@@ -7,4 +7,7 @@ public interface ObjectStorageService {
     String getDownloadUrl(String objectName, int expirySeconds);
     void delete(String objectName);
     String getBucketName();
+
+    /** P13: đọc nội dung object (mẫu DOCX). Người gọi phải đóng stream. */
+    InputStream download(String objectName);
 }

@@ -1,6 +1,7 @@
 package vn.com.d2s.smr.service.cf.impl;
 
 import io.minio.BucketExistsArgs;
+import io.minio.GetObjectArgs;
 import io.minio.GetPresignedObjectUrlArgs;
 import io.minio.MakeBucketArgs;
 import io.minio.MinioClient;
@@ -93,5 +94,14 @@ public class MinioObjectStorageServiceImpl implements ObjectStorageService {
     @Override
     public String getBucketName() {
         return bucketName;
+    }
+
+    @Override
+    public java.io.InputStream download(String objectName) {
+        try {
+            return minioClient.getObject(GetObjectArgs.builder().bucket(bucketName).object(objectName).build());
+        } catch (Exception e) {
+            throw new RuntimeException("Không đọc được file từ MinIO: " + e.getMessage(), e);
+        }
     }
 }

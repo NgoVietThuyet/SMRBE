@@ -188,6 +188,7 @@ class AuthServiceImplTest {
         MeetingInfo meeting = new MeetingInfo();
         meeting.setId("m1");
         meeting.setStatus(1);
+        meeting.setVisibility(2); // Công khai + mặc định allowGuests = true
         meeting.setReferenceFileId("ref1");
 
         when(meetingInfoRepository.findByIdAndDeletedFalse("m1")).thenReturn(Optional.of(meeting));
@@ -198,7 +199,36 @@ class AuthServiceImplTest {
         assertThat(result.success()).isTrue();
         assertThat(result.token()).isEqualTo("guest-jwt-token");
         assertThat(result.fullName()).isEqualTo("Khách Mời A");
-        verify(meetingPersonalRepository).save(any(MeetingPersonal.class));
+        org.mockito.ArgumentCaptor<MeetingPersonal> saved = org.mockito.ArgumentCaptor.forClass(MeetingPersonal.class);
+        verify(meetingPersonalRepository).save(saved.capture());
+        assertThat(saved.getValue().getUserName()).startsWith("guest_");
+        assertThat(saved.getValue().getType()).isEqualTo(5);
+        assertThat(saved.getValue().isJoined()).isFalse();
+    }
+
+    @Test
+    void guestSessionRejectsMeetingNotOpenToGuests() {
+        MeetingInfo invitedOnly = new MeetingInfo();
+        invitedOnly.setId("m1");
+        invitedOnly.setStatus(2);
+        invitedOnly.setVisibility(0);
+        MeetingInfo noGuests = new MeetingInfo();
+        noGuests.setId("m2");
+        noGuests.setStatus(2);
+        noGuests.setVisibility(2);
+        noGuests.setSettingsJson("{\"allowGuests\":false}");
+        MeetingInfo cancelled = new MeetingInfo();
+        cancelled.setId("m3");
+        cancelled.setStatus(4);
+        cancelled.setVisibility(2);
+        when(meetingInfoRepository.findByIdAndDeletedFalse("m1")).thenReturn(Optional.of(invitedOnly));
+        when(meetingInfoRepository.findByIdAndDeletedFalse("m2")).thenReturn(Optional.of(noGuests));
+        when(meetingInfoRepository.findByIdAndDeletedFalse("m3")).thenReturn(Optional.of(cancelled));
+
+        assertThat(authService.guestSession(new GuestSessionRequest("m1", "A")).success()).isFalse();
+        assertThat(authService.guestSession(new GuestSessionRequest("m2", "A")).success()).isFalse();
+        assertThat(authService.guestSession(new GuestSessionRequest("m3", "A")).success()).isFalse();
+        verify(meetingPersonalRepository, org.mockito.Mockito.never()).save(any(MeetingPersonal.class));
     }
 
     private static AdAccount activeAccount() {

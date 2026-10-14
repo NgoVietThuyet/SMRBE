@@ -1,6 +1,8 @@
 package vn.com.d2s.smr.service.mt.impl;
 
+import vn.com.d2s.smr.config.BusinessTime;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.jpa.domain.Specification;
@@ -28,6 +30,7 @@ import vn.com.d2s.smr.repository.mt.MeetingPersonalRepository;
 import vn.com.d2s.smr.repository.mt.MeetingTaskRepository;
 import vn.com.d2s.smr.repository.mt.MeetingTaskShareRepository;
 import vn.com.d2s.smr.service.mt.TaskService;
+import vn.com.d2s.smr.service.nt.event.NotificationEvents;
 
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
@@ -54,6 +57,8 @@ public class TaskServiceImpl implements TaskService {
     private final MeetingPersonalRepository personalRepository;
     private final AdAccountRepository accountRepository;
     private final Clock clock;
+    /** Domain event cho thông báo; mặc định no-op để unit test không cần Spring context. */
+    private ApplicationEventPublisher events = event -> { };
 
     @Autowired
     public TaskServiceImpl(
@@ -87,6 +92,45 @@ public class TaskServiceImpl implements TaskService {
         this.personalRepository = personalRepository;
         this.accountRepository = accountRepository;
         this.clock = clock;
+    }
+
+    @Autowired(required = false)
+    void setEventPublisher(ApplicationEventPublisher events) {
+        this.events = events;
+    }
+
+    /** P12: quyền theo bảng + realtime; null trong unit test cũ → giữ quy tắc cũ (quyền theo từng việc). */
+    private TaskAccess access;
+    private vn.com.d2s.smr.service.mt.TaskBoardService board;
+
+    @Autowired(required = false)
+    void setAccess(TaskAccess access) {
+        this.access = access;
+    }
+
+    @Autowired(required = false)
+    void setBoard(vn.com.d2s.smr.service.mt.TaskBoardService board) {
+        this.board = board;
+    }
+
+    private boolean canEdit(MeetingTask task, String userName) {
+        if (access != null) {
+            return access.rights(task, userName).edit();
+        }
+        return task.getCreateBy().equalsIgnoreCase(userName)
+                || shareRepository.existsByTaskIdAndUserNameAndPermission(task.getId(), userName, 1);
+    }
+
+    private void changed(MeetingTask task, String action, String userName) {
+        if (access != null) {
+            access.notifyChanged(access.root(task), task.getId(), action, userName);
+        }
+    }
+
+    private static void validateColor(String color) {
+        if (color != null && !color.isBlank() && !color.trim().matches("^#[0-9a-fA-F]{6}$")) {
+            throw new IllegalArgumentException("Màu không hợp lệ (dạng #RRGGBB).");
+        }
     }
 
     @Override
@@ -141,9 +185,19 @@ public class TaskServiceImpl implements TaskService {
             baseSpec = baseSpec.and((root, query, cb) -> cb.equal(root.get("parentId"), pId));
         }
 
-        LocalDate today = LocalDate.now(clock);
-        LocalDateTime todayStart = today.atStartOfDay();
-        LocalDateTime tomorrowStart = today.plusDays(1).atStartOfDay();
+        // P12: nhóm ở sidebar (mine · assigned · shared · public) và ẩn việc đã lưu trữ.
+        Specification<MeetingTask> groupSpec = TaskSpecs.group(request.group(), userName);
+        if (groupSpec != null) {
+            baseSpec = baseSpec.and(groupSpec);
+        }
+        if (!Boolean.TRUE.equals(request.includeArchived())) {
+            baseSpec = baseSpec.and(TaskSpecs.notArchived());
+        }
+
+        // DueDate lưu theo UTC → "hôm nay" = [00:00, 24:00) giờ Việt Nam quy đổi sang UTC.
+        LocalDate today = BusinessTime.today(clock);
+        LocalDateTime todayStart = BusinessTime.startOfDayUtc(today);
+        LocalDateTime tomorrowStart = BusinessTime.startOfDayUtc(today.plusDays(1));
 
         long totalCount = taskRepository.count(baseSpec);
         long mineCount = taskRepository.count(baseSpec.and(mineSpec(userName)));
@@ -190,8 +244,7 @@ public class TaskServiceImpl implements TaskService {
     @Override
     @Transactional(readOnly = true)
     public TaskDetailResponse getTask(String userName, String taskId) {
-        MeetingTask task = taskRepository.findOne(viewableTasksSpec(userName).and((root, query, cb) -> cb.equal(root.get("id"), taskId)))
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy công việc."));
+        MeetingTask task = findViewable(taskId, userName);
 
         return toDetailResponse(task, userName);
     }
@@ -216,6 +269,10 @@ public class TaskServiceImpl implements TaskService {
             boolean canViewParent = taskRepository.exists(viewableTasksSpec(creatorUserName).and((root, query, cb) -> cb.equal(root.get("id"), parentId)));
             if (!canViewParent) {
                 throw new SecurityException("Bạn không có quyền tạo công việc con trong công việc này.");
+            }
+            // P12: thêm cột / thẻ vào bảng cần quyền Sửa trên bảng.
+            if (access != null && !access.rights(parent, creatorUserName).edit()) {
+                throw new SecurityException("Bạn chỉ có quyền xem công việc này.");
             }
             if (parent.getLevel() >= 2) {
                 throw new IllegalStateException("Công việc đã đạt độ sâu tối đa (3 cấp).");
@@ -243,6 +300,10 @@ public class TaskServiceImpl implements TaskService {
         }
 
         String assignee = resolveAssignee(request.assigneeUserName());
+        validateColor(request.color());
+        if (request.startDate() != null && request.dueDate() != null && request.startDate().isAfter(request.dueDate())) {
+            throw new IllegalArgumentException("Ngày bắt đầu phải trước hạn hoàn thành.");
+        }
         LocalDateTime now = LocalDateTime.now(clock);
 
         MeetingTask task = new MeetingTask();
@@ -258,12 +319,20 @@ public class TaskServiceImpl implements TaskService {
         task.setPriority(request.priority());
         task.setPublicTask(request.isPublic());
         task.setSourceRef(request.sourceRef() != null && !request.sourceRef().isBlank() ? request.sourceRef().trim() : null);
+        task.setStartDate(request.startDate());
+        task.setColor(request.color() != null && !request.color().isBlank() ? request.color().trim() : null);
+        task.setSortOrder(parentId != null ? taskRepository.maxSortOrder(parentId) + 1 : 0);
         task.setCreateBy(creatorUserName);
         task.setCreateDate(now);
         task.setUpdateBy(creatorUserName);
         task.setUpdateDate(now);
 
         taskRepository.save(task);
+
+        if (task.getAssigneeUserName() != null) {
+            events.publishEvent(new NotificationEvents.TaskAssigned(task.getId(), creatorUserName, task.getAssigneeUserName()));
+        }
+        changed(task, "created", creatorUserName);
 
         return toListItemResponse(task, creatorUserName);
     }
@@ -277,14 +346,12 @@ public class TaskServiceImpl implements TaskService {
         }
         validateEnums(request.status(), request.priority());
 
-        MeetingTask task = taskRepository.findOne(viewableTasksSpec(userName).and((root, query, cb) -> cb.equal(root.get("id"), taskId)))
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy công việc."));
+        MeetingTask task = findViewable(taskId, userName);
 
-        boolean canEdit = task.getCreateBy().equalsIgnoreCase(userName)
-                || shareRepository.existsByTaskIdAndUserNameAndPermission(taskId, userName, 1);
-        if (!canEdit) {
+        if (!canEdit(task, userName)) {
             throw new SecurityException("Bạn chỉ có quyền xem công việc này.");
         }
+        validateColor(request.color());
 
         if (request.parentId() != null) {
             String newParentId = request.parentId().isBlank() ? null : request.parentId().trim();
@@ -329,6 +396,9 @@ public class TaskServiceImpl implements TaskService {
             task.setLevel(request.level());
         }
 
+        String oldAssignee = task.getAssigneeUserName();
+        int oldStatus = task.getStatus();
+
         task.setTitle(title);
         task.setDescription(request.description() != null && !request.description().isBlank() ? request.description().trim() : null);
         task.setAssigneeUserName(resolveAssignee(request.assigneeUserName()));
@@ -338,6 +408,21 @@ public class TaskServiceImpl implements TaskService {
         if (request.sourceRef() != null && !request.sourceRef().isBlank()) {
             task.setSourceRef(request.sourceRef().trim());
         }
+        // P12: null = giữ nguyên; clearDates = xoá cả ngày bắt đầu.
+        if (Boolean.TRUE.equals(request.clearDates())) {
+            task.setStartDate(null);
+        } else if (request.startDate() != null) {
+            task.setStartDate(request.startDate());
+        }
+        if (task.getStartDate() != null && task.getDueDate() != null && task.getStartDate().isAfter(task.getDueDate())) {
+            throw new IllegalArgumentException("Ngày bắt đầu phải trước hạn hoàn thành.");
+        }
+        if (request.color() != null) {
+            task.setColor(request.color().isBlank() ? null : request.color().trim());
+        }
+        if (request.isArchived() != null) {
+            task.setArchived(request.isArchived());
+        }
         task.setUpdateBy(userName);
         task.setUpdateDate(LocalDateTime.now(clock));
 
@@ -345,7 +430,28 @@ public class TaskServiceImpl implements TaskService {
 
         propagateLevel(task.getId(), task.getLevel(), userName);
 
+        String newAssignee = task.getAssigneeUserName();
+        if (newAssignee != null && !newAssignee.equalsIgnoreCase(oldAssignee)) {
+            events.publishEvent(new NotificationEvents.TaskAssigned(task.getId(), userName, newAssignee));
+        }
+        if (oldStatus != task.getStatus()) {
+            events.publishEvent(new NotificationEvents.TaskStatusChanged(task.getId(), userName, oldStatus, task.getStatus()));
+        }
+        changed(task, "updated", userName);
+
         return toListItemResponse(task, userName);
+    }
+
+    private MeetingTask findViewable(String taskId, String userName) {
+        if (access != null) {
+            MeetingTask task = access.find(taskId);
+            if (!access.rights(task, userName).view()) {
+                throw new IllegalArgumentException("Không tìm thấy công việc.");
+            }
+            return task;
+        }
+        return taskRepository.findOne(viewableTasksSpec(userName).and((root, query, cb) -> cb.equal(root.get("id"), taskId)))
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy công việc."));
     }
 
     @Override
@@ -354,19 +460,46 @@ public class TaskServiceImpl implements TaskService {
         MeetingTask task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy công việc."));
 
-        if (!task.getCreateBy().equalsIgnoreCase(userName)) {
-            throw new SecurityException("Chỉ người tạo công việc mới được xóa.");
+        if (access == null) {
+            if (!task.getCreateBy().equalsIgnoreCase(userName)) {
+                throw new SecurityException("Chỉ người tạo công việc mới được xóa.");
+            }
+            if (taskRepository.existsByParentId(taskId)) {
+                throw new IllegalStateException("Không thể xóa công việc còn chứa công việc con. Hãy xóa con trước.");
+            }
+            TaskListItemResponse snapshot = toListItemResponse(task, userName);
+            shareRepository.deleteByTaskId(taskId);
+            taskRepository.delete(task);
+            return snapshot;
         }
 
-        boolean hasChildren = taskRepository.existsByParentId(taskId);
-        if (hasChildren) {
-            throw new IllegalStateException("Không thể xóa công việc còn chứa công việc con. Hãy xóa con trước.");
+        // P12: bảng (cấp 0) chỉ người tạo xoá; cột / thẻ: người có quyền Sửa bảng. Xoá kèm toàn bộ cây con.
+        TaskAccess.Rights rights = access.rights(task, userName);
+        boolean allowed = task.getLevel() == 0 ? rights.owner() || task.getCreateBy().equalsIgnoreCase(userName) : rights.edit();
+        if (!allowed) {
+            throw new SecurityException(task.getLevel() == 0
+                    ? "Chỉ người tạo công việc mới được xóa." : "Bạn chỉ có quyền xem công việc này.");
         }
-
+        MeetingTask root = rights.root();
         TaskListItemResponse snapshot = toListItemResponse(task, userName);
-        shareRepository.deleteByTaskId(taskId);
-        taskRepository.delete(task);
-
+        List<MeetingTask> subtree = new ArrayList<>();
+        List<MeetingTask> level = List.of(task);
+        while (!level.isEmpty()) {
+            subtree.addAll(level);
+            level = taskRepository.findByParentIdIn(level.stream().map(MeetingTask::getId).toList());
+        }
+        List<String> ids = subtree.stream().map(MeetingTask::getId).toList();
+        if (board != null) {
+            board.purge(ids, task.getLevel() == 0 ? task.getId() : null);
+        }
+        ids.forEach(shareRepository::deleteByTaskId);
+        // Xoá từ lá lên gốc.
+        for (int i = subtree.size() - 1; i >= 0; i--) {
+            taskRepository.delete(subtree.get(i));
+        }
+        if (task.getLevel() != 0) {
+            access.notifyChanged(root, taskId, "deleted", userName);
+        }
         return snapshot;
     }
 
@@ -377,20 +510,26 @@ public class TaskServiceImpl implements TaskService {
             throw new IllegalArgumentException("Trạng thái công việc không hợp lệ.");
         }
 
-        MeetingTask task = taskRepository.findOne(viewableTasksSpec(userName).and((root, query, cb) -> cb.equal(root.get("id"), taskId)))
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy công việc."));
+        MeetingTask task = findViewable(taskId, userName);
 
-        boolean canEdit = task.getCreateBy().equalsIgnoreCase(userName)
-                || shareRepository.existsByTaskIdAndUserNameAndPermission(taskId, userName, 1);
-        if (!canEdit) {
+        // P12: người thực hiện cũng được đổi trạng thái việc của mình.
+        boolean allowed = canEdit(task, userName)
+                || (access != null && task.getAssigneeUserName() != null && task.getAssigneeUserName().equalsIgnoreCase(userName));
+        if (!allowed) {
             throw new SecurityException("Bạn chỉ có quyền xem công việc này.");
         }
 
+        int oldStatus = task.getStatus();
         task.setStatus(request.status());
         task.setUpdateBy(userName);
         task.setUpdateDate(LocalDateTime.now(clock));
 
         taskRepository.save(task);
+
+        if (oldStatus != task.getStatus()) {
+            events.publishEvent(new NotificationEvents.TaskStatusChanged(task.getId(), userName, oldStatus, task.getStatus()));
+            changed(task, "status", userName);
+        }
 
         return toListItemResponse(task, userName);
     }
@@ -403,6 +542,7 @@ public class TaskServiceImpl implements TaskService {
         task.setUpdateBy(userName);
         task.setUpdateDate(LocalDateTime.now(clock));
         taskRepository.save(task);
+        changed(task, "visibility", userName);
     }
 
     @Override
@@ -442,6 +582,7 @@ public class TaskServiceImpl implements TaskService {
         share.setUpdateDate(now);
 
         shareRepository.save(share);
+        events.publishEvent(new NotificationEvents.TaskShared(taskId, userName, account.getUserName()));
 
         task.setUpdateBy(userName);
         task.setUpdateDate(now);
@@ -491,9 +632,20 @@ public class TaskServiceImpl implements TaskService {
         int childrenCount = taskRepository.countByParentId(task.getId());
         int completedChildrenCount = taskRepository.countByParentIdAndStatus(task.getId(), 2);
         int progress = task.getStatus() == 2 ? 100 : (task.getStatus() == 1 ? 50 : 0);
+        // P12: công việc cấp 0 — tiến độ = số việc nhỏ đã xong / tổng việc nhỏ trong bảng.
+        int cardCount = 0;
+        int cardDone = 0;
+        if (task.getLevel() == 0) {
+            cardCount = taskRepository.countCards(task.getId());
+            cardDone = taskRepository.countDoneCards(task.getId());
+            if (cardCount > 0) {
+                progress = Math.round(cardDone * 100f / cardCount);
+            }
+        }
 
         boolean isCreator = task.getCreateBy().equalsIgnoreCase(userName);
-        boolean canEdit = isCreator || shareRepository.existsByTaskIdAndUserNameAndPermission(task.getId(), userName, 1);
+        boolean canEdit = access != null ? canEdit(task, userName)
+                : isCreator || shareRepository.existsByTaskIdAndUserNameAndPermission(task.getId(), userName, 1);
 
         return new TaskListItemResponse(
                 task.getId(),
@@ -518,7 +670,13 @@ public class TaskServiceImpl implements TaskService {
                 task.getCreateBy(),
                 task.getCreateDate(),
                 task.getUpdateDate(),
-                task.getSourceRef()
+                task.getSourceRef(),
+                task.getStartDate(),
+                task.getSortOrder(),
+                task.getColor(),
+                task.isArchived(),
+                cardCount,
+                cardDone
         );
     }
 
