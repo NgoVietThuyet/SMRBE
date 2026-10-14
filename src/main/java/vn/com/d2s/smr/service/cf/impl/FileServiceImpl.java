@@ -33,10 +33,13 @@ public class FileServiceImpl implements FileService {
     private static final Set<String> RECORDING_EXTENSIONS = Set.of(".mp4", ".webm", ".mkv", ".mp3", ".wav", ".ogg");
     private static final long MAX_RECORDING_SIZE = 2L * 1024 * 1024 * 1024; // 2GB
 
-    private static final Set<String> DOC_EXTENSIONS = Set.of(
-            ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".txt", ".csv", ".png", ".jpg", ".jpeg", ".zip"
-    );
-    private static final long MAX_DOC_SIZE = 200L * 1024 * 1024; // 200MB
+    /** P7: giới hạn tài liệu cuộc họp lấy từ Cấu hình hệ thống (null trong unit test → mặc định). */
+    private vn.com.d2s.smr.service.sy.SettingService settingService;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    void setSettingService(vn.com.d2s.smr.service.sy.SettingService settingService) {
+        this.settingService = settingService;
+    }
 
     private final CmFileRepository cmFileRepository;
     private final MeetingInfoRepository meetingInfoRepository;
@@ -140,16 +143,9 @@ public class FileServiceImpl implements FileService {
             throw new IllegalArgumentException("Chưa chọn file.");
         }
 
-        if (file.getSize() > MAX_DOC_SIZE) {
-            throw new IllegalArgumentException("File vượt quá 200MB.");
-        }
-
         String originalFileName = file.getOriginalFilename();
         String ext = getExtension(originalFileName);
-
-        if (ext.isEmpty() || !DOC_EXTENSIONS.contains(ext.toLowerCase())) {
-            throw new IllegalArgumentException("Định dạng " + ext + " không được hỗ trợ.");
-        }
+        vn.com.d2s.smr.common.UploadLimits.from(settingService).check(originalFileName, file.getSize());
 
         String id = UUID.randomUUID().toString().replace("-", "");
         String objectName = "meetings/" + meetingId + "/docs/" + id + ext.toLowerCase();

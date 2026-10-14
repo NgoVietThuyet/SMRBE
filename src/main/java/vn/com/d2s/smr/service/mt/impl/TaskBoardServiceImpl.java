@@ -71,9 +71,6 @@ public class TaskBoardServiceImpl implements TaskBoardService {
     /** CmFiles.Type của file đính kèm công việc. */
     static final int FILE_TYPE_TASK = 3;
     private static final Pattern COLOR = Pattern.compile("^#[0-9a-fA-F]{6}$");
-    private static final Set<String> DEFAULT_EXTENSIONS = Set.of(
-            ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".txt", ".csv", ".png", ".jpg", ".jpeg", ".zip");
-    private static final int DEFAULT_MAX_MB = 200;
 
     private final MeetingTaskRepository taskRepository;
     private final MeetingTaskShareRepository shareRepository;
@@ -566,29 +563,9 @@ public class TaskBoardServiceImpl implements TaskBoardService {
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("Chưa chọn file.");
         }
-        int maxMb = DEFAULT_MAX_MB;
-        Set<String> allowed = DEFAULT_EXTENSIONS;
-        if (settings != null) {
-            try {
-                var s = settings.getPublicSettings();
-                if (s.maxUploadSizeMb() > 0) maxMb = s.maxUploadSizeMb();
-                if (s.allowedExtensions() != null && !s.allowedExtensions().isEmpty()) {
-                    allowed = s.allowedExtensions().stream()
-                            .map(e -> (e.startsWith(".") ? e : "." + e).toLowerCase(Locale.ROOT))
-                            .collect(Collectors.toSet());
-                }
-            } catch (RuntimeException ignored) {
-                // dùng giới hạn mặc định
-            }
-        }
-        if (file.getSize() > maxMb * 1024L * 1024L) {
-            throw new IllegalArgumentException("File vượt quá " + maxMb + "MB.");
-        }
         String original = cleanName(file.getOriginalFilename());
+        vn.com.d2s.smr.common.UploadLimits.from(settings).check(original, file.getSize());
         String ext = original.contains(".") ? original.substring(original.lastIndexOf('.')).toLowerCase(Locale.ROOT) : "";
-        if (ext.isEmpty() || !allowed.contains(ext)) {
-            throw new IllegalArgumentException("Định dạng " + (ext.isEmpty() ? "(không có)" : ext) + " không được hỗ trợ.");
-        }
 
         String id = newId();
         String objectName = "tasks/" + r.root().getId() + "/" + taskId + "/" + id + ext;

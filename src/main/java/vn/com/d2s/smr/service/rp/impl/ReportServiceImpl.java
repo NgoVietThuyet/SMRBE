@@ -1,5 +1,7 @@
 package vn.com.d2s.smr.service.rp.impl;
 
+import vn.com.d2s.smr.dto.rp.AiPipelineReportResponse;
+import vn.com.d2s.smr.entity.sy.SyBackgroundJob;
 import jakarta.persistence.EntityManager;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -90,6 +92,91 @@ public class ReportServiceImpl implements ReportService {
                 .setParameter("to", range[1].plusDays(1).atStartOfDay())
                 .getResultList();
         return buildTaskReport(range[0], range[1], tasks, LocalDateTime.now(clock));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public AiPipelineReportResponse aiPipelineReport(LocalDate from, LocalDate to) {
+        LocalDate[] range = normalizeRange(from, to);
+        List<SyBackgroundJob> jobs = entityManager.createQuery("""
+                        select j from SyBackgroundJob j where j.createdAt >= :from and j.createdAt < :to
+                        """, SyBackgroundJob.class)
+                .setParameter("from", range[0].atStartOfDay())
+                .setParameter("to", range[1].plusDays(1).atStartOfDay())
+                .getResultList();
+        Set<String> meetingIds = jobs.stream().filter(j -> j.getStatus() == SyBackgroundJob.FAILED)
+                .map(SyBackgroundJob::getRefId).filter(Objects::nonNull).collect(Collectors.toSet());
+        Map<String, String> names = meetingIds.isEmpty() ? Map.of() : entityManager.createQuery(
+                        "select m from MeetingInfo m where m.id in :ids", MeetingInfo.class)
+                .setParameter("ids", meetingIds).getResultList().stream()
+                .collect(Collectors.toMap(MeetingInfo::getId, MeetingInfo::getName, (a, b) -> a));
+        return buildAiPipelineReport(range[0], range[1], jobs, names);
+    }
+
+    static String jobLabel(String type) {
+        return switch (type == null ? "" : type) {
+            case "MINUTES_GENERATE" -> "Sinh biên bản (AI)";
+            case "MINUTES_EXPORT" -> "Tổng hợp biên bản theo mẫu";
+            default -> type == null || type.isBlank() ? "Khác" : type;
+        };
+    }
+
+    static AiPipelineReportResponse buildAiPipelineReport(LocalDate from, LocalDate to, List<SyBackgroundJob> jobs,
+                                                          Map<String, String> meetingNames) {
+        int pending = 0;
+        int running = 0;
+        int done = 0;
+        int failed = 0;
+        List<Double> waits = new ArrayList<>();
+        List<Double> runs = new ArrayList<>();
+        for (SyBackgroundJob j : jobs) {
+            switch (j.getStatus()) {
+                case SyBackgroundJob.PENDING -> pending++;
+                case SyBackgroundJob.RUNNING -> running++;
+                case SyBackgroundJob.DONE -> done++;
+                default -> failed++;
+            }
+            if (j.getStartedAt() != null && j.getCreatedAt() != null) waits.add(seconds(j.getCreatedAt(), j.getStartedAt()));
+            if (finished(j)) runs.add(seconds(j.getStartedAt(), j.getFinishedAt()));
+        }
+        Map<String, List<SyBackgroundJob>> byType = jobs.stream()
+                .collect(Collectors.groupingBy(j -> j.getType() == null ? "" : j.getType(), TreeMap::new, Collectors.toList()));
+        List<AiPipelineReportResponse.TypeStat> types = byType.entrySet().stream().map(e -> {
+            List<SyBackgroundJob> list = e.getValue();
+            int d = (int) list.stream().filter(j -> j.getStatus() == SyBackgroundJob.DONE).count();
+            int f = (int) list.stream().filter(j -> j.getStatus() == SyBackgroundJob.FAILED).count();
+            double avg = list.stream().filter(ReportServiceImpl::finished)
+                    .mapToDouble(j -> seconds(j.getStartedAt(), j.getFinishedAt())).average().orElse(0);
+            return new AiPipelineReportResponse.TypeStat(e.getKey(), jobLabel(e.getKey()), list.size(), d, f, round1(avg));
+        }).toList();
+        List<AiPipelineReportResponse.Failure> failures = jobs.stream()
+                .filter(j -> j.getStatus() == SyBackgroundJob.FAILED)
+                .sorted(Comparator.comparing(SyBackgroundJob::getCreatedAt, Comparator.nullsLast(Comparator.reverseOrder())))
+                .limit(10)
+                .map(j -> new AiPipelineReportResponse.Failure(j.getId(), j.getType(), jobLabel(j.getType()), j.getRefId(),
+                        meetingNames.getOrDefault(j.getRefId(), ""), j.getError(), j.getCreatedBy(), j.getCreatedAt()))
+                .toList();
+        double rate = done + failed == 0 ? 0 : round1(100.0 * done / (done + failed));
+        return new AiPipelineReportResponse(from, to, jobs.size(), pending, running, done, failed, rate,
+                round1(waits.stream().mapToDouble(Double::doubleValue).average().orElse(0)),
+                round1(runs.stream().mapToDouble(Double::doubleValue).average().orElse(0)),
+                round1(percentile(runs, 95)), types, failures);
+    }
+
+    private static boolean finished(SyBackgroundJob j) {
+        return j.getStatus() == SyBackgroundJob.DONE && j.getStartedAt() != null && j.getFinishedAt() != null;
+    }
+
+    private static double seconds(LocalDateTime a, LocalDateTime b) {
+        return Math.max(0, Duration.between(a, b).toMillis() / 1000.0);
+    }
+
+    /** Phân vị theo cách "nearest rank". */
+    static double percentile(List<Double> values, int p) {
+        if (values.isEmpty()) return 0;
+        List<Double> sorted = values.stream().sorted().toList();
+        int rank = (int) Math.ceil(p / 100.0 * sorted.size());
+        return sorted.get(Math.max(0, Math.min(sorted.size() - 1, rank - 1)));
     }
 
     static MeetingReportResponse buildMeetingReport(

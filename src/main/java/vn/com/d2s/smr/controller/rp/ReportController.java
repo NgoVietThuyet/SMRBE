@@ -2,6 +2,7 @@ package vn.com.d2s.smr.controller.rp;
 
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.GetMapping;
+import vn.com.d2s.smr.dto.rp.AiPipelineReportResponse;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -37,5 +38,13 @@ public class ReportController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to
     ) {
         return reportService.taskReport(from, to);
+    }
+
+    @GetMapping("/ai-pipeline")
+    public AiPipelineReportResponse aiPipeline(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to
+    ) {
+        return reportService.aiPipelineReport(from, to);
     }
 }

@@ -14,4 +14,7 @@ public interface CmFileRepository extends JpaRepository<CmFile, String> {
     List<CmFile> findByTypeAndReferenceFileIdIn(int type, java.util.Collection<String> referenceFileIds);
 
     List<CmFile> findByTypeAndReferenceFileIdOrderByCreateDateDesc(int type, String referenceFileId);
+
+    /** P13: file biên bản đã dựng quá hạn lưu (dọn định kỳ). */
+    List<CmFile> findByTypeAndCreateDateBefore(int type, java.time.LocalDateTime before);
 }
