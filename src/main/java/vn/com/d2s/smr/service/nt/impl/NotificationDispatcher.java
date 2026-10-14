@@ -203,6 +203,26 @@ public class NotificationDispatcher {
     }
 
     @EventListener
+    public void onMinutesExportReady(NotificationEvents.MinutesExportReady e) {
+        MeetingInfo meeting = meetingRepository.findByIdAndDeletedFalse(e.meetingId()).orElse(null);
+        if (meeting == null) {
+            return;
+        }
+        Map<String, Object> data = meetingData(meeting);
+        data.put("exportId", e.exportId());
+        data.put("success", e.success());
+        // actor null ("Hệ thống") để chính người yêu cầu nhận được thông báo.
+        deliver(java.util.List.of(e.userName()), null, new Draft(
+                "MINUTES_EXPORT_READY", e.success() ? INFO : WARNING,
+                e.success() ? "Biên bản họp đã sẵn sàng để tải" : "Không tổng hợp được biên bản họp",
+                meeting.getName(),
+                "meeting", meeting.getId(), meeting.getId(),
+                data,
+                "MINUTES_EXPORT:" + e.exportId()
+        ));
+    }
+
+    @EventListener
     public void onMinutesPublished(NotificationEvents.MinutesPublished e) {
         MeetingInfo meeting = meetingRepository.findByIdAndDeletedFalse(e.meetingId()).orElse(null);
         if (meeting == null) {

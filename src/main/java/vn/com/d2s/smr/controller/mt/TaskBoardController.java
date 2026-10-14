@@ -49,6 +49,14 @@ public class TaskBoardController {
         return ok(boardService.groups(principal.getName()));
     }
 
+    /** Tạo nhanh một việc vào bảng chung của cuộc họp (tab Công việc trong phòng họp). */
+    @PostMapping("/meeting/{meetingId}/cards")
+    public ResponseEntity<ApiResponse<vn.com.d2s.smr.dto.mt.task.board.MeetingCardResponse>> createMeetingCard(
+            Principal principal, @PathVariable String meetingId,
+            @RequestBody vn.com.d2s.smr.dto.mt.task.board.MeetingCardRequest request) {
+        return ok(boardService.createMeetingCard(principal.getName(), meetingId, request == null ? null : request.title()));
+    }
+
     @GetMapping("/{workId}/board")
     public ResponseEntity<ApiResponse<BoardResponse>> board(Principal principal, @PathVariable String workId,
                                                            @RequestParam(name = "archived", defaultValue = "false") boolean archived) {

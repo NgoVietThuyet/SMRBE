@@ -47,4 +47,8 @@ public final class NotificationEvents {
     /** P13: biên bản được phát hành → báo mọi thành viên. */
     public record MinutesPublished(String meetingId, String actor, int version) {
     }
+
+    /** P13: file biên bản (tổng hợp theo mẫu) đã dựng xong / lỗi — báo riêng người yêu cầu. */
+    public record MinutesExportReady(String meetingId, String userName, String exportId, boolean success) {
+    }
 }

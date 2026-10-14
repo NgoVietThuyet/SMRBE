@@ -52,5 +52,6 @@ smr:
     bypass-auth: ${LLM_BYPASS_AUTH:true}
     system-prompt: ${LLM_SYSTEM_PROMPT:Bạn là AI của hệ thống SMR hỗ trợ người dùng về mọi thứ liên quan đến cuộc họp}
     connect-timeout-ms: ${LLM_CONNECT_TIMEOUT_MS:5000}
-    read-timeout-ms: ${LLM_READ_TIMEOUT_MS:30000}
+    # 120 giây: tổng hợp biên bản theo mẫu (P13) trả lời dài hơn hỏi đáp thông thường.
+    read-timeout-ms: ${LLM_READ_TIMEOUT_MS:120000}
 

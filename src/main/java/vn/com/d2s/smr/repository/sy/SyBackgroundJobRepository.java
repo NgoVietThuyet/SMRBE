@@ -10,4 +10,7 @@ public interface SyBackgroundJobRepository extends JpaRepository<SyBackgroundJob
     Optional<SyBackgroundJob> findByIdempotencyKey(String idempotencyKey);
 
     Optional<SyBackgroundJob> findFirstByRefIdAndTypeOrderByCreatedAtDesc(String refId, String type);
+
+    /** Giới hạn số lần tạo job của một người cho một cuộc họp trong khoảng thời gian gần đây. */
+    long countByTypeAndRefIdAndCreatedByAndCreatedAtAfter(String type, String refId, String createdBy, java.time.LocalDateTime after);
 }

@@ -88,6 +88,20 @@ public class TaskBoardServiceImpl implements TaskBoardService {
     private final Clock clock;
     private ObjectStorageService storage;
     private SettingService settings;
+    private vn.com.d2s.smr.repository.mt.MeetingPersonalRepository personalRepository;
+    private vn.com.d2s.smr.service.mt.RoomEventPublisher room = vn.com.d2s.smr.service.mt.RoomEventPublisher.NO_OP;
+    /** Khoá theo cuộc họp để hai người bấm cùng lúc không sinh hai bảng chung. */
+    private final Map<String, Object> meetingBoardLocks = new java.util.concurrent.ConcurrentHashMap<>();
+
+    @Autowired(required = false)
+    void setPersonalRepository(vn.com.d2s.smr.repository.mt.MeetingPersonalRepository personalRepository) {
+        this.personalRepository = personalRepository;
+    }
+
+    @Autowired(required = false)
+    void setRoom(vn.com.d2s.smr.service.mt.RoomEventPublisher room) {
+        this.room = room;
+    }
 
     @Autowired
     public TaskBoardServiceImpl(
@@ -697,5 +711,85 @@ public class TaskBoardServiceImpl implements TaskBoardService {
 
     private static String newId() {
         return UUID.randomUUID().toString().replace("-", "");
+    }
+
+    // ===================== Việc tạo từ phòng họp =====================
+
+    static String meetingBoardRef(String meetingId) {
+        return "meeting-board:" + meetingId;
+    }
+
+    @Override
+    public vn.com.d2s.smr.dto.mt.task.board.MeetingCardResponse createMeetingCard(String userName, String meetingId, String title) {
+        String t = title == null ? "" : title.trim();
+        if (t.isEmpty()) {
+            throw new IllegalArgumentException("Vui lòng nhập tên công việc.");
+        }
+        if (t.length() > 300) {
+            throw new IllegalArgumentException("Tên công việc tối đa 300 ký tự.");
+        }
+        var meeting = meetingRepository.findByIdAndDeletedFalse(meetingId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy cuộc họp."));
+        if (meeting.getStatus() == 4 || meeting.getStatus() == 5) {
+            throw new IllegalStateException("Cuộc họp đã hủy hoặc đã lưu trữ nên không thêm được công việc.");
+        }
+        if (RoomAdmission.isGuest(userName)) {
+            throw new SecurityException("Khách không tạo được công việc.");
+        }
+        List<vn.com.d2s.smr.entity.mt.MeetingPersonal> people = personalRepository == null ? List.of() : personalRepository.findByMeetingId(meetingId);
+        if (people.stream().noneMatch(p -> p.getUserName().equalsIgnoreCase(userName))) {
+            throw new SecurityException("Bạn không thuộc cuộc họp này nên không thể tạo công việc cho cuộc họp.");
+        }
+
+        LocalDateTime now = LocalDateTime.now(clock);
+        MeetingTask board;
+        MeetingTask list;
+        synchronized (meetingBoardLocks.computeIfAbsent(meetingId, k -> new Object())) {
+            String ref = meetingBoardRef(meetingId);
+            board = taskRepository.findByMeetingId(meetingId).stream()
+                    .filter(x -> x.getLevel() == 0 && ref.equals(x.getSourceRef())).findFirst().orElse(null);
+            if (board == null) {
+                // Bảng chung thuộc về chủ trì (người tạo cuộc họp) để chủ trì quản lý cột, chia sẻ, xoá.
+                String owner = people.stream().filter(RoomAdmission::isOwner).map(vn.com.d2s.smr.entity.mt.MeetingPersonal::getUserName)
+                        .findFirst().orElse(userName);
+                String name = "Công việc: " + meeting.getName();
+                board = taskRepository.save(quickTask(null, 0, name.length() > 300 ? name.substring(0, 300) : name, meetingId, owner, now, ref, 0));
+            }
+            final String boardId = board.getId();
+            list = taskRepository.findByParentId(boardId).stream()
+                    .min(java.util.Comparator.comparingInt(MeetingTask::getSortOrder)).orElse(null);
+            if (list == null) {
+                list = taskRepository.save(quickTask(boardId, 1, "Việc cần làm", meetingId, board.getCreateBy(), now, null, 0));
+            }
+        }
+        MeetingTask card = taskRepository.save(quickTask(list.getId(), 2, t, meetingId, userName, now, null,
+                taskRepository.maxSortOrder(list.getId()) + 1));
+
+        access.notifyChanged(board, card.getId(), "created", userName);
+        try {
+            room.broadcastToRoom(meetingId, "TaskChanged", Map.of("meetingId", meetingId, "workId", board.getId(), "taskId", card.getId()));
+        } catch (RuntimeException ignored) {
+            // realtime lỗi không làm hỏng thao tác chính
+        }
+        return new vn.com.d2s.smr.dto.mt.task.board.MeetingCardResponse(board.getId(), list.getId(), card.getId(), card.getTitle());
+    }
+
+    private static MeetingTask quickTask(String parentId, int level, String title, String meetingId, String user, LocalDateTime now,
+                                         String sourceRef, int order) {
+        MeetingTask x = new MeetingTask();
+        x.setId(UUID.randomUUID().toString().replace("-", ""));
+        x.setParentId(parentId);
+        x.setLevel(level);
+        x.setTitle(title);
+        x.setMeetingId(meetingId);
+        x.setSourceRef(sourceRef);
+        x.setStatus(0);
+        x.setPriority(1);
+        x.setSortOrder(order);
+        x.setCreateBy(user);
+        x.setCreateDate(now);
+        x.setUpdateBy(user);
+        x.setUpdateDate(now);
+        return x;
     }
 }

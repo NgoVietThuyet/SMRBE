@@ -61,6 +61,12 @@ public interface TaskBoardService {
 
     FileDownloadResponse downloadUrl(String userName, String fileId);
 
+    /**
+     * Tạo nhanh một việc cho cuộc họp vào <b>bảng chung</b> của cuộc họp (tạo bảng + cột "Việc cần làm" nếu chưa có).
+     * Mọi thành viên (trừ khách) đều thêm được; bảng thuộc về chủ trì, người tạo việc sửa được việc của mình.
+     */
+    vn.com.d2s.smr.dto.mt.task.board.MeetingCardResponse createMeetingCard(String userName, String meetingId, String title);
+
     /** Xoá dữ liệu phụ (nhãn gắn, checklist, bình luận, file) của các việc bị xoá. */
     void purge(Collection<String> taskIds, String workIdIfBoardDeleted);
 }
