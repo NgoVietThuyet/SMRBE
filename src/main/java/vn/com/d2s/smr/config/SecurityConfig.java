@@ -61,6 +61,8 @@ public class SecurityConfig {
                         // P10: màn /join/:roomCode cho khách chưa đăng nhập
                         .requestMatchers(HttpMethod.GET, "/api/Meeting/public/*").permitAll()
                         .requestMatchers("/error").permitAll()
+                        // Swagger UI + tài liệu OpenAPI (OpenApiConfig)
+                        .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         // Quản trị: chỉ SUPER_ADMIN được ghi dữ liệu nhân sự và xem/gán quyền của người khác.
                         // Các GET danh mục (summary, organization-tree, titles, employees) vẫn mở cho người đã đăng nhập.
                         .requestMatchers("/api/admin/**").access(adminAccess)
@@ -118,10 +120,13 @@ public class SecurityConfig {
     @Bean
     CorsConfigurationSource corsConfigurationSource(CorsProperties properties) {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(properties.allowedOrigins());
+        // Dạng mẫu: cho phép ghi "http://sso.d2s.com.vn:*" (mọi cổng) hoặc "https://*.d2s.com.vn".
+        configuration.setAllowedOriginPatterns(properties.allowedOrigins().stream().map(String::trim).filter(o -> !o.isEmpty()).toList());
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
+        // FE khác domain/cổng với BE: cho trình duyệt đọc tên file khi tải DOCX/XLSX.
+        configuration.setExposedHeaders(List.of("Content-Disposition"));
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);

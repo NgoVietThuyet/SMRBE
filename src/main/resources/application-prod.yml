@@ -1,0 +1,10 @@
+# Profile "prod": BE chạy HTTPS bằng chứng chỉ sso.d2s.com.vn.pfx.
+#   java -jar smr-backend-0.1.0-SNAPSHOT.jar --spring.profiles.active=prod
+# Mật khẩu file .pfx KHÔNG ghi ở đây: truyền qua biến môi trường SSL_KEYSTORE_PASSWORD
+# (hoặc tham số --server.ssl.key-store-password=...). Mặc định file .pfx nằm cạnh file jar.
+server:
+  ssl:
+    enabled: true
+    key-store: ${SSL_KEYSTORE:file:./sso.d2s.com.vn.pfx}
+    key-store-type: PKCS12
+    key-store-password: ${SSL_KEYSTORE_PASSWORD}

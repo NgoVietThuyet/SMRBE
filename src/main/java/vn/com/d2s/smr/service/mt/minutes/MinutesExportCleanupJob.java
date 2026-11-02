@@ -28,6 +28,7 @@ public class MinutesExportCleanupJob {
     private final int retentionDays;
     private final Clock clock;
 
+    @org.springframework.beans.factory.annotation.Autowired
     public MinutesExportCleanupJob(CmFileRepository fileRepository, ObjectStorageService storage,
                                    @Value("${smr.minutes.export-retention-days:7}") int retentionDays) {
         this(fileRepository, storage, retentionDays, Clock.systemUTC());

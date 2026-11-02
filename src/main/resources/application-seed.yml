@@ -1,0 +1,7 @@
+# Profile "seed": chạy bộ dữ liệu demo (seed/DemoDataSeeder) rồi tự thoát.
+# Cổng ngẫu nhiên để không đụng BE đang chạy ở 5228.
+server:
+  port: 0
+smr:
+  seed:
+    action: check

@@ -250,6 +250,68 @@ class TaskBoardServiceImplTest {
         when(shareRepository.findByTaskIdAndUserName(taskId, user)).thenReturn(Optional.of(s));
     }
 
+    // ===== Việc tạo từ phòng họp
+
+    private void stubMeeting(int status) {
+        vn.com.d2s.smr.entity.mt.MeetingInfo m = new vn.com.d2s.smr.entity.mt.MeetingInfo();
+        m.setId("m1");
+        m.setName("Họp giao ban");
+        m.setStatus(status);
+        when(meetingRepository.findByIdAndDeletedFalse("m1")).thenReturn(Optional.of(m));
+        when(personalRepository.findByMeetingId("m1")).thenReturn(List.of(member("host", 1), member("mem", 4)));
+        service.setPersonalRepository(personalRepository);
+        when(taskRepository.save(any(MeetingTask.class))).thenAnswer(i -> {
+            MeetingTask t = i.getArgument(0);
+            db.put(t.getId(), t);
+            return t;
+        });
+        when(taskRepository.findByMeetingId("m1")).thenAnswer(i -> db.values().stream().filter(t -> "m1".equals(t.getMeetingId())).toList());
+        when(taskRepository.maxSortOrder(anyString())).thenAnswer(i -> children((String) i.getArgument(0)).stream()
+                .mapToInt(MeetingTask::getSortOrder).max().orElse(-1));
+    }
+
+    private static vn.com.d2s.smr.entity.mt.MeetingPersonal member(String user, int type) {
+        vn.com.d2s.smr.entity.mt.MeetingPersonal p = new vn.com.d2s.smr.entity.mt.MeetingPersonal();
+        p.setMeetingId("m1");
+        p.setUserName(user);
+        p.setType(type);
+        p.setChairperson(type == 1);
+        return p;
+    }
+
+    @Test
+    void meetingCardGoesToOneSharedBoardOwnedByHost() {
+        stubMeeting(2);
+
+        var first = service.createMeetingCard("mem", "m1", "  Chuẩn bị tài liệu ");
+        var second = service.createMeetingCard("host", "m1", "Gửi biên bản");
+
+        // Một bảng chung, một cột; bảng thuộc chủ trì dù thành viên bấm tạo trước.
+        assertThat(second.workId()).isEqualTo(first.workId());
+        assertThat(second.listId()).isEqualTo(first.listId());
+        assertThat(db.get(first.workId()).getCreateBy()).isEqualTo("host");
+        assertThat(db.get(first.workId()).getSourceRef()).isEqualTo("meeting-board:m1");
+        MeetingTask card = db.get(first.cardId());
+        assertThat(card.getTitle()).isEqualTo("Chuẩn bị tài liệu");
+        assertThat(card.getCreateBy()).isEqualTo("mem");
+        assertThat(card.getLevel()).isEqualTo(2);
+        assertThat(db.get(second.cardId()).getSortOrder()).isEqualTo(1);
+        // Thành viên sửa được việc mình tạo, chỉ xem việc của người khác.
+        TaskAccess access = new TaskAccess(taskRepository, shareRepository, personalRepository);
+        assertThat(access.rights(card, "mem").edit()).isTrue();
+        assertThat(access.rights(db.get(second.cardId()), "mem").edit()).isFalse();
+    }
+
+    @Test
+    void meetingCardRejectsOutsiderGuestBlankAndCancelled() {
+        stubMeeting(2);
+        assertThatThrownBy(() -> service.createMeetingCard("stranger", "m1", "x")).isInstanceOf(SecurityException.class);
+        assertThatThrownBy(() -> service.createMeetingCard("guest_abc", "m1", "x")).isInstanceOf(SecurityException.class);
+        assertThatThrownBy(() -> service.createMeetingCard("mem", "m1", "  ")).isInstanceOf(IllegalArgumentException.class);
+        stubMeeting(4);
+        assertThatThrownBy(() -> service.createMeetingCard("mem", "m1", "x")).isInstanceOf(IllegalStateException.class);
+    }
+
     private static MeetingTask task(String id, String parent, int level, int order, String createBy, String assignee) {
         MeetingTask t = new MeetingTask();
         t.setId(id);

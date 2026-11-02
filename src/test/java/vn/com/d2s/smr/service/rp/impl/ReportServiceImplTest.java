@@ -1,16 +1,19 @@
 package vn.com.d2s.smr.service.rp.impl;
 
 import org.junit.jupiter.api.Test;
+import vn.com.d2s.smr.dto.rp.AiPipelineReportResponse;
 import vn.com.d2s.smr.dto.rp.MeetingReportResponse;
 import vn.com.d2s.smr.dto.rp.TaskReportResponse;
 import vn.com.d2s.smr.entity.md.MdOrganize;
 import vn.com.d2s.smr.entity.mt.MeetingInfo;
 import vn.com.d2s.smr.entity.mt.MeetingPersonal;
 import vn.com.d2s.smr.entity.mt.MeetingTask;
+import vn.com.d2s.smr.entity.sy.SyBackgroundJob;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -123,5 +126,61 @@ class ReportServiceImplTest {
         t.setStatus(status);
         t.setDueDate(dueDate);
         return t;
+    }
+
+    private static SyBackgroundJob job(String id, String type, int status, LocalDateTime created, Integer waitSec, Integer runSec) {
+        SyBackgroundJob j = new SyBackgroundJob();
+        j.setId(id);
+        j.setType(type);
+        j.setStatus(status);
+        j.setRefId("m1");
+        j.setCreatedBy("u1");
+        j.setCreatedAt(created);
+        if (waitSec != null) j.setStartedAt(created.plusSeconds(waitSec));
+        if (waitSec != null && runSec != null) j.setFinishedAt(created.plusSeconds(waitSec + runSec));
+        j.setError(status == SyBackgroundJob.FAILED ? "Không kết nối được máy chủ AI." : null);
+        return j;
+    }
+
+    @Test
+    void aiPipelineReportCountsStatusesDurationsAndFailures() {
+        LocalDateTime t = LocalDateTime.of(2026, 10, 10, 8, 0);
+        List<SyBackgroundJob> jobs = List.of(
+                job("a", "MINUTES_GENERATE", SyBackgroundJob.DONE, t, 2, 10),
+                job("b", "MINUTES_GENERATE", SyBackgroundJob.DONE, t.plusHours(1), 4, 30),
+                job("c", "MINUTES_EXPORT", SyBackgroundJob.FAILED, t.plusHours(2), 0, 5),
+                job("d", "MINUTES_EXPORT", SyBackgroundJob.FAILED, t.plusHours(3), 0, 5),
+                job("e", "MINUTES_EXPORT", SyBackgroundJob.RUNNING, t.plusHours(4), 6, null),
+                job("f", "MINUTES_EXPORT", SyBackgroundJob.PENDING, t.plusHours(5), null, null));
+
+        AiPipelineReportResponse r = ReportServiceImpl.buildAiPipelineReport(LocalDate.of(2026, 10, 1), LocalDate.of(2026, 10, 14),
+                jobs, Map.of("m1", "Họp giao ban"));
+
+        assertThat(r.total()).isEqualTo(6);
+        assertThat(r.done()).isEqualTo(2);
+        assertThat(r.failed()).isEqualTo(2);
+        assertThat(r.running()).isEqualTo(1);
+        assertThat(r.pending()).isEqualTo(1);
+        assertThat(r.successRate()).isEqualTo(50.0);
+        // Chờ: (2 + 4 + 0 + 0 + 6) / 5 job đã bắt đầu; chạy: chỉ tính job xong (10, 30).
+        assertThat(r.avgWaitSeconds()).isEqualTo(2.4);
+        assertThat(r.avgRunSeconds()).isEqualTo(20.0);
+        assertThat(r.p95RunSeconds()).isEqualTo(30.0);
+        assertThat(r.byType()).extracting(AiPipelineReportResponse.TypeStat::label)
+                .containsExactly("Tổng hợp biên bản theo mẫu", "Sinh biên bản (AI)");
+        assertThat(r.byType().get(0).failed()).isEqualTo(2);
+        assertThat(r.byType().get(1).avgRunSeconds()).isEqualTo(20.0);
+        // Lỗi mới nhất lên đầu, kèm tên cuộc họp.
+        assertThat(r.recentFailures()).extracting(AiPipelineReportResponse.Failure::id).containsExactly("d", "c");
+        assertThat(r.recentFailures().get(0).meetingName()).isEqualTo("Họp giao ban");
+    }
+
+    @Test
+    void aiPipelineReportEmptyRange() {
+        AiPipelineReportResponse r = ReportServiceImpl.buildAiPipelineReport(LocalDate.of(2026, 10, 1), LocalDate.of(2026, 10, 14), List.of(), Map.of());
+        assertThat(r.total()).isZero();
+        assertThat(r.successRate()).isZero();
+        assertThat(r.p95RunSeconds()).isZero();
+        assertThat(r.byType()).isEmpty();
     }
 }

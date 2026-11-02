@@ -105,3 +105,5 @@ application-local.yaml
 *.code-workspace
 *.md
 !README.md
+# Mật khẩu tài khoản demo (bộ seed) — chỉ nằm trên máy, không đưa vào git
+seed-credentials.local.txt

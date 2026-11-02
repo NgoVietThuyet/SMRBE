@@ -1,0 +1,16 @@
+# Chỉ cần pom.xml + src để build. Không đưa file bí mật, file build, dữ liệu cục bộ vào image.
+target/
+uploads/
+.mvn/
+mvnw
+mvnw.cmd
+*.md
+db/
+seed-credentials.local.txt
+*.local.txt
+*.log
+.env
+.env.*
+.idea/
+.vscode/
+*.iml
