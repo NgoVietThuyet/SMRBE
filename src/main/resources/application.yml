@@ -1,6 +1,10 @@
 spring:
   application:
     name: smr-backend
+  config:
+    # Cấu hình riêng máy dev (DB qua SSH tunnel...). File đã nằm trong .gitignore và .dockerignore;
+    # không có file thì bỏ qua. Biến môi trường vẫn ghi đè giá trị trong file này.
+    import: "optional:classpath:application-local.yml"
   datasource:
     url: ${DB_URL:jdbc:sqlserver://sso.d2s.com.vn:2025;databaseName=KLTNSMR;encrypt=true;trustServerCertificate=true}
     username: ${DB_USERNAME:sa}

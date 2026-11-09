@@ -14,3 +14,6 @@ seed-credentials.local.txt
 .idea/
 .vscode/
 *.iml
+
+# Cấu hình riêng máy dev (chứa mật khẩu)
+**/application-local.*
