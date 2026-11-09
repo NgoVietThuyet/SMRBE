@@ -25,9 +25,12 @@ import java.util.UUID;
  */
 public final class MinutesAiGenerator {
 
-    public static final String PROMPT_VERSION = "minutes-v1";
+    public static final String PROMPT_VERSION = "minutes-v2";
     /** Giới hạn độ dài transcript gửi LLM (ký tự) — dài hơn thì cắt bớt phần cuối, có ghi chú trong prompt. */
     static final int MAX_TRANSCRIPT_CHARS = 24_000;
+    /** Giới hạn tổng độ dài tài liệu đính kèm gửi LLM, và tối đa cho từng tài liệu (ký tự). */
+    static final int MAX_DOCS_CHARS = 12_000;
+    static final int MAX_DOC_CHARS = 5_000;
     private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
     private MinutesAiGenerator() {
@@ -36,11 +39,20 @@ public final class MinutesAiGenerator {
     public record Participant(String userName, String fullName) {
     }
 
+    /** Tài liệu đính kèm đã trích văn bản. */
+    public record Doc(String name, String text) {
+    }
+
     public record Prompt(String system, String user, Map<String, String> codeToSegment) {
     }
 
     public static Prompt build(String meetingName, LocalDateTime startUtc, List<Participant> participants,
                                List<MeetingTranscriptSegment> segments) {
+        return build(meetingName, startUtc, participants, segments, List.of());
+    }
+
+    public static Prompt build(String meetingName, LocalDateTime startUtc, List<Participant> participants,
+                               List<MeetingTranscriptSegment> segments, List<Doc> docs) {
         Map<String, String> codes = new LinkedHashMap<>();
         StringBuilder transcript = new StringBuilder();
         LocalDateTime base = startUtc != null ? startUtc : (segments.isEmpty() ? null : segments.get(0).getSpokenAt());
@@ -65,7 +77,8 @@ public final class MinutesAiGenerator {
         String system = """
                 Bạn là thư ký cuộc họp chuyên nghiệp. Nhiệm vụ: lập biên bản từ transcript được cung cấp.
                 QUY TẮC BẮT BUỘC:
-                1. Chỉ dùng thông tin có trong transcript. Không suy đoán, không bịa thêm.
+                1. Chỉ dùng thông tin có trong transcript và tài liệu đính kèm (nếu có). Không suy đoán, không bịa thêm.
+                   Tài liệu đính kèm chỉ để hiểu ngữ cảnh, thuật ngữ, số liệu; quyết định và việc cần làm phải dựa trên điều được NÓI trong transcript.
                 2. Mỗi quyết định và việc cần làm phải có "sources": danh sách mã đoạn transcript (dạng "S12") nơi thông tin đó được nói ra.
                 3. Không có quyết định / việc cần làm nào thì trả mảng rỗng.
                 4. "assignee": chỉ ghi tên đăng nhập (userName) trong danh sách thành viên khi transcript nêu rõ người phụ trách; không rõ thì null.
@@ -77,8 +90,23 @@ public final class MinutesAiGenerator {
         String user = "CUỘC HỌP: " + meetingName + "\n"
                 + (startUtc != null ? "BẮT ĐẦU: " + vn(startUtc) + " (giờ Việt Nam)\n" : "")
                 + "THÀNH VIÊN (userName: họ tên):\n" + people
-                + "\nTRANSCRIPT" + (truncated ? " (đã cắt bớt phần cuối do quá dài)" : "") + ":\n" + transcript;
+                + docsSection(docs)
+                + "\nTRANSCRIPT" + (truncated ? " (đã cắt bớt phần cuối do quá dài)" : "") + ":\n"
+                + (transcript.length() == 0 ? "(Không có transcript.)\n" : transcript);
         return new Prompt(system, user, codes);
+    }
+
+    private static String docsSection(List<Doc> docs) {
+        if (docs == null || docs.isEmpty()) return "";
+        StringBuilder sb = new StringBuilder("\nTÀI LIỆU ĐÍNH KÈM (chỉ để tham khảo ngữ cảnh):\n");
+        int left = MAX_DOCS_CHARS;
+        for (Doc d : docs) {
+            if (left <= 0) break;
+            String t = d.text().length() > Math.min(MAX_DOC_CHARS, left) ? d.text().substring(0, Math.min(MAX_DOC_CHARS, left)) + "…" : d.text();
+            sb.append("--- ").append(d.name()).append(" ---\n").append(t).append('\n');
+            left -= t.length();
+        }
+        return sb.toString();
     }
 
     /** Đọc JSON của LLM thành nội dung biên bản; mã nguồn không hợp lệ bị bỏ. Ném IllegalStateException nếu không đọc được. */

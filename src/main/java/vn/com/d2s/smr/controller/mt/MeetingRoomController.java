@@ -39,9 +39,11 @@ import java.util.List;
 public class MeetingRoomController {
 
     private final MeetingRoomService roomService;
+    private final vn.com.d2s.smr.service.cf.FileService fileService;
 
-    public MeetingRoomController(MeetingRoomService roomService) {
+    public MeetingRoomController(MeetingRoomService roomService, vn.com.d2s.smr.service.cf.FileService fileService) {
         this.roomService = roomService;
+        this.fileService = fileService;
     }
 
     // ----- Vào phòng / phòng chờ
@@ -132,6 +134,16 @@ public class MeetingRoomController {
     public ResponseEntity<ApiResponse<Void>> recording(Principal principal, @PathVariable String meetingId, @RequestBody ToggleRequest request) {
         roomService.recording(principal.getName(), meetingId, request != null && request.on());
         return ResponseEntity.ok(ApiResponse.success(null, null));
+    }
+
+    /** Tải lên một phần bản ghi hình (webm) do chủ trì ghi trên trình duyệt. */
+    @Audited(category = "MEETING", action = "RECORDING_UPLOAD", targetType = "MEETING", targetPathVariable = "meetingId")
+    @PostMapping(value = "/{meetingId}/room/recording/file", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse<vn.com.d2s.smr.dto.cf.file.UploadedFileResponse>> uploadRecording(
+            Principal principal, @PathVariable String meetingId,
+            @org.springframework.web.bind.annotation.RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
+        roomService.assertCanRecord(principal.getName(), meetingId);
+        return ok(fileService.uploadMeetingRecording(principal.getName(), meetingId, file));
     }
 
     // ----- Tham dự

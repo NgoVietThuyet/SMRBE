@@ -101,6 +101,7 @@ public class MinutesServiceImpl implements MinutesService {
     private PermissionService permissionService;
     private SettingService settingService;
     private ObjectStorageService storage;
+    private vn.com.d2s.smr.repository.cf.CmFileRepository fileRepository;
     /** Unit test chạy job đồng bộ. */
     boolean runJobsInline = false;
 
@@ -149,6 +150,30 @@ public class MinutesServiceImpl implements MinutesService {
 
     @Autowired(required = false)
     void setStorage(ObjectStorageService storage) { this.storage = storage; }
+
+    @Autowired(required = false)
+    void setFileRepository(vn.com.d2s.smr.repository.cf.CmFileRepository fileRepository) { this.fileRepository = fileRepository; }
+
+    /** Tài liệu cuộc họp (type=1) đọc được văn bản — nguồn bổ sung cho AI cùng transcript. */
+    private List<vn.com.d2s.smr.entity.cf.CmFile> docFiles(MeetingInfo meeting) {
+        if (fileRepository == null || storage == null || meeting.getReferenceFileId() == null) return List.of();
+        return fileRepository.findByTypeAndReferenceFileIdOrderByCreateDateDesc(1, meeting.getReferenceFileId()).stream()
+                .filter(f -> !f.isMinutesFile() && f.getObjectName() != null && MeetingDocumentText.supports(f.getExtension()))
+                .limit(10).toList();
+    }
+
+    private List<MinutesAiGenerator.Doc> readDocs(List<vn.com.d2s.smr.entity.cf.CmFile> files) {
+        List<MinutesAiGenerator.Doc> docs = new ArrayList<>();
+        for (var f : files) {
+            try (InputStream in = storage.download(f.getObjectName())) {
+                String text = MeetingDocumentText.extract(in, f.getExtension(), f.getFileSize() == null ? 0 : f.getFileSize().longValue());
+                if (text != null) docs.add(new MinutesAiGenerator.Doc(f.getFileName(), text));
+            } catch (Exception e) {
+                log.warn("Không đọc được tài liệu {} cho biên bản: {}", f.getId(), e.getMessage());
+            }
+        }
+        return docs;
+    }
 
     @PreDestroy
     void shutdown() {
@@ -269,9 +294,12 @@ public class MinutesServiceImpl implements MinutesService {
             throw new IllegalStateException("Cuộc họp chưa diễn ra nên chưa có transcript.");
         }
         List<MeetingTranscriptSegment> segs = segmentRepository.findByMeetingIdOrderBySpokenAtAsc(meetingId);
-        if (segs.isEmpty()) throw new IllegalStateException("Cuộc họp chưa có transcript. Hãy bật phụ đề trong phòng họp.");
+        List<vn.com.d2s.smr.entity.cf.CmFile> docFiles = docFiles(c.meeting());
+        if (segs.isEmpty() && docFiles.isEmpty()) {
+            throw new IllegalStateException("Cuộc họp chưa có transcript hoặc tài liệu để AI tổng hợp.");
+        }
 
-        String key = "MINUTES:" + meetingId + ":" + transcriptHash(segs);
+        String key = "MINUTES:" + meetingId + ":" + sourceHash(segs, docFiles);
         Optional<SyBackgroundJob> existing = jobRepository.findByIdempotencyKey(key);
         if (existing.isPresent() && existing.get().getStatus() != SyBackgroundJob.FAILED) {
             return toJob(existing.get(), true);
@@ -318,7 +346,8 @@ public class MinutesServiceImpl implements MinutesService {
                     .filter(p -> !RoomAdmission.isGuest(p.getUserName()))
                     .map(p -> new MinutesAiGenerator.Participant(p.getUserName(), p.getFullName())).toList();
             MinutesAiGenerator.Prompt prompt = MinutesAiGenerator.build(meeting.getName(),
-                    meeting.getStartDate() != null ? meeting.getStartDate() : meeting.getExpectedStartTime(), participants, segs);
+                    meeting.getStartDate() != null ? meeting.getStartDate() : meeting.getExpectedStartTime(), participants, segs,
+                    readDocs(docFiles(meeting)));
             String raw = llm.generate(prompt.system(), prompt.user(), 0.2, 3000);
             if (raw == null || raw.isBlank()) throw new IllegalStateException("Không kết nối được máy chủ AI. Hãy thử lại sau.");
             MinutesContent content = MinutesAiGenerator.parse(raw, prompt.codeToSegment(), participants, mapper);
@@ -362,6 +391,21 @@ public class MinutesServiceImpl implements MinutesService {
             room.sendToUsers(members, "MinutesStatusChanged", payload);
         } catch (RuntimeException ignored) {
             // realtime lỗi không ảnh hưởng nghiệp vụ
+        }
+    }
+
+    /** Băm transcript + danh sách tài liệu → thêm/bớt tài liệu thì cho phép sinh lại biên bản. */
+    private static String sourceHash(List<MeetingTranscriptSegment> segs, List<vn.com.d2s.smr.entity.cf.CmFile> docs) {
+        String base = transcriptHash(segs);
+        if (docs.isEmpty()) return base;
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            md.update(base.getBytes(StandardCharsets.UTF_8));
+            docs.stream().map(vn.com.d2s.smr.entity.cf.CmFile::getId).sorted()
+                    .forEach(id -> md.update((id + "\n").getBytes(StandardCharsets.UTF_8)));
+            return HexFormat.of().formatHex(md.digest());
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException(e);
         }
     }
 

@@ -44,6 +44,9 @@ public interface MeetingRoomService {
 
     void recording(String userName, String meetingId, boolean on);
 
+    /** Ném SecurityException nếu người dùng không được ghi hình cuộc họp này (chủ trì + MEETING_RECORD + cho phép ghi hình). */
+    void assertCanRecord(String userName, String meetingId);
+
     List<AttendanceSummaryResponse> attendance(String userName, String meetingId);
 
     /** Tên file + nội dung XLSX tham dự. */

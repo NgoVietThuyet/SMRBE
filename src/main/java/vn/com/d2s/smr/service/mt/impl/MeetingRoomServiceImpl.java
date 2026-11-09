@@ -395,9 +395,9 @@ public class MeetingRoomServiceImpl implements MeetingRoomService {
 
     // ===================== Ghi hình =====================
 
-    /** Chỉ ghi nhận + báo cả phòng (Jitsi tự ghi qua startRecording). Audit ở controller. */
+    /** Chỉ ghi nhận + báo cả phòng (chủ trì ghi trên trình duyệt rồi tải lên). Audit ở controller. */
     @Override
-    public void recording(String userName, String meetingId, boolean on) {
+    public void assertCanRecord(String userName, String meetingId) {
         MeetingInfo meeting = meeting(meetingId);
         moderator(meetingId, userName);
         if (!admission.settings(meeting).recordingEnabled()) {
@@ -406,6 +406,11 @@ public class MeetingRoomServiceImpl implements MeetingRoomService {
         if (!adminAccess.isAdmin(userName) && !hasRight(userName, "MEETING_RECORD")) {
             throw new SecurityException("Bạn chưa được cấp quyền ghi hình (MEETING_RECORD).");
         }
+    }
+
+    @Override
+    public void recording(String userName, String meetingId, boolean on) {
+        assertCanRecord(userName, meetingId);
         publisher.broadcastToRoom(meetingId, "RecordingChanged", Map.of("meetingId", meetingId, "on", on, "by", userName));
     }
 

@@ -10,6 +10,11 @@ spring:
     username: ${DB_USERNAME:sa}
     password: ${DB_PASSWORD:sa@d2s.com.vn}
     driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
+  servlet:
+    multipart:
+      # Mặc định Spring chỉ cho 1MB → tài liệu và bản ghi hình bị từ chối. Khớp nginx (client_max_body_size 210m).
+      max-file-size: 210MB
+      max-request-size: 210MB
   jpa:
     open-in-view: false
     hibernate:

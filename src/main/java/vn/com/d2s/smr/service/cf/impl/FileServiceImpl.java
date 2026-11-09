@@ -130,6 +130,57 @@ public class FileServiceImpl implements FileService {
         return result;
     }
 
+    /** Giới hạn mỗi phần ghi hình (khớp client_max_body_size 210m của nginx). FE tự cắt phần ~10 phút. */
+    private static final long MAX_RECORDING_PART_SIZE = 200L * 1024 * 1024;
+
+    @Override
+    public UploadedFileResponse uploadMeetingRecording(String user, String meetingId, MultipartFile file) {
+        MeetingInfo meeting = meetingInfoRepository.findByIdAndDeletedFalse(meetingId)
+                .orElseThrow(() -> new NoSuchElementException("Không tìm thấy cuộc họp."));
+        if (file == null || file.isEmpty() || file.getSize() <= 0) {
+            throw new IllegalArgumentException("Không có dữ liệu ghi hình.");
+        }
+        String originalFileName = file.getOriginalFilename();
+        String ext = getExtension(originalFileName).toLowerCase();
+        if (!RECORDING_EXTENSIONS.contains(ext) || file.getSize() > MAX_RECORDING_PART_SIZE) {
+            throw new IllegalArgumentException("File ghi hình không hợp lệ (định dạng hoặc quá " + (MAX_RECORDING_PART_SIZE >> 20) + "MB).");
+        }
+        String id = UUID.randomUUID().toString().replace("-", "");
+        String objectName = "meetings/" + meetingId + "/recordings/" + id + ext;
+        String mime = file.getContentType() != null ? file.getContentType() : "application/octet-stream";
+        try (InputStream is = file.getInputStream()) {
+            storageService.upload(objectName, is, file.getSize(), mime);
+        } catch (IOException e) {
+            throw new RuntimeException("Lỗi đọc file upload: " + e.getMessage(), e);
+        }
+        LocalDateTime now = LocalDateTime.now(clock);
+        CmFile entity = new CmFile();
+        entity.setId(id);
+        entity.setFileName(getCleanFileName(originalFileName));
+        entity.setFileSize(BigDecimal.valueOf(file.getSize()));
+        entity.setMimeType(mime);
+        entity.setExtension(ext);
+        entity.setType(2);
+        entity.setIcon("recording");
+        entity.setReferenceFileId(meeting.getReferenceFileId());
+        entity.setMinutesFile(false);
+        entity.setOrderNumber(0);
+        entity.setVoiceToText("");
+        entity.setBucketName(storageService.getBucketName());
+        entity.setObjectName(objectName);
+        entity.setCreateBy(user);
+        entity.setCreateDate(now);
+        entity.setUpdateBy(user);
+        entity.setUpdateDate(now);
+        try {
+            cmFileRepository.save(entity);
+        } catch (Exception ex) {
+            storageService.delete(objectName);
+            throw ex;
+        }
+        return new UploadedFileResponse(entity.getId(), entity.getFileName(), entity.getFileSize(), entity.getMimeType());
+    }
+
     @Override
     public MeetingFileItemResponse uploadMeetingFile(String user, String meetingId, MultipartFile file) {
         MeetingInfo meeting = meetingInfoRepository.findByIdAndDeletedFalse(meetingId)
