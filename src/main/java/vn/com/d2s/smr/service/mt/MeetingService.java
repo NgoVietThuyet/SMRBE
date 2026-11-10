@@ -54,6 +54,15 @@ public interface MeetingService {
 
     void endMeeting(String userName, String meetingId);
 
+    /** Id các cuộc họp đang diễn ra đã quá giờ kết thúc dự kiến. */
+    java.util.List<String> overdueOngoingMeetingIds();
+
+    /** Tự kết thúc cuộc họp nếu vẫn đang diễn ra, đã quá giờ dự kiến và không còn ai trong phòng. @return true nếu đã kết thúc. */
+    boolean endIfIdle(String meetingId);
+
+    /** Cuộc họp đang diễn ra, đã quá giờ dự kiến và hiện không có ai trong phòng. */
+    boolean isOverdueAndEmpty(String meetingId);
+
     void joinMeeting(String userName, String meetingId);
 
     void leaveMeeting(String userName, String meetingId);

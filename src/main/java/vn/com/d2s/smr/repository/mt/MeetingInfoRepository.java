@@ -16,6 +16,10 @@ public interface MeetingInfoRepository extends JpaRepository<MeetingInfo, String
 
     boolean existsByRoomCode(String roomCode);
 
+    /** Id cuộc họp đang diễn ra (status 2) đã quá giờ kết thúc dự kiến — ứng viên tự kết thúc khi không còn ai trong phòng. */
+    @Query("select m.id from MeetingInfo m where m.deleted = false and m.status = 2 and m.expectedEndTime is not null and m.expectedEndTime <= :now")
+    List<String> findOverdueOngoingIds(@Param("now") java.time.LocalDateTime now);
+
     Optional<MeetingInfo> findByIdAndDeletedFalse(String id);
 
     Optional<MeetingInfo> findFirstByRoomCodeIgnoreCaseAndDeletedFalse(String roomCode);

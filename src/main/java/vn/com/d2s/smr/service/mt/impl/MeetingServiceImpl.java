@@ -938,6 +938,52 @@ public class MeetingServiceImpl implements MeetingService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public List<String> overdueOngoingMeetingIds() {
+        return meetingInfoRepository.findOverdueOngoingIds(LocalDateTime.now(clock));
+    }
+
+    /** Tài khoản ghi trong nhật ký / UpdateBy khi hệ thống tự kết thúc cuộc họp. */
+    static final String SYSTEM_ACTOR = "system";
+
+    @Override
+    @Transactional(readOnly = true)
+    public boolean isOverdueAndEmpty(String meetingId) {
+        MeetingInfo meeting = meetingInfoRepository.findByIdAndDeletedFalse(meetingId).orElse(null);
+        return meeting != null && meeting.getStatus() == 2 && meeting.getExpectedEndTime() != null
+                && !meeting.getExpectedEndTime().isAfter(LocalDateTime.now(clock)) && room.onlineUsers(meetingId).isEmpty();
+    }
+
+    @Override
+    @Transactional
+    public boolean endIfIdle(String meetingId) {
+        MeetingInfo meeting = meetingInfoRepository.findByIdAndDeletedFalse(meetingId).orElse(null);
+        LocalDateTime now = LocalDateTime.now(clock);
+        if (meeting == null || meeting.getStatus() != 2 || meeting.getExpectedEndTime() == null
+                || meeting.getExpectedEndTime().isAfter(now)) {
+            return false;
+        }
+        if (!room.onlineUsers(meetingId).isEmpty()) {
+            return false; // vẫn còn người trong phòng
+        }
+        meeting.setStatus(3);
+        meeting.setEndDate(now);
+        meeting.setUpdateBy(SYSTEM_ACTOR);
+        meeting.setUpdateDate(now);
+        meetingInfoRepository.save(meeting);
+        List<MeetingPersonal> stillIn = meetingPersonalRepository.findByMeetingId(meetingId).stream()
+                .filter(MeetingPersonal::isJoined).toList();
+        stillIn.forEach(p -> p.setJoined(false));
+        if (!stillIn.isEmpty()) {
+            meetingPersonalRepository.saveAll(stillIn);
+        }
+        saveAuditLog(meetingId, "AUTO_END", SYSTEM_ACTOR, meeting.getVersion() + 1,
+                "Hệ thống tự kết thúc cuộc họp: đã quá giờ kết thúc dự kiến và không còn ai trong phòng.");
+        publishStatus(meetingId, 3, "ended");
+        return true;
+    }
+
+    @Override
     @Transactional
     public void joinMeeting(String userName, String meetingId) {
         MeetingInfo meeting = meetingInfoRepository.findByIdAndDeletedFalse(meetingId)
