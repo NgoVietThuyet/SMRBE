@@ -106,6 +106,9 @@ public class RoomAdmission {
                     break;
             }
         }
-        return settings.lobbyEnabled() ? State.NEED_REQUEST : State.ADMITTED;
+        // Người chưa được mời (khách, hoặc tự vào bằng link / mã phòng ở cuộc họp Công khai) luôn phải được chủ trì duyệt.
+        boolean uninvited = isGuest(personal.getUserName())
+                || (personal.getCreateBy() != null && personal.getCreateBy().equalsIgnoreCase(personal.getUserName()));
+        return settings.lobbyEnabled() || uninvited ? State.NEED_REQUEST : State.ADMITTED;
     }
 }

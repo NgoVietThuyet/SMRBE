@@ -125,8 +125,8 @@ class MeetingRoomServiceImplTest {
     }
 
     @Test
-    void enterInternalMeetingAsOutsiderAddsOptionalMember() {
-        MeetingInfo m = meeting(2, 1, null);
+    void enterPublicMeetingAsOutsiderAddsOptionalMemberAndWaitsForApproval() {
+        MeetingInfo m = meeting(2, 2, null);
         stubMembers(m, person("host", 1, true));
         AdAccount acc = new AdAccount();
         acc.setUserName("u9");
@@ -134,10 +134,12 @@ class MeetingRoomServiceImplTest {
         when(accountRepository.findById("u9")).thenReturn(Optional.of(acc));
         when(personalRepository.save(any(MeetingPersonal.class))).thenAnswer(i -> i.getArgument(0));
         when(lobbyRepository.findFirstByMeetingIdAndUserNameOrderByRequestedAtDesc("m1", "u9")).thenReturn(Optional.empty());
+        when(lobbyRepository.save(any(MtLobbyRequest.class))).thenAnswer(i -> i.getArgument(0));
 
         EnterRoomResponse res = service.enter("u9", "m1");
 
-        assertThat(res.state()).isEqualTo("ADMITTED");
+        // Người chưa được mời luôn phải qua chủ trì duyệt, kể cả khi cuộc họp không bật phòng chờ.
+        assertThat(res.state()).isEqualTo("LOBBY");
         ArgumentCaptor<MeetingPersonal> saved = ArgumentCaptor.forClass(MeetingPersonal.class);
         verify(personalRepository).save(saved.capture());
         assertThat(saved.getValue().getType()).isEqualTo(5);

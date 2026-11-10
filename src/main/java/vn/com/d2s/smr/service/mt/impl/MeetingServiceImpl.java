@@ -185,9 +185,9 @@ public class MeetingServiceImpl implements MeetingService {
                 .findFirst()
                 .orElse(meeting.getCreateBy());
 
-        // Người chưa được mời: cuộc họp Nội bộ (1) / Công khai (2) đang hoặc sắp diễn ra → vào được
-        // (P10: room/enter thêm họ làm thành viên "Tùy chọn"). "Chỉ người được mời" → chỉ biết lý do.
-        boolean open = meeting.getVisibility() >= 1 && (meeting.getStatus() == 1 || meeting.getStatus() == 2);
+        // Người chưa được mời: chỉ cuộc họp Công khai (2) đang hoặc sắp diễn ra mới xin vào được
+        // (P10: room/enter thêm họ làm thành viên "Tùy chọn", chờ chủ trì duyệt). Nội bộ (0, và 1 cũ) → chỉ biết lý do.
+        boolean open = meeting.getVisibility() == 2 && (meeting.getStatus() == 1 || meeting.getStatus() == 2);
         if (!member && !open) {
             return new MeetingCodeLookupResponse(null, null, -1, null, null, null, false, false, "NOT_INVITED");
         }
@@ -333,7 +333,7 @@ public class MeetingServiceImpl implements MeetingService {
         meeting.setExpectedEndTime(request.expectedEndTime() != null ? request.expectedEndTime() : now.plusHours(1));
         meeting.setTimeZone(request.timeZone() != null ? request.timeZone().trim() : "Asia/Bangkok");
         meeting.setStatus(request.saveAsDraft() ? 0 : 1);
-        meeting.setVisibility(request.visibility());
+        meeting.setVisibility(request.visibility() == 2 ? 2 : 0);
         meeting.setRoomCode(roomCode);
         meeting.setJoinUrl("/meeting/" + roomCode);
         meeting.setReferenceFileId(refFileId);
@@ -487,7 +487,7 @@ public class MeetingServiceImpl implements MeetingService {
         if (request.timeZone() != null) {
             meeting.setTimeZone(request.timeZone().trim());
         }
-        meeting.setVisibility(request.visibility());
+        meeting.setVisibility(request.visibility() == 2 ? 2 : 0);
         if (request.settings() != null) {
             meeting.setSettingsJson(toJson(request.settings()));
         }
@@ -633,7 +633,7 @@ public class MeetingServiceImpl implements MeetingService {
         meeting.setExpectedEndTime(now.plusHours(1));
         meeting.setTimeZone("Asia/Bangkok");
         meeting.setStatus(2);
-        meeting.setVisibility(1);
+        meeting.setVisibility(2);
         meeting.setRoomCode(roomCode);
         meeting.setJoinUrl("/meeting/" + roomCode);
         meeting.setReferenceFileId(refFileId);

@@ -32,6 +32,11 @@ public record MeetingSettingsDto(
             if (stored != null && stored.isObject()) {
                 merged.setAll((com.fasterxml.jackson.databind.node.ObjectNode) stored);
             }
+            // Các tính năng này luôn có sẵn trong phòng họp (không còn là cài đặt): bỏ qua giá trị cũ đã lưu.
+            for (String always : new String[]{"chatEnabled", "screenShareEnabled", "whiteboardEnabled",
+                    "fileUploadEnabled", "recordingEnabled", "captionsEnabled"}) {
+                merged.put(always, true);
+            }
             return mapper.treeToValue(merged, MeetingSettingsDto.class);
         } catch (Exception e) {
             return defaultSettings();
@@ -40,7 +45,7 @@ public record MeetingSettingsDto(
 
     public static MeetingSettingsDto defaultSettings() {
         return new MeetingSettingsDto(
-                1, false, true, false, true, true, true, true, true, false, true, "", "", false
+                1, false, true, false, true, true, true, true, true, true, true, "", "", false
         );
     }
 }

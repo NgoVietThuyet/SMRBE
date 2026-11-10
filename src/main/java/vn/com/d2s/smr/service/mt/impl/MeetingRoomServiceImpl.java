@@ -122,11 +122,11 @@ public class MeetingRoomServiceImpl implements MeetingRoomService {
     }
 
     /**
-     * Người chưa được mời: cuộc họp Nội bộ (1) / Công khai (2) đang hoặc sắp diễn ra → thêm làm thành viên "Tùy chọn".
+     * Người chưa được mời: cuộc họp Công khai (2) đang hoặc sắp diễn ra → thêm làm thành viên "Tùy chọn" (chờ chủ trì duyệt).
      * Cuộc họp "Chỉ người được mời" → 403.
      */
     private MeetingPersonal selfJoin(MeetingInfo meeting, String userName) {
-        boolean open = meeting.getVisibility() >= 1 && (meeting.getStatus() == 1 || meeting.getStatus() == 2);
+        boolean open = meeting.getVisibility() == 2 && (meeting.getStatus() == 1 || meeting.getStatus() == 2);
         if (!open || RoomAdmission.isGuest(userName)) {
             throw new SecurityException("Cuộc họp chỉ dành cho người được mời.");
         }
