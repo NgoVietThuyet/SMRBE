@@ -12,30 +12,17 @@ import java.util.stream.Collectors;
 public final class PermissionCatalog {
 
     public static final List<PermissionDefinition> DEFINITIONS = List.of(
-            permission("HR_VIEW", "Xem module nhân sự", "Nhân sự"),
-            permission("HR_ORG_CREATE", "Tạo phòng ban", "Cơ cấu tổ chức"),
-            permission("HR_ORG_UPDATE", "Cập nhật phòng ban", "Cơ cấu tổ chức"),
-            permission("HR_ORG_MOVE", "Di chuyển phòng ban", "Cơ cấu tổ chức"),
-            permission("HR_ORG_DELETE", "Xóa phòng ban", "Cơ cấu tổ chức"),
-            permission("HR_ORG_PERMISSION", "Phân quyền phòng ban", "Cơ cấu tổ chức"),
-            permission("HR_TITLE_VIEW", "Xem chức danh", "Chức danh"),
-            permission("HR_TITLE_CREATE", "Tạo chức danh", "Chức danh"),
-            permission("HR_TITLE_UPDATE", "Cập nhật chức danh", "Chức danh"),
-            permission("HR_TITLE_DELETE", "Xóa chức danh", "Chức danh"),
-            permission("HR_TITLE_PERMISSION", "Phân quyền chức danh", "Chức danh"),
-            permission("HR_ACCOUNT_VIEW", "Xem tài khoản", "Tài khoản"),
-            permission("HR_ACCOUNT_CREATE", "Tạo tài khoản", "Tài khoản"),
-            permission("HR_ACCOUNT_UPDATE", "Cập nhật tài khoản", "Tài khoản"),
-            permission("HR_ACCOUNT_LOCK", "Khóa/mở tài khoản", "Tài khoản"),
-            permission("HR_ACCOUNT_RESET_PASSWORD", "Đặt lại mật khẩu", "Tài khoản"),
-            permission("HR_ACCOUNT_TRANSFER", "Điều chuyển phòng ban", "Tài khoản"),
-            permission("HR_ACCOUNT_CHANGE_TITLE", "Đổi chức danh", "Tài khoản"),
-            permission("HR_ACCOUNT_PERMISSION", "Phân quyền tài khoản", "Tài khoản"),
+            permission("ADMIN_ORGANIZATIONS", "Cơ cấu tổ chức", "Menu Quản trị"),
+            permission("ADMIN_TITLES", "Chức danh", "Menu Quản trị"),
+            permission("ADMIN_ACCOUNTS", "Tài khoản", "Menu Quản trị"),
+            permission("ADMIN_PERMISSIONS", "Phân quyền", "Menu Quản trị"),
+            permission("ADMIN_STATISTICS", "Thống kê", "Menu Quản trị"),
+            permission("ADMIN_AUDIT_LOGS", "Nhật ký hoạt động", "Menu Quản trị"),
+            permission("ADMIN_SETTINGS", "Cấu hình hệ thống", "Menu Quản trị"),
             permission("MEETING_RECORD", "Ghi hình", "Cuộc họp"),
             permission("FILE_UPLOAD", "Tải file lên", "Tài liệu"),
             permission("FILE_DOWNLOAD", "Tải file xuống", "Tài liệu"),
-            permission("AI_SUMMARY", "Tóm tắt AI", "AI"),
-            permission("DASHBOARD_VIEW", "Xem dashboard", "Báo cáo")
+            permission("AI_SUMMARY", "Tóm tắt AI", "AI")
     );
 
     public static final Set<String> ALL_CODES = DEFINITIONS.stream()
@@ -46,7 +33,12 @@ public final class PermissionCatalog {
      * Mã đã gỡ: ai cũng tạo được cuộc họp và mời thành viên (người tạo là chủ trì) nên không còn phân quyền.
      * PermissionJson cũ còn chứa các mã này vẫn đọc / lưu được — chúng bị bỏ qua.
      */
-    public static final Set<String> RETIRED_CODES = Set.of("MEETING_CREATE", "MEETING_INVITE");
+    public static final Set<String> RETIRED_CODES = Set.of("MEETING_CREATE", "MEETING_INVITE",
+            // Quyền nhân sự HR_* và DASHBOARD_VIEW chưa từng được kiểm tra ở đâu → thay bằng quyền vào từng menu Quản trị (ADMIN_*).
+            "HR_VIEW", "HR_ORG_CREATE", "HR_ORG_UPDATE", "HR_ORG_MOVE", "HR_ORG_DELETE", "HR_ORG_PERMISSION",
+            "HR_TITLE_VIEW", "HR_TITLE_CREATE", "HR_TITLE_UPDATE", "HR_TITLE_DELETE", "HR_TITLE_PERMISSION",
+            "HR_ACCOUNT_VIEW", "HR_ACCOUNT_CREATE", "HR_ACCOUNT_UPDATE", "HR_ACCOUNT_LOCK", "HR_ACCOUNT_RESET_PASSWORD",
+            "HR_ACCOUNT_TRANSFER", "HR_ACCOUNT_CHANGE_TITLE", "HR_ACCOUNT_PERMISSION", "DASHBOARD_VIEW");
 
     private PermissionCatalog() {
     }

@@ -45,16 +45,16 @@ class PermissionServiceImplTest {
     @Test
     void resolvesUserThenTitleThenOrganizationPermissionPrecedence() {
         AdAccount account = account();
-        account.setPermissionJson("{\"version\":1,\"permissions\":{\"HR_VIEW\":\"Deny\"}}");
+        account.setPermissionJson("{\"version\":1,\"permissions\":{\"ADMIN_ORGANIZATIONS\":\"Deny\"}}");
         MdTitle title = title();
-        title.setPermissionJson("{\"version\":1,\"permissions\":{\"HR_VIEW\":\"Allow\",\"MEETING_RECORD\":\"Allow\",\"MEETING_CREATE\":\"Allow\"}}");
+        title.setPermissionJson("{\"version\":1,\"permissions\":{\"ADMIN_ORGANIZATIONS\":\"Allow\",\"MEETING_RECORD\":\"Allow\",\"MEETING_CREATE\":\"Allow\"}}");
         MdOrganize organization = organization();
         organization.setPermissionJson("{\"version\":1,\"permissions\":{\"FILE_UPLOAD\":\"Allow\"}}");
         stubHierarchy(account, title, organization);
 
         List<EffectivePermissionResponse> result = service.getEffectivePermissions("admin");
 
-        EffectivePermissionResponse hrView = permission(result, "HR_VIEW");
+        EffectivePermissionResponse hrView = permission(result, "ADMIN_ORGANIZATIONS");
         assertThat(hrView.allowed()).isFalse();
         assertThat(hrView.sourceType()).isEqualTo("USER");
         assertThat(permission(result, "MEETING_RECORD").sourceType()).isEqualTo("TITLE");
@@ -72,7 +72,7 @@ class PermissionServiceImplTest {
 
         List<EffectivePermissionResponse> result = service.getEffectivePermissions("admin");
 
-        assertThat(result).hasSize(24).allMatch(EffectivePermissionResponse::allowed);
+        assertThat(result).hasSize(11).allMatch(EffectivePermissionResponse::allowed);
         assertThat(result).allMatch(permission -> "ROLE".equals(permission.sourceType()));
     }
 
@@ -84,7 +84,7 @@ class PermissionServiceImplTest {
 
         EffectivePermissionResponse result = permission(
                 service.getEffectivePermissions("admin"),
-                "HR_VIEW"
+                "ADMIN_ORGANIZATIONS"
         );
 
         assertThat(result.allowed()).isFalse();
@@ -95,10 +95,10 @@ class PermissionServiceImplTest {
     void serializerNormalizesCodesAndRejectsUnknownCodes() {
         String json = service.serializeAndValidate(new PermissionDocument(
                 1,
-                Map.of("hr_view", PermissionEffect.ALLOW)
+                Map.of("admin_organizations", PermissionEffect.ALLOW)
         ));
 
-        assertThat(json).contains("HR_VIEW").contains("Allow");
+        assertThat(json).contains("ADMIN_ORGANIZATIONS").contains("Allow");
         assertThatThrownBy(() -> service.serializeAndValidate(new PermissionDocument(
                 1,
                 Map.of("UNKNOWN", PermissionEffect.ALLOW)

@@ -43,6 +43,7 @@ public class SecurityConfig {
             JwtAuthenticationConverter jwtAuthenticationConverter,
             ObjectMapper objectMapper,
             AdminAccess adminAccess,
+            MenuAccess menuAccess,
             GuestScope guestScope
     ) throws Exception {
         http
@@ -63,14 +64,27 @@ public class SecurityConfig {
                         .requestMatchers("/error").permitAll()
                         // Swagger UI + tài liệu OpenAPI (OpenApiConfig)
                         .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
-                        // Quản trị: chỉ SUPER_ADMIN được ghi dữ liệu nhân sự và xem/gán quyền của người khác.
+                        // Quản trị: SUPER_ADMIN, hoặc tài khoản được gán quyền vào đúng menu (ADMIN_*) tương ứng.
                         // Các GET danh mục (summary, organization-tree, titles, employees) vẫn mở cho người đã đăng nhập.
+                        .requestMatchers(HttpMethod.GET, "/api/human-resources/*/*/permissions").access(menuAccess.requires("ADMIN_PERMISSIONS"))
+                        .requestMatchers(HttpMethod.PUT, "/api/human-resources/*/*/permissions").access(menuAccess.requires("ADMIN_PERMISSIONS"))
+                        .requestMatchers(HttpMethod.GET, "/api/human-resources/employees/*/effective-permissions").access(menuAccess.requires("ADMIN_PERMISSIONS"))
+                        .requestMatchers(HttpMethod.POST, "/api/human-resources/organizations/**").access(menuAccess.requires("ADMIN_ORGANIZATIONS"))
+                        .requestMatchers(HttpMethod.PUT, "/api/human-resources/organizations/**").access(menuAccess.requires("ADMIN_ORGANIZATIONS"))
+                        .requestMatchers(HttpMethod.DELETE, "/api/human-resources/organizations/**").access(menuAccess.requires("ADMIN_ORGANIZATIONS"))
+                        .requestMatchers(HttpMethod.POST, "/api/human-resources/titles/**").access(menuAccess.requires("ADMIN_TITLES"))
+                        .requestMatchers(HttpMethod.PUT, "/api/human-resources/titles/**").access(menuAccess.requires("ADMIN_TITLES"))
+                        .requestMatchers(HttpMethod.DELETE, "/api/human-resources/titles/**").access(menuAccess.requires("ADMIN_TITLES"))
+                        .requestMatchers(HttpMethod.POST, "/api/human-resources/employees/**", "/api/human-resources/directory-employees").access(menuAccess.requires("ADMIN_ACCOUNTS"))
+                        .requestMatchers(HttpMethod.PUT, "/api/human-resources/employees/**").access(menuAccess.requires("ADMIN_ACCOUNTS"))
+                        .requestMatchers(HttpMethod.DELETE, "/api/human-resources/employees/**").access(menuAccess.requires("ADMIN_ACCOUNTS"))
+                        .requestMatchers("/api/admin/reports/**").access(menuAccess.requires("ADMIN_STATISTICS"))
+                        .requestMatchers("/api/admin/audit-logs/**").access(menuAccess.requires("ADMIN_AUDIT_LOGS"))
+                        .requestMatchers("/api/admin/settings/**", "/api/admin/minutes-templates/**").access(menuAccess.requires("ADMIN_SETTINGS"))
                         .requestMatchers("/api/admin/**").access(adminAccess)
                         .requestMatchers(HttpMethod.POST, "/api/human-resources/**").access(adminAccess)
                         .requestMatchers(HttpMethod.PUT, "/api/human-resources/**").access(adminAccess)
                         .requestMatchers(HttpMethod.DELETE, "/api/human-resources/**").access(adminAccess)
-                        .requestMatchers(HttpMethod.GET, "/api/human-resources/*/*/permissions").access(adminAccess)
-                        .requestMatchers(HttpMethod.GET, "/api/human-resources/employees/*/effective-permissions").access(adminAccess)
                         // Token khách chỉ dùng được cho đúng cuộc họp của nó.
                         .anyRequest().access(guestScope))
                 .oauth2ResourceServer(oauth -> oauth.jwt(jwt -> jwt
