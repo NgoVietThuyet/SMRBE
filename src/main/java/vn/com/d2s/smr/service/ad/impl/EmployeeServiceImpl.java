@@ -123,7 +123,7 @@ public class EmployeeServiceImpl implements EmployeeService {
         if (adAccountRepository.existsByUserNameOrEmail(userName, email)) {
             throw new IllegalArgumentException("Username hoặc email đã tồn tại.");
         }
-        String tempPassword = generatePassword();
+        String tempPassword = initialPassword(userName);
         LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
 
         AdAccount a = new AdAccount();
@@ -161,8 +161,7 @@ public class EmployeeServiceImpl implements EmployeeService {
         while (adAccountRepository.existsById(userName)) {
             userName = baseName + String.format("%02d", i++);
         }
-        // Mật khẩu tạm ngẫu nhiên (trước đây là "<username>@123" → đoán được). Chỉ trả về một lần.
-        String rawPassword = generatePassword();
+        String rawPassword = initialPassword(userName);
         LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
 
         AdAccount a = new AdAccount();
@@ -361,6 +360,11 @@ public class EmployeeServiceImpl implements EmployeeService {
         if (!mdTitleRepository.existsByCodeAndActiveTrue(title)) {
             throw new IllegalArgumentException("Chức danh không hợp lệ.");
         }
+    }
+
+    /** Mật khẩu khởi tạo khi Admin đăng ký tài khoản: tên đăng nhập + \"123\" (VD thuyet → thuyet123). Người dùng bị buộc đổi ở lần đăng nhập đầu. */
+    static String initialPassword(String userName) {
+        return userName + "123";
     }
 
     private static String generatePassword() {
