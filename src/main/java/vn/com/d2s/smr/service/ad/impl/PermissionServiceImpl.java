@@ -65,8 +65,13 @@ public class PermissionServiceImpl implements PermissionService {
         MdTitle title = titleRepository.findById(account.getTitleCode()).orElse(null);
         MdOrganize organization = organizeRepository.findById(account.getOrgId()).orElse(null);
 
+        // Có quyền ADMIN (từ tài khoản / chức danh / phòng ban) → có toàn bộ quyền như quản trị viên.
+        boolean fullAdmin = !isSuperAdmin(account.getRoleCodes()) && resolve("ADMIN", account, title, organization).allowed();
         return PermissionCatalog.DEFINITIONS.stream()
-                .map(definition -> toEffectivePermission(definition, account, title, organization))
+                .map(definition -> fullAdmin && !"ADMIN".equals(definition.code())
+                        ? new EffectivePermissionResponse(definition.code(), definition.name(), true, "Allow",
+                                "ADMIN", "ADMIN", "Quyền Admin")
+                        : toEffectivePermission(definition, account, title, organization))
                 .toList();
     }
 

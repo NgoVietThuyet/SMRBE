@@ -65,6 +65,33 @@ class PermissionServiceImplTest {
     }
 
     @Test
+    void adminRightFromTitleGrantsEveryPermission() {
+        MdTitle title = title();
+        title.setPermissionJson("{\"version\":1,\"permissions\":{\"ADMIN\":\"Allow\"}}");
+        stubHierarchy(account(), title, organization());
+
+        List<EffectivePermissionResponse> result = service.getEffectivePermissions("admin");
+
+        assertThat(result).hasSize(12).allMatch(EffectivePermissionResponse::allowed);
+        assertThat(permission(result, "ADMIN").sourceType()).isEqualTo("TITLE");
+        assertThat(permission(result, "MEETING_RECORD").sourceType()).isEqualTo("ADMIN");
+    }
+
+    @Test
+    void userDenyOnAdminBeatsTitleAllow() {
+        AdAccount account = account();
+        account.setPermissionJson("{\"version\":1,\"permissions\":{\"ADMIN\":\"Deny\"}}");
+        MdTitle title = title();
+        title.setPermissionJson("{\"version\":1,\"permissions\":{\"ADMIN\":\"Allow\"}}");
+        stubHierarchy(account, title, organization());
+
+        List<EffectivePermissionResponse> result = service.getEffectivePermissions("admin");
+
+        assertThat(permission(result, "ADMIN").allowed()).isFalse();
+        assertThat(permission(result, "MEETING_RECORD").allowed()).isFalse();
+    }
+
+    @Test
     void superAdminReceivesEveryPermission() {
         AdAccount account = account();
         account.setRoleCodes("[\"SUPER_ADMIN\"]");
@@ -72,7 +99,7 @@ class PermissionServiceImplTest {
 
         List<EffectivePermissionResponse> result = service.getEffectivePermissions("admin");
 
-        assertThat(result).hasSize(11).allMatch(EffectivePermissionResponse::allowed);
+        assertThat(result).hasSize(12).allMatch(EffectivePermissionResponse::allowed);
         assertThat(result).allMatch(permission -> "ROLE".equals(permission.sourceType()));
     }
 

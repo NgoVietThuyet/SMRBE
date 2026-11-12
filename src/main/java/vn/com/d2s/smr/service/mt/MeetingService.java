@@ -30,6 +30,9 @@ public interface MeetingService {
 
     PagedResultResponse<MeetingListItemResponse> searchMeetings(String userName, MeetingSearchRequest request);
 
+    /** Mọi cuộc họp của hệ thống — chỉ Admin (SecurityException nếu không phải). */
+    PagedResultResponse<MeetingListItemResponse> searchAllMeetings(String userName, MeetingSearchRequest request);
+
     Optional<MeetingDetailResponse> getMeetingDetail(String userName, String meetingId);
 
     MeetingDetailResponse createMeeting(String userName, CreateMeetingRequest request);

@@ -34,10 +34,30 @@ public class AdminAccess implements AuthorizationManager<RequestAuthorizationCon
         return new AuthorizationDecision(isAdmin(auth.getName()));
     }
 
+    private vn.com.d2s.smr.service.ad.PermissionService permissionService;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    void setPermissionService(vn.com.d2s.smr.service.ad.PermissionService permissionService) {
+        this.permissionService = permissionService;
+    }
+
+    /** Admin = role SUPER_ADMIN, hoặc được gán quyền ADMIN (tài khoản → chức danh → phòng ban). */
     public boolean isAdmin(String userName) {
-        return accountRepository.findById(userName)
-                .map(account -> account.getRoleCodes() != null
-                        && account.getRoleCodes().toUpperCase(Locale.ROOT).contains(SUPER_ADMIN))
-                .orElse(false);
+        var account = accountRepository.findById(userName).orElse(null);
+        if (account == null) {
+            return false;
+        }
+        if (account.getRoleCodes() != null && account.getRoleCodes().toUpperCase(Locale.ROOT).contains(SUPER_ADMIN)) {
+            return true;
+        }
+        if (permissionService == null) {
+            return false;
+        }
+        try {
+            return permissionService.getEffectivePermissions(userName).stream()
+                    .anyMatch(p -> "ADMIN".equalsIgnoreCase(p.code()) && p.allowed());
+        } catch (RuntimeException e) {
+            return false;
+        }
     }
 }

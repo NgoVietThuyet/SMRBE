@@ -12,6 +12,7 @@ import java.util.stream.Collectors;
 public final class PermissionCatalog {
 
     public static final List<PermissionDefinition> DEFINITIONS = List.of(
+            permission("ADMIN", "Admin (toàn quyền như quản trị viên)", "Quản trị viên"),
             permission("ADMIN_ORGANIZATIONS", "Cơ cấu tổ chức", "Menu Quản trị"),
             permission("ADMIN_TITLES", "Chức danh", "Menu Quản trị"),
             permission("ADMIN_ACCOUNTS", "Tài khoản", "Menu Quản trị"),

@@ -56,8 +56,8 @@ class UserPermissionControllerTest {
     void catalogReturnsGroupsInDotNetOrder() throws Exception {
         mockMvc.perform(get("/api/permissions/catalog").principal(() -> "admin"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].groupName").value("Menu Quản trị"))
-                .andExpect(jsonPath("$[0].permissions[0].code").value("ADMIN_ORGANIZATIONS"));
+                .andExpect(jsonPath("$[0].groupName").value("Quản trị viên"))
+                .andExpect(jsonPath("$[0].permissions[0].code").value("ADMIN"));
     }
 
     @Test

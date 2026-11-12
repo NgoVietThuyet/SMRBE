@@ -81,6 +81,16 @@ public class MeetingController {
         return ResponseEntity.ok(ApiResponse.success(result, null));
     }
 
+    /** Toàn bộ cuộc họp của hệ thống — chỉ Admin (SecurityConfig và service đều kiểm tra). */
+    @PostMapping("/query-all")
+    public ResponseEntity<ApiResponse<PagedResultResponse<MeetingListItemResponse>>> searchAllMeetings(
+            Principal principal,
+            @RequestBody MeetingSearchRequest request
+    ) {
+        PagedResultResponse<MeetingListItemResponse> result = meetingService.searchAllMeetings(principal.getName(), request);
+        return ResponseEntity.ok(ApiResponse.success(result, null));
+    }
+
     @GetMapping("/{meetingId}")
     public ResponseEntity<ApiResponse<MeetingDetailResponse>> getMeetingDetail(
             Principal principal,

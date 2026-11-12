@@ -81,6 +81,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/admin/reports/**").access(menuAccess.requires("ADMIN_STATISTICS"))
                         .requestMatchers("/api/admin/audit-logs/**").access(menuAccess.requires("ADMIN_AUDIT_LOGS"))
                         .requestMatchers("/api/admin/settings/**", "/api/admin/minutes-templates/**").access(menuAccess.requires("ADMIN_SETTINGS"))
+                        .requestMatchers(HttpMethod.POST, "/api/Meeting/query-all").access(adminAccess)
                         .requestMatchers("/api/admin/**").access(adminAccess)
                         .requestMatchers(HttpMethod.POST, "/api/human-resources/**").access(adminAccess)
                         .requestMatchers(HttpMethod.PUT, "/api/human-resources/**").access(adminAccess)

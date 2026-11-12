@@ -372,6 +372,24 @@
    "minutesFlow": "draft"
   },
   {
+   "key": "khoaluan",
+   "name": "Rà soát tiến độ và chốt kế hoạch demo hệ thống SMR",
+   "day": -1,
+   "start": "14:00",
+   "minutes": 55,
+   "host": "khoa.tran",
+   "status": "ended",
+   "secretary": "linh.vu",
+   "required": [
+    "anh.dang",
+    "nga.do",
+    "tuan.vo"
+   ],
+   "description": "Rà soát kết quả thực nghiệm, chốt bộ dữ liệu đánh giá và kế hoạch báo cáo trước hội đồng.",
+   "agenda": "1. Tiến độ các mô-đun\n2. Bộ dữ liệu đánh giá\n3. Kế hoạch demo và báo cáo",
+   "transcript": "khoaluan"
+  },
+  {
    "key": "ai",
    "name": "Đồng bộ tiến độ tính năng AI tóm tắt biên bản",
    "day": -3,
@@ -1617,6 +1635,160 @@
    {
     "speaker": "trung.bui",
     "text": "Cảm ơn mọi người, mình sẽ gửi báo cáo sự cố cho Ban giám đốc."
+   }
+  ],
+  "khoaluan": [
+   {
+    "speaker": "khoa.tran",
+    "text": "Chào cả nhóm, hôm nay mình rà soát tiến độ và chốt kế hoạch demo hệ thống SMR. Có ba nội dung: tiến độ các mô-đun, bộ dữ liệu đánh giá, và kế hoạch báo cáo."
+   },
+   {
+    "speaker": "linh.vu",
+    "text": "Em là thư ký, em sẽ ghi lại các quyết định và việc cần làm, cuối buổi em đọc lại để mọi người xác nhận."
+   },
+   {
+    "speaker": "khoa.tran",
+    "text": "Được. Tuấn báo cáo mô-đun nhận dạng giọng nói trước."
+   },
+   {
+    "speaker": "tuan.vo",
+    "text": "Mô-đun nhận dạng giọng nói chạy ổn với họp tiếng Việt sạch, sai số từ khoảng 9 phần trăm. Khi có tiếng ồn hoặc nói chồng thì tăng lên khoảng 18 phần trăm."
+   },
+   {
+    "speaker": "khoa.tran",
+    "text": "18 phần trăm hơi cao. Em đã thử khử nhiễu trước khi nhận dạng chưa?"
+   },
+   {
+    "speaker": "tuan.vo",
+    "text": "Em chưa thử. Em đề xuất thêm bước lọc nhiễu, dự kiến giảm được vài điểm phần trăm."
+   },
+   {
+    "speaker": "khoa.tran",
+    "text": "Vậy thống nhất thêm bước lọc nhiễu vào luồng xử lý. Tuấn thực hiện và đo lại sai số, hạn là {+3}."
+   },
+   {
+    "speaker": "tuan.vo",
+    "text": "Em nhận, em sẽ báo cáo số liệu trước và sau khi lọc nhiễu."
+   },
+   {
+    "speaker": "anh.dang",
+    "text": "Phần tóm tắt thì em đã chạy trên mười họp mẫu. Bản tóm tắt đủ ý chính nhưng đôi khi bỏ sót người phụ trách của công việc."
+   },
+   {
+    "speaker": "nga.do",
+    "text": "Em cũng thấy vậy. Có hai trường hợp công việc không ghi người phụ trách dù trong cuộc họp có nói rõ tên."
+   },
+   {
+    "speaker": "khoa.tran",
+    "text": "Đây là lỗi quan trọng vì mục tiêu của hệ thống là giúp người dùng nắm việc sau họp. Anh, em chỉnh lại câu lệnh để bắt buộc trích xuất người phụ trách và hạn hoàn thành."
+   },
+   {
+    "speaker": "anh.dang",
+    "text": "Dạ, em sẽ chỉnh câu lệnh và chạy lại mười họp mẫu, hạn là {+4}."
+   },
+   {
+    "speaker": "khoa.tran",
+    "text": "Tốt. Giờ sang bộ dữ liệu đánh giá. Nga trình bày phương án."
+   },
+   {
+    "speaker": "nga.do",
+    "text": "Em đề xuất dùng ba nguồn. Một là bộ dữ liệu công khai AMI và MeetingBank để so sánh với bản tóm tắt chuẩn. Hai là các cuộc họp kịch bản do nhóm tự tạo, có sẵn danh sách quyết định và việc cần làm làm đáp án. Ba là ít nhất ba cuộc họp thật của nhóm."
+   },
+   {
+    "speaker": "khoa.tran",
+    "text": "Phương án hợp lý. Trong báo cáo phải ghi rõ nguồn nào là dữ liệu mô phỏng, nguồn nào là họp thật, không được trình bày lẫn."
+   },
+   {
+    "speaker": "nga.do",
+    "text": "Dạ vâng, em sẽ ghi rõ nguồn và cách tạo dữ liệu trong chương thực nghiệm."
+   },
+   {
+    "speaker": "linh.vu",
+    "text": "Anh ơi, bao nhiêu cuộc họp kịch bản thì đủ ạ?"
+   },
+   {
+    "speaker": "khoa.tran",
+    "text": "Chốt ba mươi cuộc họp kịch bản và năm cuộc họp thật. Nga phụ trách tạo ba mươi cuộc họp kịch bản, hạn là {+7}."
+   },
+   {
+    "speaker": "nga.do",
+    "text": "Em nhận. Em sẽ tạo bằng mô hình ngôn ngữ rồi đọc thành âm thanh bằng nhiều giọng khác nhau."
+   },
+   {
+    "speaker": "tuan.vo",
+    "text": "Em đề nghị thêm tiếng ồn nền và đoạn nói chồng vào âm thanh để giống họp thật, nếu không sai số sẽ thấp bất thường."
+   },
+   {
+    "speaker": "khoa.tran",
+    "text": "Đồng ý. Nga thêm bước làm bẩn âm thanh vào quy trình tạo dữ liệu."
+   },
+   {
+    "speaker": "anh.dang",
+    "text": "Còn họp thật thì ai ghi lại ạ? Mỗi buổi cần có người gõ lại nội dung làm chuẩn."
+   },
+   {
+    "speaker": "khoa.tran",
+    "text": "Linh phụ trách tổ chức năm cuộc họp thật, mỗi buổi khoảng hai mươi phút, và gõ lại nội dung làm đáp án. Hạn hoàn thành là {+10}."
+   },
+   {
+    "speaker": "linh.vu",
+    "text": "Em nhận. Em sẽ họp qua chính hệ thống để vừa lấy dữ liệu vừa kiểm thử."
+   },
+   {
+    "speaker": "khoa.tran",
+    "text": "Về cách đánh giá, chốt dùng ba chỉ số: tỷ lệ sai từ cho nhận dạng, điểm ROUGE và BERTScore cho tóm tắt, và độ chính xác, độ phủ cho việc trích xuất công việc."
+   },
+   {
+    "speaker": "nga.do",
+    "text": "Em đề xuất thêm khảo sát người dùng, mời khoảng mười người chấm điểm từ một đến năm."
+   },
+   {
+    "speaker": "khoa.tran",
+    "text": "Hay đấy, thêm vào. Nga soạn mẫu phiếu khảo sát, hạn là {+8}."
+   },
+   {
+    "speaker": "nga.do",
+    "text": "Dạ, em soạn xong sẽ gửi nhóm xem trước khi phát."
+   },
+   {
+    "speaker": "khoa.tran",
+    "text": "Nội dung cuối là kế hoạch demo và báo cáo. Buổi demo thử với giảng viên hướng dẫn dự kiến vào ngày {+12}."
+   },
+   {
+    "speaker": "anh.dang",
+    "text": "Anh ơi, em lo phần demo sẽ gặp sự cố mạng. Em đề nghị chuẩn bị sẵn một video quay màn hình làm phương án dự phòng."
+   },
+   {
+    "speaker": "khoa.tran",
+    "text": "Đồng ý. Anh Đăng quay video dự phòng quy trình họp và sau họp, hạn là {+11}."
+   },
+   {
+    "speaker": "anh.dang",
+    "text": "Dạ, em nhận."
+   },
+   {
+    "speaker": "tuan.vo",
+    "text": "Em cần chốt luôn máy chủ chạy demo. Em đề nghị dùng máy của nhóm, không dùng mạng ký túc xá."
+   },
+   {
+    "speaker": "khoa.tran",
+    "text": "Thống nhất chạy demo trên máy chủ của nhóm. Tuấn kiểm tra cấu hình và chạy thử một lần trước hôm demo."
+   },
+   {
+    "speaker": "tuan.vo",
+    "text": "Dạ, em chạy thử trước ngày {+11}."
+   },
+   {
+    "speaker": "khoa.tran",
+    "text": "Về chương báo cáo, mỗi người tự viết phần mô-đun của mình, tôi sẽ tổng hợp. Hạn nộp bản nháp là {+13}."
+   },
+   {
+    "speaker": "linh.vu",
+    "text": "Em xin đọc lại các quyết định. Một: thêm bước lọc nhiễu. Hai: chốt ba mươi họp kịch bản và năm họp thật. Ba: dùng ba chỉ số đánh giá và khảo sát người dùng. Bốn: chạy demo trên máy chủ của nhóm."
+   },
+   {
+    "speaker": "khoa.tran",
+    "text": "Đúng rồi. Còn việc cần làm thì mọi người xem biên bản em gửi. Cảm ơn mọi người, kết thúc buổi họp."
    }
   ],
   "ai": [

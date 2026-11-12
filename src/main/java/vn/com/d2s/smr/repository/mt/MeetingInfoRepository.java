@@ -65,6 +65,27 @@ public interface MeetingInfoRepository extends JpaRepository<MeetingInfo, String
             Pageable pageable
     );
 
+    /** Như {@link #searchMeetings} nhưng cho mọi cuộc họp của hệ thống (chỉ Admin dùng). */
+    @Query("""
+            select m
+            from MeetingInfo m
+            where m.deleted = false
+              and (:anyStatus = true or m.status in :statuses)
+              and (:keyword is null or :keyword = ''
+                   or lower(m.name) like lower(concat('%', :keyword, '%'))
+                   or lower(m.roomCode) like lower(concat('%', :keyword, '%')))
+              and (:startDate is null or m.expectedStartTime >= :startDate)
+              and (:endDate is null or m.expectedStartTime <= :endDate)
+            """)
+    Page<MeetingInfo> searchAllMeetings(
+            @Param("anyStatus") boolean anyStatus,
+            @Param("statuses") Collection<Integer> statuses,
+            @Param("keyword") String keyword,
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate,
+            Pageable pageable
+    );
+
     /**
      * Cuộc họp đã lên lịch / đang diễn ra của các {@code userNames} (viết thường) giao với khoảng [startTime, endTime).
      * Mỗi dòng là cặp (MeetingInfo, MeetingPersonal) để biết ai bị trùng.

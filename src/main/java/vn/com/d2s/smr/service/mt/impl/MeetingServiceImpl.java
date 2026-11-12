@@ -130,6 +130,17 @@ public class MeetingServiceImpl implements MeetingService {
     /** Quy tắc phòng chờ (P10); null trong unit test cũ → coi như được vào. */
     private RoomAdmission admission;
 
+    private vn.com.d2s.smr.config.AdminAccess adminAccess;
+
+    @Autowired(required = false)
+    void setAdminAccess(vn.com.d2s.smr.config.AdminAccess adminAccess) {
+        this.adminAccess = adminAccess;
+    }
+
+    private boolean isSystemAdmin(String userName) {
+        return adminAccess != null && adminAccess.isAdmin(userName);
+    }
+
     @Autowired(required = false)
     void setRoomPublisher(RoomEventPublisher room) {
         this.room = room;
@@ -241,6 +252,31 @@ public class MeetingServiceImpl implements MeetingService {
         );
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public PagedResultResponse<MeetingListItemResponse> searchAllMeetings(String userName, MeetingSearchRequest request) {
+        if (!isSystemAdmin(userName)) {
+            throw new SecurityException("Chỉ quản trị viên được xem toàn bộ cuộc họp.");
+        }
+        String tab = request.tab().toLowerCase(Locale.ROOT);
+        List<Integer> statuses = statusesForTab(tab, request.status());
+        Sort sort = "upcoming".equals(tab)
+                ? Sort.by(Sort.Direction.ASC, "expectedStartTime")
+                : Sort.by(Sort.Direction.DESC, "expectedStartTime");
+        Page<MeetingInfo> pageResult = meetingInfoRepository.searchAllMeetings(
+                statuses.isEmpty(),
+                statuses.isEmpty() ? List.of(-1) : statuses,
+                request.keyword(),
+                request.startDate(),
+                request.endDate(),
+                PageRequest.of(request.page() - 1, request.pageSize(), sort)
+        );
+        List<MeetingListItemResponse> items = pageResult.getContent().stream()
+                .map(m -> toListItemResponse(m, userName))
+                .toList();
+        return PagedResultResponse.of(items, request.page(), request.pageSize(), pageResult.getTotalElements());
+    }
+
     /**
      * Tab → các trạng thái được lấy. Rỗng = không lọc.
      * all: mọi trạng thái trừ đã lưu trữ · upcoming: 1 · ongoing: 2 · history: 3, 4 · archived: 5 · draft: 0.
@@ -305,7 +341,7 @@ public class MeetingServiceImpl implements MeetingService {
 
         List<MeetingPersonal> personals = meetingPersonalRepository.findByMeetingId(meetingId);
         boolean isMember = personals.stream().anyMatch(p -> p.getUserName().equalsIgnoreCase(userName));
-        if (!isMember) {
+        if (!isMember && !isSystemAdmin(userName)) {
             throw new SecurityException("Bạn không có quyền truy cập thông tin cuộc họp này.");
         }
 
