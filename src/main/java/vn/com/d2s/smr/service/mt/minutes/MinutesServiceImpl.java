@@ -229,7 +229,8 @@ public class MinutesServiceImpl implements MinutesService {
         // Đang diễn ra (đã có transcript dần) + đã kết thúc + đã lưu trữ.
         String kw = keyword == null ? "" : keyword.trim();
         PageRequest pr = PageRequest.of(p - 1, size, Sort.by(Sort.Direction.DESC, "expectedStartTime"));
-        // Admin thấy biên bản của mọi cuộc họp trong hệ thống.
+        // Ai thấy cuộc họp nào thì thấy biên bản của cuộc họp đó: admin → mọi cuộc họp (như "Toàn bộ cuộc họp"),
+        // người thường → cuộc họp mình là thành viên. Trợ lý AI dùng chung danh sách này.
         Page<MeetingInfo> meetings = adminAccess != null && adminAccess.isAdmin(userName)
                 ? meetingRepository.searchAllMeetings(false, List.of(2, 3, 5), kw, null, null, pr)
                 : meetingRepository.searchMeetings(userName, false, List.of(2, 3, 5), kw, null, null, pr);

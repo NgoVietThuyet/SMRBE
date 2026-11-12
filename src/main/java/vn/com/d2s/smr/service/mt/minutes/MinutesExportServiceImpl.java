@@ -391,10 +391,11 @@ public class MinutesExportServiceImpl implements MinutesExportService {
     /** Dựng file theo mẫu đang dùng. */
     byte[] build(MeetingInfo meeting, List<MeetingPersonal> people) throws IOException {
         List<MeetingTranscriptSegment> segs = segmentRepository.findByMeetingIdOrderBySpokenAtAsc(meeting.getId());
-        MtMinutes publishedRow = minutesRepository.findFirstByMeetingIdAndStatusOrderByVersionDesc(meeting.getId(), MtMinutes.PUBLISHED).orElse(null);
+        MtMinutes publishedRow = officialMinutes(meeting.getId()).orElse(null);
         MinutesContent published = publishedRow == null ? null : readContent(publishedRow.getContentJson());
         String note = publishedRow != null
-                ? "Quyết định và việc cần làm lấy theo biên bản đã phát hành (phiên bản " + publishedRow.getVersion() + "). Các mục khác do AI tổng hợp."
+                ? "Quyết định và việc cần làm lấy theo biên bản " + (publishedRow.getStatus() == MtMinutes.PUBLISHED ? "đã phát hành" : "đã duyệt")
+                        + " (phiên bản " + publishedRow.getVersion() + "). Các mục khác do AI tổng hợp."
                 : "Biên bản do AI tổng hợp, chưa qua duyệt.";
 
         Optional<CmFile> own = meetingTemplate(meeting.getId());
@@ -505,7 +506,7 @@ public class MinutesExportServiceImpl implements MinutesExportService {
             }
         }
         if (published != null) {
-            sb.append("\n## Biên bản đã phát hành (nguồn chính thức)\nTóm tắt: ").append(published.summary()).append('\n');
+            sb.append("\n## Biên bản đã duyệt / phát hành (nguồn chính thức)\nTóm tắt: ").append(published.summary()).append('\n');
             sb.append("Quyết định:\n").append(decisionsText(published)).append('\n');
             sb.append("Việc cần làm:\n").append(actionsText(published)).append('\n');
         }
@@ -524,6 +525,13 @@ public class MinutesExportServiceImpl implements MinutesExportService {
     }
 
     /** Mã băm của mẫu + dữ liệu cuộc họp: chưa đổi thì dùng lại file đã dựng. */
+    /** Biên bản chính thức = phiên bản mới nhất đã duyệt hoặc đã phát hành (bản nháp / chờ duyệt / từ chối không tính). */
+    private Optional<MtMinutes> officialMinutes(String meetingId) {
+        return minutesRepository.findByMeetingIdOrderByVersionDesc(meetingId).stream()
+                .filter(x -> x.getStatus() == MtMinutes.APPROVED || x.getStatus() == MtMinutes.PUBLISHED)
+                .findFirst();
+    }
+
     private String dataHash(Ctx c) {
         MeetingInfo m = c.meeting();
         StringBuilder sb = new StringBuilder(MinutesTemplateGenerator.PROMPT_VERSION).append('|');
@@ -531,8 +539,9 @@ public class MinutesExportServiceImpl implements MinutesExportService {
         sb.append(m.getName()).append('|').append(startOf(m)).append('|').append(m.getEndDate()).append('|');
         c.people().stream().map(p -> p.getUserName() + ":" + p.getType()).sorted().forEach(x -> sb.append(x).append(','));
         sb.append('|').append(MinutesServiceImpl.transcriptHash(segmentRepository.findByMeetingIdOrderBySpokenAtAsc(m.getId())));
-        sb.append('|').append(minutesRepository.findFirstByMeetingIdAndStatusOrderByVersionDesc(m.getId(), MtMinutes.PUBLISHED)
-                .map(MtMinutes::getId).orElse("-"));
+        // Đổi phiên bản chính thức, trạng thái (duyệt → phát hành) hay nội dung đều làm file cũ hết hiệu lực.
+        sb.append('|').append(officialMinutes(m.getId())
+                .map(x -> x.getId() + ":" + x.getStatus() + ":" + (x.getContentJson() == null ? 0 : x.getContentJson().hashCode())).orElse("-"));
         taskRepository.findByMeetingId(m.getId()).stream().filter(t -> t.getLevel() >= 2)
                 .map(t -> t.getId() + ":" + t.getTitle() + ":" + t.getStatus() + ":" + t.getAssigneeUserName() + ":" + t.getDueDate())
                 .sorted().forEach(x -> sb.append('|').append(x));
