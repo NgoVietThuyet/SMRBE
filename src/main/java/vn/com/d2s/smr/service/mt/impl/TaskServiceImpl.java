@@ -133,6 +133,17 @@ public class TaskServiceImpl implements TaskService {
         }
     }
 
+    private vn.com.d2s.smr.config.AdminAccess adminAccess;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    void setAdminAccess(vn.com.d2s.smr.config.AdminAccess adminAccess) {
+        this.adminAccess = adminAccess;
+    }
+
+    private boolean isSystemAdmin(String userName) {
+        return adminAccess != null && adminAccess.isAdmin(userName);
+    }
+
     @Override
     @Transactional(readOnly = true)
     public TaskSearchResultResponse searchTasks(String userName, TaskSearchRequest request) {
@@ -267,7 +278,7 @@ public class TaskServiceImpl implements TaskService {
                     .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy công việc cha."));
 
             boolean canViewParent = taskRepository.exists(viewableTasksSpec(creatorUserName).and((root, query, cb) -> cb.equal(root.get("id"), parentId)));
-            if (!canViewParent) {
+            if (!canViewParent && !isSystemAdmin(creatorUserName)) {
                 throw new SecurityException("Bạn không có quyền tạo công việc con trong công việc này.");
             }
             // P12: thêm cột / thẻ vào bảng cần quyền Sửa trên bảng.
@@ -292,7 +303,7 @@ public class TaskServiceImpl implements TaskService {
             final String mId = meetingId;
             meetingRepository.findByIdAndDeletedFalse(mId)
                     .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy cuộc họp."));
-            if (!personalRepository.existsByMeetingIdAndUserName(mId, creatorUserName)) {
+            if (!personalRepository.existsByMeetingIdAndUserName(mId, creatorUserName) && !isSystemAdmin(creatorUserName)) {
                 throw new SecurityException("Bạn không thuộc cuộc họp này nên không thể tạo công việc cho cuộc họp.");
             }
         } else if (parent != null && parent.getMeetingId() != null) {
@@ -736,6 +747,9 @@ public class TaskServiceImpl implements TaskService {
     }
 
     private Specification<MeetingTask> viewableTasksSpec(String userName) {
+        if (isSystemAdmin(userName)) {
+            return (root, query, cb) -> cb.conjunction(); // Admin hệ thống thấy mọi công việc
+        }
         return (root, query, cb) -> {
             Predicate pCreateBy = cb.equal(root.get("createBy"), userName);
             Predicate pPublic = cb.isTrue(root.get("publicTask"));

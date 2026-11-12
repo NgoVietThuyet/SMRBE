@@ -127,7 +127,8 @@ public class MeetingRoomServiceImpl implements MeetingRoomService {
      */
     private MeetingPersonal selfJoin(MeetingInfo meeting, String userName) {
         boolean open = meeting.getVisibility() == 2 && (meeting.getStatus() == 1 || meeting.getStatus() == 2);
-        if (!open || RoomAdmission.isGuest(userName)) {
+        boolean admin = adminAccess.isAdmin(userName); // Admin hệ thống vào được mọi cuộc họp, với quyền chủ trì
+        if (!admin && (!open || RoomAdmission.isGuest(userName))) {
             throw new SecurityException("Cuộc họp chỉ dành cho người được mời.");
         }
         AdAccount account = accountRepository.findById(userName)
@@ -144,8 +145,8 @@ public class MeetingRoomServiceImpl implements MeetingRoomService {
         p.setOrgId(nz(account.getOrgId()));
         p.setTitleCode(nz(account.getTitleCode()));
         p.setReferenceFileId(nz(meeting.getReferenceFileId()));
-        p.setType(5);
-        p.setChairperson(false);
+        p.setType(admin ? 2 : 5);
+        p.setChairperson(admin);
         p.setJoined(false);
         p.setCreateBy(userName);
         p.setCreateDate(now);
@@ -403,9 +404,6 @@ public class MeetingRoomServiceImpl implements MeetingRoomService {
         if (!admission.settings(meeting).recordingEnabled()) {
             throw new SecurityException("Cuộc họp này không cho phép ghi hình.");
         }
-        if (!adminAccess.isAdmin(userName) && !hasRight(userName, "MEETING_RECORD")) {
-            throw new SecurityException("Bạn chưa được cấp quyền ghi hình (MEETING_RECORD).");
-        }
     }
 
     @Override
@@ -414,14 +412,6 @@ public class MeetingRoomServiceImpl implements MeetingRoomService {
         publisher.broadcastToRoom(meetingId, "RecordingChanged", Map.of("meetingId", meetingId, "on", on, "by", userName));
     }
 
-    private boolean hasRight(String userName, String code) {
-        try {
-            return permissionService.getEffectivePermissions(userName).stream()
-                    .anyMatch(p -> code.equalsIgnoreCase(p.code()) && p.allowed());
-        } catch (RuntimeException e) {
-            return false;
-        }
-    }
 
     // ===================== Tham dự =====================
 
@@ -498,6 +488,15 @@ public class MeetingRoomServiceImpl implements MeetingRoomService {
     }
 
     private MeetingPersonal moderator(String meetingId, String userName) {
+        if (adminAccess.isAdmin(userName)) {
+            MeetingPersonal real = personalRepository.findByMeetingIdAndUserName(meetingId, userName).orElse(null);
+            if (real != null) return real;
+            MeetingPersonal tmp = new MeetingPersonal(); // Admin chưa vào phòng: đối tượng tạm, không lưu DB
+            tmp.setMeetingId(meetingId);
+            tmp.setUserName(userName);
+            tmp.setChairperson(true);
+            return tmp;
+        }
         MeetingPersonal me = member(meetingId, userName);
         if (!RoomAdmission.isModerator(me)) {
             throw new SecurityException("Chỉ chủ trì được thực hiện thao tác này.");

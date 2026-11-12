@@ -46,6 +46,13 @@ public class TaskAccess {
         this.personalRepository = personalRepository;
     }
 
+    private vn.com.d2s.smr.config.AdminAccess adminAccess;
+
+    @Autowired(required = false)
+    void setAdminAccess(vn.com.d2s.smr.config.AdminAccess adminAccess) {
+        this.adminAccess = adminAccess;
+    }
+
     @Autowired(required = false)
     void setPublisher(UserNotificationPublisher publisher) {
         this.publisher = publisher;
@@ -70,6 +77,9 @@ public class TaskAccess {
 
     public Rights rights(MeetingTask task, String user) {
         MeetingTask root = root(task);
+        if (adminAccess != null && adminAccess.isAdmin(user)) {
+            return new Rights(root, true, true, true); // Admin hệ thống: toàn quyền trên mọi công việc
+        }
         boolean owner = eq(root.getCreateBy(), user);
         Optional<MeetingTaskShare> rootShare = shareRepository.findByTaskIdAndUserName(root.getId(), user);
         Optional<MeetingTaskShare> ownShare = task == root ? Optional.empty() : shareRepository.findByTaskIdAndUserName(task.getId(), user);

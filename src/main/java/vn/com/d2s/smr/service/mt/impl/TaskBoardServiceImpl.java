@@ -155,6 +155,17 @@ public class TaskBoardServiceImpl implements TaskBoardService {
 
     // ===================== T2: sidebar =====================
 
+    private vn.com.d2s.smr.config.AdminAccess adminAccess;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    void setAdminAccess(vn.com.d2s.smr.config.AdminAccess adminAccess) {
+        this.adminAccess = adminAccess;
+    }
+
+    private boolean isSystemAdmin(String userName) {
+        return adminAccess != null && adminAccess.isAdmin(userName);
+    }
+
     @Override
     @Transactional(readOnly = true)
     public TaskGroupsResponse groups(String userName) {
@@ -714,7 +725,7 @@ public class TaskBoardServiceImpl implements TaskBoardService {
             throw new SecurityException("Khách không tạo được công việc.");
         }
         List<vn.com.d2s.smr.entity.mt.MeetingPersonal> people = personalRepository == null ? List.of() : personalRepository.findByMeetingId(meetingId);
-        if (people.stream().noneMatch(p -> p.getUserName().equalsIgnoreCase(userName))) {
+        if (people.stream().noneMatch(p -> p.getUserName().equalsIgnoreCase(userName)) && !isSystemAdmin(userName)) {
             throw new SecurityException("Bạn không thuộc cuộc họp này nên không thể tạo công việc cho cuộc họp.");
         }
 

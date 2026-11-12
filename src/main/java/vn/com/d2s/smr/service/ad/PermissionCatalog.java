@@ -19,11 +19,7 @@ public final class PermissionCatalog {
             permission("ADMIN_PERMISSIONS", "Phân quyền", "Menu Quản trị"),
             permission("ADMIN_STATISTICS", "Thống kê", "Menu Quản trị"),
             permission("ADMIN_AUDIT_LOGS", "Nhật ký hoạt động", "Menu Quản trị"),
-            permission("ADMIN_SETTINGS", "Cấu hình hệ thống", "Menu Quản trị"),
-            permission("MEETING_RECORD", "Ghi hình", "Cuộc họp"),
-            permission("FILE_UPLOAD", "Tải file lên", "Tài liệu"),
-            permission("FILE_DOWNLOAD", "Tải file xuống", "Tài liệu"),
-            permission("AI_SUMMARY", "Tóm tắt AI", "AI")
+            permission("ADMIN_SETTINGS", "Cấu hình hệ thống", "Menu Quản trị")
     );
 
     public static final Set<String> ALL_CODES = DEFINITIONS.stream()
@@ -35,6 +31,8 @@ public final class PermissionCatalog {
      * PermissionJson cũ còn chứa các mã này vẫn đọc / lưu được — chúng bị bỏ qua.
      */
     public static final Set<String> RETIRED_CODES = Set.of("MEETING_CREATE", "MEETING_INVITE",
+            // Ghi hình / tải file / tóm tắt AI là nút chức năng, ai cũng dùng được → không còn phân quyền.
+            "MEETING_RECORD", "FILE_UPLOAD", "FILE_DOWNLOAD", "AI_SUMMARY",
             // Quyền nhân sự HR_* và DASHBOARD_VIEW chưa từng được kiểm tra ở đâu → thay bằng quyền vào từng menu Quản trị (ADMIN_*).
             "HR_VIEW", "HR_ORG_CREATE", "HR_ORG_UPDATE", "HR_ORG_MOVE", "HR_ORG_DELETE", "HR_ORG_PERMISSION",
             "HR_TITLE_VIEW", "HR_TITLE_CREATE", "HR_TITLE_UPDATE", "HR_TITLE_DELETE", "HR_TITLE_PERMISSION",

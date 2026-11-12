@@ -219,17 +219,6 @@ public class MinutesServiceImpl implements MinutesService {
         return c;
     }
 
-    private boolean canUseAi(String userName) {
-        if (adminAccess != null && adminAccess.isAdmin(userName)) return true;
-        if (permissionService == null) return true;
-        try {
-            return permissionService.getEffectivePermissions(userName).stream()
-                    .anyMatch(p -> "AI_SUMMARY".equalsIgnoreCase(p.code()) && p.allowed());
-        } catch (RuntimeException e) {
-            return false;
-        }
-    }
-
     // ===================== Danh sách =====================
 
     @Override
@@ -288,7 +277,7 @@ public class MinutesServiceImpl implements MinutesService {
         return new MinutesDetailResponse(meetingId, c.meeting().getName(), c.meeting().getStatus(),
                 c.meeting().getStartDate() != null ? c.meeting().getStartDate() : c.meeting().getExpectedStartTime(),
                 c.meeting().getEndDate(),
-                c.moderator(), c.secretary(), c.editor() && canUseAi(userName), c.editor(), c.moderator(),
+                c.moderator(), c.secretary(), c.editor(), c.editor(), c.moderator(),
                 current == null ? null : toVersion(current),
                 visible.stream().map(m -> new MinutesDetailResponse.VersionItem(m.getVersion(), m.getStatus(), m.getSource(), m.getCreatedAt())).toList(),
                 job,
@@ -302,7 +291,6 @@ public class MinutesServiceImpl implements MinutesService {
     @Override
     public MinutesJobResponse generate(String userName, String meetingId) {
         Ctx c = editor(userName, meetingId);
-        if (!canUseAi(userName)) throw new SecurityException("Bạn chưa được cấp quyền dùng AI tóm tắt (AI_SUMMARY).");
         if (c.meeting().getStatus() != 2 && c.meeting().getStatus() != 3 && c.meeting().getStatus() != 5) {
             throw new IllegalStateException("Cuộc họp chưa diễn ra nên chưa có transcript.");
         }

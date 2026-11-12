@@ -484,7 +484,7 @@ public class MeetingServiceImpl implements MeetingService {
         List<MeetingPersonal> personals = meetingPersonalRepository.findByMeetingId(meetingId);
         boolean isHostOrManager = personals.stream()
                 .anyMatch(p -> p.getUserName().equalsIgnoreCase(userName) && RoomAdmission.isModerator(p));
-        if (!isHostOrManager) {
+        if (!isHostOrManager && !isSystemAdmin(userName)) {
             throw new SecurityException("Bạn không có quyền cập nhật cuộc họp này.");
         }
 
@@ -570,7 +570,7 @@ public class MeetingServiceImpl implements MeetingService {
         List<MeetingPersonal> personals = meetingPersonalRepository.findByMeetingId(meetingId);
         boolean isHost = personals.stream()
                 .anyMatch(p -> p.getUserName().equalsIgnoreCase(userName) && RoomAdmission.isModerator(p));
-        if (!isHost) {
+        if (!isHost && !isSystemAdmin(userName)) {
             throw new SecurityException("Bạn không có quyền xóa cuộc họp này.");
         }
 
@@ -597,7 +597,7 @@ public class MeetingServiceImpl implements MeetingService {
         List<MeetingPersonal> personals = meetingPersonalRepository.findByMeetingId(meetingId);
         boolean isHost = personals.stream()
                 .anyMatch(p -> p.getUserName().equalsIgnoreCase(userName) && RoomAdmission.isModerator(p));
-        if (!isHost) {
+        if (!isHost && !isSystemAdmin(userName)) {
             throw new SecurityException("Bạn không có quyền hủy cuộc họp này.");
         }
 
@@ -626,7 +626,7 @@ public class MeetingServiceImpl implements MeetingService {
         List<MeetingPersonal> personals = meetingPersonalRepository.findByMeetingId(meetingId);
         boolean isHost = personals.stream()
                 .anyMatch(p -> p.getUserName().equalsIgnoreCase(userName) && RoomAdmission.isModerator(p));
-        if (!isHost) {
+        if (!isHost && !isSystemAdmin(userName)) {
             throw new SecurityException("Bạn không có quyền lưu trữ cuộc họp này.");
         }
 
@@ -754,7 +754,7 @@ public class MeetingServiceImpl implements MeetingService {
         List<MeetingPersonal> personals = new ArrayList<>(meetingPersonalRepository.findByMeetingId(meetingId));
         boolean isHostOrManager = personals.stream()
                 .anyMatch(p -> p.getUserName().equalsIgnoreCase(userName) && RoomAdmission.isModerator(p));
-        if (!isHostOrManager) {
+        if (!isHostOrManager && !isSystemAdmin(userName)) {
             throw new SecurityException("Bạn không có quyền quản lý thành viên cuộc họp này.");
         }
 
@@ -837,7 +837,7 @@ public class MeetingServiceImpl implements MeetingService {
         List<MeetingPersonal> personals = meetingPersonalRepository.findByMeetingId(meetingId);
         boolean isHostOrManager = personals.stream()
                 .anyMatch(p -> p.getUserName().equalsIgnoreCase(userName) && RoomAdmission.isModerator(p));
-        if (!isHostOrManager) {
+        if (!isHostOrManager && !isSystemAdmin(userName)) {
             throw new SecurityException("Bạn không có quyền xóa thành viên khỏi cuộc họp này.");
         }
 
@@ -912,7 +912,7 @@ public class MeetingServiceImpl implements MeetingService {
         List<MeetingPersonal> personals = meetingPersonalRepository.findByMeetingId(meetingId);
         boolean isHost = personals.stream()
                 .anyMatch(p -> p.getUserName().equalsIgnoreCase(userName) && RoomAdmission.isModerator(p));
-        if (!isHost) {
+        if (!isHost && !isSystemAdmin(userName)) {
             throw new SecurityException("Bạn không có quyền bắt đầu cuộc họp này.");
         }
 
@@ -944,7 +944,7 @@ public class MeetingServiceImpl implements MeetingService {
         List<MeetingPersonal> personals = meetingPersonalRepository.findByMeetingId(meetingId);
         boolean isHost = personals.stream()
                 .anyMatch(p -> p.getUserName().equalsIgnoreCase(userName) && RoomAdmission.isModerator(p));
-        if (!isHost) {
+        if (!isHost && !isSystemAdmin(userName)) {
             throw new SecurityException("Bạn không có quyền kết thúc cuộc họp này.");
         }
 
@@ -1067,7 +1067,7 @@ public class MeetingServiceImpl implements MeetingService {
                 .orElseThrow(() -> new IllegalArgumentException("Cuộc họp không tồn tại."));
 
         boolean isMember = meetingPersonalRepository.existsByMeetingIdAndUserName(meetingId, userName);
-        if (!isMember) {
+        if (!isMember && !isSystemAdmin(userName)) {
             throw new SecurityException("Bạn không có quyền xem tin nhắn cuộc họp này.");
         }
 
@@ -1156,7 +1156,7 @@ public class MeetingServiceImpl implements MeetingService {
                 .orElse(null);
         String hostName = host != null ? host.getFullName() : (meeting.getCreateBy() != null ? meeting.getCreateBy() : "");
         boolean isHost = personals.stream()
-                .anyMatch(p -> p.getUserName().equalsIgnoreCase(userName) && RoomAdmission.isModerator(p));
+                .anyMatch(p -> p.getUserName().equalsIgnoreCase(userName) && RoomAdmission.isModerator(p)) || isSystemAdmin(userName);
 
         return new MeetingListItemResponse(
                 meeting.getId(),
@@ -1181,7 +1181,7 @@ public class MeetingServiceImpl implements MeetingService {
                 .orElse(null);
         String hostName = host != null ? host.getFullName() : "";
         boolean isHost = personals.stream()
-                .anyMatch(p -> p.getUserName().equalsIgnoreCase(userName) && RoomAdmission.isModerator(p));
+                .anyMatch(p -> p.getUserName().equalsIgnoreCase(userName) && RoomAdmission.isModerator(p)) || isSystemAdmin(userName);
 
         List<MeetingParticipantResponse> participantResponses = personals.stream()
                 .map(p -> new MeetingParticipantResponse(

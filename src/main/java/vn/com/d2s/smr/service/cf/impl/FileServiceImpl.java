@@ -47,6 +47,18 @@ public class FileServiceImpl implements FileService {
     private final ObjectStorageService storageService;
     private final MeetingEventPublisher eventPublisher;
     private final Clock clock;
+    private vn.com.d2s.smr.config.AdminAccess adminAccess;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    void setAdminAccess(vn.com.d2s.smr.config.AdminAccess adminAccess) {
+        this.adminAccess = adminAccess;
+    }
+
+    /** Thành viên cuộc họp hoặc Admin hệ thống. */
+    private boolean canAccessMeeting(String meetingId, String user) {
+        return meetingPersonalRepository.existsByMeetingIdAndUserName(meetingId, user)
+                || (adminAccess != null && adminAccess.isAdmin(user));
+    }
 
     public FileServiceImpl(
             CmFileRepository cmFileRepository,
@@ -186,7 +198,7 @@ public class FileServiceImpl implements FileService {
         MeetingInfo meeting = meetingInfoRepository.findByIdAndDeletedFalse(meetingId)
                 .orElseThrow(() -> new NoSuchElementException("Không tìm thấy cuộc họp."));
 
-        if (!meetingPersonalRepository.existsByMeetingIdAndUserName(meetingId, user)) {
+        if (!canAccessMeeting(meetingId, user)) {
             throw new SecurityException("Bạn không phải thành viên cuộc họp này.");
         }
 
@@ -254,7 +266,7 @@ public class FileServiceImpl implements FileService {
     @Override
     @Transactional(readOnly = true)
     public List<MeetingFileItemResponse> getMeetingFiles(String user, String meetingId) {
-        if (!meetingPersonalRepository.existsByMeetingIdAndUserName(meetingId, user)) {
+        if (!canAccessMeeting(meetingId, user)) {
             throw new SecurityException("Bạn không phải thành viên cuộc họp này.");
         }
 
@@ -285,7 +297,7 @@ public class FileServiceImpl implements FileService {
                 .map(MeetingInfo::getId)
                 .orElse(null);
 
-        if (meetingId == null || !meetingPersonalRepository.existsByMeetingIdAndUserName(meetingId, user)) {
+        if (meetingId == null || !canAccessMeeting(meetingId, user)) {
             throw new SecurityException("Bạn không phải thành viên cuộc họp này.");
         }
 
