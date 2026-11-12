@@ -98,6 +98,11 @@ public class MinutesExportServiceImpl implements MinutesExportService {
     private ApplicationEventPublisher events = e -> { };
     private RoomEventPublisher room = RoomEventPublisher.NO_OP;
     private SettingService settingService;
+    private vn.com.d2s.smr.config.AdminAccess adminAccess;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    void setAdminAccess(vn.com.d2s.smr.config.AdminAccess adminAccess) { this.adminAccess = adminAccess; }
+
     /** Unit test chạy job đồng bộ. */
     boolean runJobsInline = false;
 
@@ -157,7 +162,17 @@ public class MinutesExportServiceImpl implements MinutesExportService {
         }
         List<MeetingPersonal> people = personalRepository.findByMeetingId(meetingId);
         MeetingPersonal me = people.stream().filter(p -> p.getUserName().equalsIgnoreCase(userName)).findFirst()
-                .orElseThrow(() -> new SecurityException("Bạn không phải thành viên cuộc họp này."));
+                .orElse(null);
+        if (me == null) {
+            if (adminAccess == null || !adminAccess.isAdmin(userName)) {
+                throw new SecurityException("Bạn không phải thành viên cuộc họp này.");
+            }
+            // Admin hệ thống không nằm trong cuộc họp: coi như chủ trì (đối tượng tạm, không lưu DB).
+            me = new MeetingPersonal();
+            me.setMeetingId(meetingId);
+            me.setUserName(userName);
+            me.setChairperson(true);
+        }
         return new Ctx(m, people, me);
     }
 
