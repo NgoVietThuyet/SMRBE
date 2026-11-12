@@ -18,6 +18,7 @@ import vn.com.d2s.smr.dto.mt.minutes.MinutesContent;
 import vn.com.d2s.smr.dto.mt.minutes.MinutesDetailResponse;
 import vn.com.d2s.smr.entity.ad.AdAccount;
 import vn.com.d2s.smr.entity.cf.CmFile;
+import vn.com.d2s.smr.entity.md.MdOrganize;
 import vn.com.d2s.smr.entity.md.MdTitle;
 import vn.com.d2s.smr.entity.mt.MeetingAuditLog;
 import vn.com.d2s.smr.entity.mt.MeetingInfo;
@@ -78,8 +79,10 @@ public class DemoDataSeeder implements ApplicationRunner {
 
     private static final Logger log = LoggerFactory.getLogger(DemoDataSeeder.class);
     static final String SEED = DemoPlan.SEED_USER;
-    static final String SEED_LOCK = "seed-lock";
-    static final String TITLE_PERMISSION_JSON = "{\"version\":1,\"permissions\":{\"AI_SUMMARY\":\"Allow\",\"MEETING_RECORD\":\"Allow\"}}";
+    /** Dấu trong UpdateBy của tài khoản chủ trì được seed cấp quyền AI → {@code remove} biết đường trả lại. */
+    static final String SEED_PERM = "seed-perm";
+    /** Quyền cấp cho 3 chủ trì ở mức tài khoản (USER thắng TITLE và ORGANIZATION khi gộp quyền). */
+    static final String HOST_PERMISSION_JSON = "{\"version\":1,\"permissions\":{\"AI_SUMMARY\":\"Allow\",\"MEETING_RECORD\":\"Allow\"}}";
     static final String DENY_AI_JSON = "{\"version\":1,\"permissions\":{\"AI_SUMMARY\":\"Deny\"}}";
     private static final String LIKE_DEMO = "demo!_%";
 
@@ -93,9 +96,10 @@ public class DemoDataSeeder implements ApplicationRunner {
     private final SyBackgroundJobRepository jobRepository;
     private final ApplicationContext context;
     private final String action;
-    private final String seedPassword;
 
     private DemoData data;
+    /** Tên đăng nhập thật của 3 chủ trì (đã tìm theo họ tên trong DB). */
+    private List<String> hostUserNames = List.of();
     private LocalDateTime now;
     private Map<String, AdAccount> accounts;
     private final Map<String, Integer> counts = new LinkedHashMap<>();
@@ -103,8 +107,7 @@ public class DemoDataSeeder implements ApplicationRunner {
     public DemoDataSeeder(EntityManager em, TransactionTemplate tx, PasswordEncoder passwordEncoder, ObjectStorageService storage,
                           ObjectMapper mapper, MinutesService minutesService, MinutesExportService exportService,
                           SyBackgroundJobRepository jobRepository, ApplicationContext context,
-                          @Value("${smr.seed.action:check}") String action,
-                          @Value("${SEED_PASSWORD:}") String seedPassword) {
+                          @Value("${smr.seed.action:check}") String action) {
         this.em = em;
         this.tx = tx;
         this.passwordEncoder = passwordEncoder;
@@ -115,7 +118,43 @@ public class DemoDataSeeder implements ApplicationRunner {
         this.jobRepository = jobRepository;
         this.context = context;
         this.action = action == null ? "check" : action.trim().toLowerCase();
-        this.seedPassword = seedPassword;
+    }
+
+    /**
+     * Nạp tài khoản trong DB, tìm 3 chủ trì theo họ tên rồi đọc lại nội dung với tên đăng nhập thật.
+     * Không tìm được / trùng người → dừng và báo, không đoán.
+     */
+    private void prepare() {
+        loadAccounts();
+        Map<String, String> active = accounts.values().stream().filter(AdAccount::isActive)
+                .collect(Collectors.toMap(AdAccount::getUserName, a -> nz(a.getFullName()), (a, b) -> a, LinkedHashMap::new));
+        DemoAccounts.HostResolution r = DemoAccounts.resolveHosts(data.hostAccounts(), active);
+        if (!r.problems().isEmpty()) {
+            r.problems().forEach(p -> log.warn("  - {}", p));
+            throw new IllegalStateException(r.problems().size() + " vấn đề khi tìm tài khoản chủ trì (xem log).");
+        }
+        r.aliasToUser().forEach((alias, user) -> log.info("  Chủ trì {} = {}", alias, user));
+        data = DemoData.load(mapper, r.aliasToUser());
+        hostUserNames = List.copyOf(r.aliasToUser().values());
+    }
+
+    /** Phòng ban cấp lá và chức danh đang có trong DB, và nơi từng tài khoản demo mới được gán (ngẫu nhiên, cố định). */
+    private record Assignments(Map<String, String> orgByUser, Map<String, String> titleByUser, Map<String, String> orgNames,
+                               Map<String, String> titleNames, List<String> problems) {
+    }
+
+    private Assignments assignments() {
+        List<MdOrganize> orgs = tx.execute(s -> em.createQuery("select o from MdOrganize o where o.active = true", MdOrganize.class).getResultList());
+        List<MdTitle> titles = tx.execute(s -> em.createQuery("select t from MdTitle t where t.active = true", MdTitle.class).getResultList());
+        List<String> orgIds = DemoAccounts.leafOrgIds(orgs.stream().map(o -> new DemoAccounts.OrgRow(o.getId(), o.getParentId())).toList());
+        List<String> titleCodes = DemoAccounts.usableTitleCodes(titles.stream().map(MdTitle::getCode).toList());
+        List<String> problems = new ArrayList<>();
+        if (orgIds.isEmpty()) problems.add("DB chưa có phòng ban nào (cấp lá, đang hoạt động) để gán cho tài khoản demo.");
+        if (titleCodes.isEmpty()) problems.add("DB chưa có chức danh nào (đang hoạt động, ngoài ADMIN) để gán cho tài khoản demo.");
+        List<String> users = data.accounts().stream().map(DemoData.Account::userName).toList();
+        return new Assignments(DemoAccounts.assign(users, orgIds, "org"), DemoAccounts.assign(users, titleCodes, "title"),
+                orgs.stream().collect(Collectors.toMap(MdOrganize::getId, MdOrganize::getName, (a, b) -> a)),
+                titles.stream().collect(Collectors.toMap(MdTitle::getCode, MdTitle::getName, (a, b) -> a)), problems);
     }
 
     @Override
@@ -147,8 +186,13 @@ public class DemoDataSeeder implements ApplicationRunner {
     // =====================================================================================
 
     void check() {
-        loadAccounts();
+        prepare();
         List<String> problems = validate();
+        Assignments as = assignments();
+        problems.addAll(as.problems());
+        data.accounts().forEach(a -> log.info("  {} → phòng '{}', chức danh '{}', email {}", a.userName(),
+                as.orgNames().getOrDefault(as.orgByUser().get(a.userName()), "?"),
+                as.titleNames().getOrDefault(as.titleByUser().get(a.userName()), "?"), DemoAccounts.email(a.userName())));
         List<PlannedMeeting> plan = DemoPlan.plan(data, now);
         counts.put("Cuộc họp sẽ tạo", plan.size());
         counts.put("  trong đó đã có trong DB", (int) plan.stream().filter(p -> em.find(MeetingInfo.class, p.id()) != null).count());
@@ -190,9 +234,7 @@ public class DemoDataSeeder implements ApplicationRunner {
     // =====================================================================================
 
     void load() {
-        if (seedPassword == null || seedPassword.length() < 8) {
-            throw new IllegalStateException("Đặt biến môi trường SEED_PASSWORD (≥ 8 ký tự) làm mật khẩu cho tài khoản demo mới.");
-        }
+        prepare();
         tx.executeWithoutResult(s -> seedAccounts());
         loadAccounts();
         List<String> problems = validate();
@@ -210,17 +252,22 @@ public class DemoDataSeeder implements ApplicationRunner {
 
     private void seedAccounts() {
         loadAccounts();
+        Assignments as = assignments();
+        if (!as.problems().isEmpty()) {
+            as.problems().forEach(p -> log.warn("  - {}", p));
+            throw new IllegalStateException("Chưa đủ phòng ban / chức danh trong DB để tạo tài khoản demo (xem log). Chưa ghi gì.");
+        }
         for (DemoData.Account a : data.accounts()) {
             if (accounts.containsKey(key(a.userName()))) continue;
             AdAccount acc = new AdAccount();
             acc.setUserName(a.userName());
-            acc.setPassword(passwordEncoder.encode(seedPassword));
+            acc.setPassword(passwordEncoder.encode(DemoAccounts.password(a.userName())));
             acc.setFullName(a.fullName());
             acc.setPhone(a.phone());
-            acc.setEmail(a.userName() + "@" + data.emailDomain());
+            acc.setEmail(DemoAccounts.email(a.userName()));
             acc.setAddress("");
-            acc.setOrgId(a.orgId());
-            acc.setTitleCode(a.titleCode());
+            acc.setOrgId(as.orgByUser().get(a.userName()));
+            acc.setTitleCode(as.titleByUser().get(a.userName()));
             acc.setRoleCodes("USER");
             acc.setActive(!a.locked());
             acc.setMustChangePassword(a.mustChangePassword());
@@ -229,22 +276,18 @@ public class DemoDataSeeder implements ApplicationRunner {
             em.persist(acc);
             inc("Tài khoản mới");
         }
-        for (String u : data.junkAccounts()) {
-            AdAccount acc = em.find(AdAccount.class, u);
-            if (acc != null && acc.isActive()) {
-                acc.setActive(false);
-                acc.setUpdateBy(SEED_LOCK);
-                acc.setUpdateDate(now);
-                inc("Tài khoản rác đã khóa");
-            }
-        }
-        for (String code : data.managerTitles()) {
-            MdTitle t = em.find(MdTitle.class, code);
-            if (t != null && (t.getPermissionJson() == null || t.getPermissionJson().isBlank())) {
-                t.setPermissionJson(TITLE_PERMISSION_JSON);
-                t.setUpdateBy(SEED);
-                t.setUpdateDate(now);
-                inc("Chức danh được cấp AI_SUMMARY, MEETING_RECORD");
+        // Ba chủ trì: cấp AI_SUMMARY, MEETING_RECORD ở mức tài khoản (không sửa chức danh / phòng ban của ai).
+        // Tài khoản đã có quyền riêng thì giữ nguyên, không ghi đè.
+        for (String u : hostUserNames) {
+            AdAccount h = em.find(AdAccount.class, u);
+            if (h == null) continue;
+            if (h.getPermissionJson() == null || h.getPermissionJson().isBlank()) {
+                h.setPermissionJson(HOST_PERMISSION_JSON);
+                h.setUpdateBy(SEED_PERM);
+                h.setUpdateDate(now);
+                inc("Chủ trì được cấp AI_SUMMARY, MEETING_RECORD");
+            } else if (!HOST_PERMISSION_JSON.equals(h.getPermissionJson())) {
+                log.warn("  {} đã có quyền riêng, giữ nguyên (cần kiểm tra AI_SUMMARY nếu muốn sinh biên bản).", u);
             }
         }
     }
@@ -638,13 +681,13 @@ public class DemoDataSeeder implements ApplicationRunner {
                 audit("login:" + a.getUserName() + ":" + d, "AUTH", "LOGIN", a.getUserName(), "ACCOUNT", a.getUserName(), true, day);
             }
         }
-        for (String u : List.of("phong.nguyen", "mai.dang", "giang.le")) {
-            if (accounts.containsKey(u)) audit("loginfail:" + u, "AUTH", "LOGIN", u, "ACCOUNT", u, false, DemoPlan.dayAt(now, -3, 8).plusMinutes(7));
+        for (String u : data.accounts().stream().limit(3).map(DemoData.Account::userName).toList()) {
+            if (accounts.containsKey(key(u))) audit("loginfail:" + u, "AUTH", "LOGIN", u, "ACCOUNT", u, false, DemoPlan.dayAt(now, -3, 8).plusMinutes(7));
         }
-        for (String code : data.managerTitles()) {
-            MdTitle t = em.find(MdTitle.class, code);
-            if (t != null && TITLE_PERMISSION_JSON.equals(t.getPermissionJson())) {
-                audit("perm:" + code, "PERMISSION", "UPDATE", "admin", "TITLE", code, true, now.minusDays(30));
+        for (String u : hostUserNames) {
+            AdAccount h = accounts.get(key(u));
+            if (h != null && HOST_PERMISSION_JSON.equals(h.getPermissionJson()) && SEED_PERM.equals(h.getUpdateBy())) {
+                audit("perm:" + u, "PERMISSION", "UPDATE", "admin", "USER", u, true, now.minusDays(30));
             }
         }
     }
@@ -706,7 +749,7 @@ public class DemoDataSeeder implements ApplicationRunner {
     // =====================================================================================
 
     void minutes() {
-        loadAccounts();
+        prepare();
         List<PlannedMeeting> plan = DemoPlan.plan(data, now);
         for (PlannedMeeting p : plan) {
             DemoData.Meeting src = p.source();
@@ -894,12 +937,10 @@ public class DemoDataSeeder implements ApplicationRunner {
                     inc("Tài khoản demo");
                 }
             }
-            int unlocked = em.createQuery("update AdAccount a set a.active = true, a.updateBy = :s where a.updateBy = :lock")
-                    .setParameter("s", SEED).setParameter("lock", SEED_LOCK).executeUpdate();
-            counts.put("Tài khoản rác mở khoá lại", unlocked);
-            int titles = em.createQuery("update MdTitle t set t.permissionJson = null where t.permissionJson = :j and t.updateBy = :s")
-                    .setParameter("j", TITLE_PERMISSION_JSON).setParameter("s", SEED).executeUpdate();
-            counts.put("Chức danh trả lại quyền cũ", titles);
+            // Trả lại quyền đã cấp cho chủ trì (chỉ khi quyền còn đúng nguyên bản và chưa ai sửa tài khoản sau đó).
+            int hosts = em.createQuery("update AdAccount a set a.permissionJson = null, a.updateBy = :s where a.permissionJson = :j and a.updateBy = :m")
+                    .setParameter("s", SEED).setParameter("j", HOST_PERMISSION_JSON).setParameter("m", SEED_PERM).executeUpdate();
+            counts.put("Chủ trì trả lại quyền cũ", hosts);
         });
     }
 

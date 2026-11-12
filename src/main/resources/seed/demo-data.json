@@ -1,101 +1,75 @@
 {
  "version": 1,
- "company": "Công ty Smart Meeting",
- "emailDomain": "smartmeeting.vn",
+ "company": "Công ty Cổ phần phần mềm ABS",
  "accounts": [
   {
    "userName": "duc.nguyen",
    "fullName": "Nguyễn Minh Đức",
-   "orgId": "ORG_DEV",
-   "titleCode": "SR_BACKEND",
    "phone": "0907 112 041"
   },
   {
    "userName": "son.pham",
    "fullName": "Phạm Hoàng Sơn",
-   "orgId": "ORG_DEV",
-   "titleCode": "SR_FRONTEND",
    "phone": "0916 223 052",
    "denyAiSummary": true
   },
   {
    "userName": "tuan.vo",
    "fullName": "Võ Anh Tuấn",
-   "orgId": "ORG_AI",
-   "titleCode": "AI_ENG",
    "phone": "0937 334 063"
   },
   {
    "userName": "yen.ly",
    "fullName": "Lý Hải Yến",
-   "orgId": "ORG_QA",
-   "titleCode": "QA_ENG",
    "phone": "0948 445 074"
   },
   {
    "userName": "quan.dinh",
    "fullName": "Đinh Hồng Quân",
-   "orgId": "ORG_INFRA",
-   "titleCode": "DEVOPS_ENG",
    "phone": "0959 556 085"
   },
   {
    "userName": "lan.mai",
    "fullName": "Mai Ngọc Lan",
-   "orgId": "ORG_MKT",
-   "titleCode": "MKT_EXEC",
    "phone": "0961 667 096"
   },
   {
    "userName": "uyen.trinh",
    "fullName": "Trịnh Thu Uyên",
-   "orgId": "ORG_FIN",
-   "titleCode": "GEN_ACC",
    "phone": "0972 778 017"
   },
   {
    "userName": "binh.cao",
    "fullName": "Cao Thanh Bình",
-   "orgId": "ORG_HR",
-   "titleCode": "HR_EXEC",
    "phone": "0983 889 028",
    "mustChangePassword": true
   },
   {
    "userName": "hieu.ta",
    "fullName": "Tạ Minh Hiếu",
-   "orgId": "ORG_SALES",
-   "titleCode": "SALES_EXEC",
    "phone": "0994 990 039",
    "locked": true
   },
   {
    "userName": "tam.ho",
    "fullName": "Hồ Ngọc Tâm",
-   "orgId": "ORG_CS",
-   "titleCode": "CS_EXEC",
    "phone": "0905 001 040",
    "locked": true
   }
  ],
- "managerTitles": [
-  "CEO",
-  "CTO",
-  "COO",
-  "CFO",
-  "TECH_DIR",
-  "TECH_LEAD",
-  "PO_LEAD",
-  "QA_LEAD",
-  "CS_LEAD",
-  "HR_MGR",
-  "MKT_MGR",
-  "SALES_MGR",
-  "CHIEF_ACC"
- ],
- "junkAccounts": [
-  "string",
-  "toan"
+ "hostAccounts": [
+  {
+   "alias": "@thuyet",
+   "fullName": "Ngô Viết Thuyết"
+  },
+  {
+   "alias": "@duy",
+   "fullName": "Vũ Bá Duy"
+  },
+  {
+   "alias": "@toan",
+   "fullName": "Hoàng Văn Toàn"
+  }
  ],
  "recurring": [
   {
@@ -106,19 +80,19 @@
    "weeksAfter": 2,
    "start": "08:30",
    "minutes": 60,
-   "host": "bao.nguyen",
-   "secretary": "van.doan",
+   "host": "@toan",
+   "secretary": "tuan.vo",
    "cohost": [],
    "required": [
-    "hoang.tran",
-    "vinh.vu",
-    "huong.le",
-    "hung.pham",
-    "ngoc.phan"
+    "yen.ly",
+    "uyen.trinh",
+    "binh.cao",
+    "@thuyet",
+    "quan.dinh"
    ],
    "optional": [
-    "kien.tran",
-    "danh.trinh"
+    "tam.ho",
+    "son.pham"
    ],
    "description": "Giao ban đầu tuần: tình hình kinh doanh, tiến độ các dự án trọng điểm, nhân sự và tài chính.",
    "agenda": "1. Kết quả tuần trước\n2. Tiến độ dự án SMR v2 và chuyển đổi Cloud\n3. Kinh doanh – khách hàng\n4. Nhân sự, tài chính\n5. Việc ưu tiên tuần này",
@@ -132,19 +106,19 @@
    "day": -40,
    "start": "09:00",
    "minutes": 90,
-   "host": "nga.do",
+   "host": "@thuyet",
    "status": "ended",
    "cohost": [
-    "anh.dang"
+    "@duy"
    ],
-   "secretary": "huy.bui",
+   "secretary": "hieu.ta",
    "required": [
-    "hoang.tran",
-    "nam.nguyen",
-    "thuyet.ngo",
-    "khoa.tran",
-    "ha.duong",
-    "vy.phan"
+    "duc.nguyen",
+    "lan.mai",
+    "quan.dinh",
+    "son.pham",
+    "tuan.vo",
+    "yen.ly"
    ],
    "description": "Khởi động dự án Smart Meeting phiên bản 2: mục tiêu, phạm vi, mốc thời gian và phân công.",
    "agenda": "1. Mục tiêu và phạm vi SMR v2\n2. Mốc thời gian\n3. Kiến trúc và công nghệ\n4. Phân công",
@@ -156,7 +130,7 @@
    ],
    "attendance": {
     "late": {
-     "khoa.tran": 7
+     "son.pham": 7
     },
     "absent": []
    }
@@ -167,19 +141,19 @@
    "day": -28,
    "start": "14:00",
    "minutes": 60,
-   "host": "anh.dang",
+   "host": "@duy",
    "status": "ended",
-   "secretary": "nam.nguyen",
+   "secretary": "lan.mai",
    "required": [
-    "thuyet.ngo",
-    "khoa.tran",
-    "linh.vu",
-    "giang.le",
-    "ha.duong",
-    "nga.do"
+    "tam.ho",
+    "uyen.trinh",
+    "hieu.ta",
+    "binh.cao",
+    "duc.nguyen",
+    "@toan"
    ],
    "optional": [
-    "duc.nguyen"
+    "tuan.vo"
    ],
    "description": "Chốt phạm vi Sprint 12 (2 tuần) cho SMR v2.",
    "agenda": "1. Rà backlog\n2. Ước lượng\n3. Cam kết sprint",
@@ -187,10 +161,10 @@
    "minutesFlow": "published",
    "attendance": {
     "late": {
-     "linh.vu": 4
+     "hieu.ta": 4
     },
     "leaveEarly": {
-     "nga.do": 15
+     "@toan": 15
     }
    }
   },
@@ -200,17 +174,17 @@
    "day": -26,
    "start": "09:30",
    "minutes": 90,
-   "host": "hung.pham",
+   "host": "@toan",
    "status": "ended",
    "cohost": [
-    "trung.bui"
+    "binh.cao"
    ],
-   "secretary": "manh.hoang",
+   "secretary": "lan.mai",
    "required": [
-    "hoang.tran",
-    "huong.le",
-    "anh.dang",
-    "quan.dinh"
+    "@duy",
+    "quan.dinh",
+    "son.pham",
+    "hieu.ta"
    ],
    "description": "So sánh phương án AWS và Azure, chi phí, lộ trình chuyển đổi và rủi ro.",
    "agenda": "1. Hiện trạng hạ tầng\n2. So sánh AWS – Azure\n3. Chi phí\n4. Lộ trình và rủi ro",
@@ -222,7 +196,7 @@
    ],
    "attendance": {
     "reconnect": [
-     "huong.le"
+     "quan.dinh"
     ]
    }
   },
@@ -232,13 +206,13 @@
    "day": -21,
    "start": "10:00",
    "minutes": 60,
-   "host": "danh.trinh",
+   "host": "@thuyet",
    "status": "ended",
-   "secretary": "thao.vu",
+   "secretary": "duc.nguyen",
    "required": [
-    "phong.nguyen",
-    "nga.do",
-    "loc.nguyen"
+    "uyen.trinh",
+    "yen.ly",
+    "tam.ho"
    ],
    "visibility": 2,
    "lobby": true,
@@ -257,16 +231,16 @@
    "day": -14,
    "start": "15:00",
    "minutes": 60,
-   "host": "huong.le",
+   "host": "@duy",
    "status": "ended",
-   "secretary": "dat.pham",
+   "secretary": "uyen.trinh",
    "required": [
-    "thao.nguyen",
-    "hung.pham",
-    "hoang.tran"
+    "duc.nguyen",
+    "tuan.vo",
+    "lan.mai"
    ],
    "optional": [
-    "uyen.trinh"
+    "@toan"
    ],
    "description": "Rà soát chi phí quý IV: hạ tầng Cloud, bản quyền phần mềm, nhân sự thuê ngoài.",
    "agenda": "1. Thực chi 9 tháng\n2. Dự toán Q4\n3. Các khoản cần cắt giảm",
@@ -282,15 +256,15 @@
    "day": -12,
    "start": "14:00",
    "minutes": 75,
-   "host": "ha.duong",
+   "host": "@toan",
    "status": "ended",
-   "secretary": "giang.le",
+   "secretary": "yen.ly",
    "required": [
-    "anh.dang",
-    "nam.nguyen",
-    "thuyet.ngo",
-    "nga.do",
-    "yen.ly"
+    "quan.dinh",
+    "hieu.ta",
+    "binh.cao",
+    "@thuyet",
+    "tam.ho"
    ],
    "description": "Kết quả kiểm thử bản Beta, lỗi tồn đọng và điều kiện phát hành.",
    "agenda": "1. Kết quả kiểm thử\n2. Lỗi nghiêm trọng\n3. Hiệu năng\n4. Điều kiện phát hành",
@@ -307,14 +281,14 @@
    "day": -10,
    "start": "10:00",
    "minutes": 60,
-   "host": "kien.tran",
+   "host": "@duy",
    "status": "ended",
-   "secretary": "trang.hoang",
+   "secretary": "son.pham",
    "required": [
-    "nga.do",
-    "danh.trinh",
-    "vy.phan",
-    "lan.mai"
+    "hieu.ta",
+    "binh.cao",
+    "quan.dinh",
+    "yen.ly"
    ],
    "description": "Thống nhất thông điệp, kênh truyền thông và ngân sách cho đợt ra mắt SMR v2.",
    "agenda": "1. Thông điệp chính\n2. Kênh và lịch đăng\n3. Ngân sách\n4. Sự kiện ra mắt",
@@ -332,15 +306,15 @@
    "day": -7,
    "start": "14:00",
    "minutes": 45,
-   "host": "anh.dang",
+   "host": "@thuyet",
    "status": "ended",
-   "secretary": "nam.nguyen",
+   "secretary": "tuan.vo",
    "required": [
-    "thuyet.ngo",
-    "khoa.tran",
-    "giang.le",
+    "tam.ho",
     "duc.nguyen",
-    "son.pham"
+    "son.pham",
+    "lan.mai",
+    "uyen.trinh"
    ],
    "description": "Chốt phạm vi Sprint 13.",
    "agenda": "1. Rà backlog\n2. Cam kết sprint",
@@ -353,19 +327,19 @@
    "day": -5,
    "start": "16:00",
    "minutes": 45,
-   "host": "trung.bui",
+   "host": "@thuyet",
    "status": "ended",
    "cohost": [
-    "hung.pham"
+    "lan.mai"
    ],
    "required": [
-    "manh.hoang",
-    "thuyet.ngo",
-    "ha.duong",
-    "loc.nguyen",
-    "quan.dinh"
+    "tuan.vo",
+    "@duy",
+    "son.pham",
+    "binh.cao",
+    "duc.nguyen"
    ],
-   "secretary": "manh.hoang",
+   "secretary": "tuan.vo",
    "description": "Phân tích sự cố người dùng không đăng nhập được trong 40 phút và biện pháp phòng ngừa.",
    "agenda": "1. Diễn biến sự cố\n2. Nguyên nhân gốc\n3. Khắc phục\n4. Phòng ngừa",
    "transcript": "incident",
@@ -377,13 +351,13 @@
    "day": -1,
    "start": "14:00",
    "minutes": 55,
-   "host": "khoa.tran",
+   "host": "@duy",
    "status": "ended",
-   "secretary": "linh.vu",
+   "secretary": "yen.ly",
    "required": [
-    "anh.dang",
-    "nga.do",
-    "tuan.vo"
+    "@toan",
+    "hieu.ta",
+    "quan.dinh"
    ],
    "description": "Rà soát kết quả thực nghiệm, chốt bộ dữ liệu đánh giá và kế hoạch báo cáo trước hội đồng.",
    "agenda": "1. Tiến độ các mô-đun\n2. Bộ dữ liệu đánh giá\n3. Kế hoạch demo và báo cáo",
@@ -395,13 +369,13 @@
    "day": -3,
    "start": "11:00",
    "minutes": 40,
-   "host": "khoa.tran",
+   "host": "@toan",
    "status": "ended",
-   "secretary": "linh.vu",
+   "secretary": "uyen.trinh",
    "required": [
-    "anh.dang",
-    "nga.do",
-    "tuan.vo"
+    "tam.ho",
+    "binh.cao",
+    "lan.mai"
    ],
    "description": "Cập nhật độ chính xác của mô-đun tóm tắt và dẫn nguồn.",
    "agenda": "1. Kết quả đánh giá\n2. Vướng mắc",
@@ -413,14 +387,14 @@
    "day": -31,
    "start": "16:00",
    "minutes": 45,
-   "host": "anh.dang",
+   "host": "@duy",
    "status": "ended",
-   "secretary": "nam.nguyen",
+   "secretary": "yen.ly",
    "required": [
-    "thuyet.ngo",
-    "khoa.tran",
-    "giang.le",
-    "ha.duong"
+    "@thuyet",
+    "duc.nguyen",
+    "son.pham",
+    "tam.ho"
    ],
    "description": "Nhìn lại Sprint 11: điều làm tốt, cần cải thiện.",
    "transcript": "retro11",
@@ -432,15 +406,15 @@
    "day": -33,
    "start": "10:00",
    "minutes": 60,
-   "host": "vy.phan",
+   "host": "@thuyet",
    "status": "ended",
    "cohost": [
-    "nga.do"
+    "uyen.trinh"
    ],
-   "secretary": "huy.bui",
+   "secretary": "hieu.ta",
    "required": [
-    "nam.nguyen",
-    "anh.dang"
+    "quan.dinh",
+    "tuan.vo"
    ],
    "description": "Góp ý luồng tạo cuộc họp, phòng họp và trình soạn biên bản.",
    "transcript": "uireview",
@@ -452,17 +426,17 @@
    "day": -36,
    "start": "14:00",
    "minutes": 90,
-   "host": "van.doan",
+   "host": "@toan",
    "status": "ended",
-   "secretary": "anh.le",
+   "secretary": "binh.cao",
    "required": [
-    "ngoc.phan",
-    "duc.nguyen",
-    "son.pham",
-    "tuan.vo",
+    "quan.dinh",
+    "hieu.ta",
     "yen.ly",
+    "son.pham",
     "lan.mai",
-    "binh.cao"
+    "uyen.trinh",
+    "tuan.vo"
    ],
    "description": "Phổ biến nội quy công ty, quy định bảo mật thông tin và sử dụng tài khoản.",
    "visibility": 1,
@@ -474,10 +448,10 @@
    "day": -2,
    "start": "17:00",
    "minutes": 30,
-   "host": "hung.pham",
+   "host": "@thuyet",
    "status": "ended",
    "required": [
-    "anh.dang"
+    "duc.nguyen"
    ],
    "description": "Trao đổi định kỳ về nhân sự và tiến độ nhóm.",
    "transcript": "oneonone",
@@ -489,14 +463,14 @@
    "day": -17,
    "start": "09:00",
    "minutes": 60,
-   "host": "ngoc.phan",
+   "host": "@toan",
    "status": "ended",
-   "secretary": "anh.le",
+   "secretary": "tam.ho",
    "required": [
-    "van.doan",
-    "vinh.vu",
-    "huong.le",
-    "anh.dang"
+    "lan.mai",
+    "quan.dinh",
+    "yen.ly",
+    "duc.nguyen"
    ],
    "description": "Nhu cầu tuyển dụng các phòng, ngân sách và kênh tuyển.",
    "transcript": "hr",
@@ -508,17 +482,17 @@
    "day": -52,
    "start": "08:30",
    "minutes": 120,
-   "host": "bao.nguyen",
+   "host": "@duy",
    "status": "archived",
-   "secretary": "van.doan",
+   "secretary": "hieu.ta",
    "required": [
-    "hoang.tran",
-    "vinh.vu",
-    "huong.le",
-    "hung.pham",
-    "ngoc.phan",
-    "danh.trinh",
-    "kien.tran"
+    "tuan.vo",
+    "binh.cao",
+    "son.pham",
+    "uyen.trinh",
+    "tam.ho",
+    "duc.nguyen",
+    "@thuyet"
    ],
    "description": "Tổng kết kết quả kinh doanh và vận hành quý II."
   },
@@ -528,14 +502,14 @@
    "day": -46,
    "start": "13:30",
    "minutes": 180,
-   "host": "nga.do",
+   "host": "@thuyet",
    "status": "archived",
    "required": [
-    "hoang.tran",
-    "hung.pham",
-    "vy.phan",
-    "huy.bui",
-    "kien.tran"
+    "yen.ly",
+    "binh.cao",
+    "tuan.vo",
+    "son.pham",
+    "uyen.trinh"
    ],
    "description": "Định hướng lộ trình sản phẩm năm 2027."
   },
@@ -545,11 +519,11 @@
    "day": -9,
    "start": "15:00",
    "minutes": 60,
-   "host": "danh.trinh",
+   "host": "@toan",
    "status": "cancelled",
    "required": [
-    "phong.nguyen",
-    "nga.do"
+    "quan.dinh",
+    "@duy"
    ],
    "cancelReason": "Đối tác dời lịch sang tuần sau, sẽ hẹn lại."
   },
@@ -559,11 +533,11 @@
    "day": -1,
    "start": "09:00",
    "minutes": 60,
-   "host": "danh.trinh",
+   "host": "@duy",
    "status": "cancelled",
    "required": [
-    "phong.nguyen",
-    "thao.vu"
+    "lan.mai",
+    "hieu.ta"
    ],
    "cancelReason": "Trùng lịch làm việc với khách hàng An Phát."
   },
@@ -573,15 +547,15 @@
    "day": 4,
    "start": "13:30",
    "minutes": 240,
-   "host": "hung.pham",
+   "host": "@toan",
    "status": "cancelled",
    "required": [
-    "anh.dang",
-    "nam.nguyen",
-    "thuyet.ngo",
-    "khoa.tran",
-    "trung.bui",
-    "ha.duong"
+    "tam.ho",
+    "yen.ly",
+    "binh.cao",
+    "hieu.ta",
+    "son.pham",
+    "uyen.trinh"
    ],
    "cancelReason": "Dời sang quý I/2027 do dồn tiến độ ra mắt SMR v2."
   },
@@ -591,14 +565,14 @@
    "day": 0,
    "start": "NOW-15",
    "minutes": 30,
-   "host": "anh.dang",
+   "host": "@thuyet",
    "status": "ongoing",
-   "secretary": "nam.nguyen",
+   "secretary": "tam.ho",
    "required": [
-    "thuyet.ngo",
     "duc.nguyen",
-    "son.pham",
-    "khoa.tran"
+    "tuan.vo",
+    "quan.dinh",
+    "lan.mai"
    ],
    "description": "Họp đứng hằng ngày 15 phút."
   },
@@ -608,16 +582,16 @@
    "day": 0,
    "start": "NOW+180",
    "minutes": 60,
-   "host": "nga.do",
+   "host": "@duy",
    "status": "scheduled",
    "cohost": [
-    "anh.dang"
+    "tuan.vo"
    ],
    "required": [
-    "hoang.tran",
-    "ha.duong",
-    "khoa.tran",
-    "vy.phan"
+    "binh.cao",
+    "quan.dinh",
+    "tam.ho",
+    "yen.ly"
    ],
    "description": "Rà kịch bản demo và phân vai."
   },
@@ -627,16 +601,16 @@
    "day": 1,
    "start": "14:00",
    "minutes": 60,
-   "host": "anh.dang",
+   "host": "@thuyet",
    "status": "scheduled",
-   "secretary": "nam.nguyen",
+   "secretary": "lan.mai",
    "required": [
-    "thuyet.ngo",
-    "khoa.tran",
-    "giang.le",
     "duc.nguyen",
+    "uyen.trinh",
     "son.pham",
-    "nga.do"
+    "@toan",
+    "hieu.ta",
+    "@duy"
    ]
   },
   {
@@ -645,13 +619,13 @@
    "day": 2,
    "start": "09:30",
    "minutes": 90,
-   "host": "danh.trinh",
+   "host": "@toan",
    "status": "scheduled",
-   "secretary": "thao.vu",
+   "secretary": "tuan.vo",
    "required": [
-    "phong.nguyen",
-    "nga.do",
-    "khoa.tran"
+    "binh.cao",
+    "quan.dinh",
+    "son.pham"
    ],
    "visibility": 2,
    "lobby": true,
@@ -667,13 +641,13 @@
    "day": 3,
    "start": "10:00",
    "minutes": 90,
-   "host": "trung.bui",
+   "host": "@duy",
    "status": "scheduled",
    "required": [
-    "hoang.tran",
-    "manh.hoang",
-    "quan.dinh",
-    "thuyet.ngo"
+    "hieu.ta",
+    "duc.nguyen",
+    "uyen.trinh",
+    "tam.ho"
    ],
    "description": "Rà soát phân quyền IAM, mã hóa dữ liệu, sao lưu."
   },
@@ -683,11 +657,11 @@
    "day": 3,
    "start": "10:30",
    "minutes": 60,
-   "host": "ngoc.phan",
+   "host": "@thuyet",
    "status": "scheduled",
    "required": [
-    "hoang.tran",
-    "anh.dang"
+    "yen.ly",
+    "lan.mai"
    ],
    "visibility": 0,
    "description": "Vòng phỏng vấn kỹ thuật (trùng giờ với review bảo mật)."
@@ -698,15 +672,15 @@
    "day": 6,
    "start": "14:00",
    "minutes": 120,
-   "host": "ngoc.phan",
+   "host": "@duy",
    "status": "scheduled",
-   "secretary": "anh.le",
+   "secretary": "lan.mai",
    "required": [
-    "vinh.vu",
-    "hung.pham",
-    "danh.trinh",
-    "kien.tran",
-    "loc.nguyen"
+    "tam.ho",
+    "hieu.ta",
+    "binh.cao",
+    "tuan.vo",
+    "duc.nguyen"
    ]
   },
   {
@@ -715,17 +689,17 @@
    "day": 8,
    "start": "15:00",
    "minutes": 60,
-   "host": "anh.dang",
+   "host": "@toan",
    "status": "scheduled",
    "cohost": [
-    "nga.do"
+    "quan.dinh"
    ],
    "required": [
-    "hoang.tran",
-    "ha.duong",
-    "trung.bui",
-    "thuyet.ngo",
-    "nam.nguyen"
+    "son.pham",
+    "yen.ly",
+    "uyen.trinh",
+    "tuan.vo",
+    "lan.mai"
    ],
    "files": [
     "Release_notes_SMR_v2.0.docx"
@@ -737,17 +711,17 @@
    "day": 10,
    "start": "09:00",
    "minutes": 120,
-   "host": "bao.nguyen",
+   "host": "@thuyet",
    "status": "scheduled",
    "cohost": [
-    "kien.tran"
+    "hieu.ta"
    ],
-   "secretary": "trang.hoang",
+   "secretary": "duc.nguyen",
    "required": [
-    "hoang.tran",
-    "nga.do",
-    "danh.trinh",
-    "lan.mai"
+    "quan.dinh",
+    "binh.cao",
+    "yen.ly",
+    "tam.ho"
    ],
    "visibility": 2,
    "lobby": true,
@@ -759,16 +733,16 @@
    "day": 13,
    "start": "09:00",
    "minutes": 120,
-   "host": "huong.le",
+   "host": "@toan",
    "status": "scheduled",
-   "secretary": "dat.pham",
+   "secretary": "son.pham",
    "required": [
-    "hoang.tran",
-    "vinh.vu",
-    "huong.le",
-    "hung.pham",
-    "ngoc.phan",
-    "thao.nguyen"
+    "uyen.trinh",
+    "duc.nguyen",
+    "@toan",
+    "hieu.ta",
+    "@thuyet",
+    "lan.mai"
    ]
   },
   {
@@ -777,13 +751,13 @@
    "day": 16,
    "start": "16:00",
    "minutes": 45,
-   "host": "anh.dang",
+   "host": "@duy",
    "status": "scheduled",
    "required": [
-    "thuyet.ngo",
-    "khoa.tran",
-    "giang.le",
-    "son.pham"
+    "yen.ly",
+    "@toan",
+    "quan.dinh",
+    "uyen.trinh"
    ]
   },
   {
@@ -792,17 +766,17 @@
    "day": 20,
    "start": "14:00",
    "minutes": 90,
-   "host": "hung.pham",
+   "host": "@duy",
    "status": "scheduled",
    "cohost": [
-    "trung.bui"
+    "son.pham"
    ],
    "required": [
-    "hoang.tran",
-    "huong.le",
-    "manh.hoang",
-    "quan.dinh",
-    "anh.dang"
+    "binh.cao",
+    "tuan.vo",
+    "tam.ho",
+    "uyen.trinh",
+    "@thuyet"
    ]
   },
   {
@@ -811,12 +785,12 @@
    "day": 12,
    "start": "13:30",
    "minutes": 120,
-   "host": "loc.nguyen",
+   "host": "@toan",
    "status": "draft",
    "required": [
-    "mai.dang",
-    "nga.do",
-    "vy.phan"
+    "binh.cao",
+    "quan.dinh",
+    "tam.ho"
    ]
   },
   {
@@ -825,1495 +799,1495 @@
    "day": 18,
    "start": "08:00",
    "minutes": 240,
-   "host": "danh.trinh",
+   "host": "@thuyet",
    "status": "draft",
    "required": [
-    "bao.nguyen",
-    "kien.tran",
-    "phong.nguyen"
+    "lan.mai",
+    "yen.ly",
+    "hieu.ta"
    ]
   }
  ],
  "transcripts": {
   "kickoff": [
    {
-    "speaker": "nga.do",
+    "speaker": "@thuyet",
     "text": "Chào mọi người, hôm nay mình kick-off dự án Smart Meeting phiên bản 2. Mục tiêu là ra mắt bản chính thức trước cuối tháng 11."
    },
    {
-    "speaker": "hoang.tran",
+    "speaker": "duc.nguyen",
     "text": "Ban giám đốc kỳ vọng bản v2 giải quyết được hai việc: biên bản họp tự động và quản lý công việc sau họp."
    },
    {
-    "speaker": "nga.do",
+    "speaker": "@thuyet",
     "text": "Đúng vậy. Phạm vi gồm bốn mảng: phòng họp trực tuyến, phụ đề, biên bản AI và bảng công việc."
    },
    {
-    "speaker": "anh.dang",
+    "speaker": "@duy",
     "text": "Về kiến trúc, backend giữ Spring Boot, frontend chuyển hẳn sang Angular 20, realtime dùng SignalR."
    },
    {
-    "speaker": "thuyet.ngo",
+    "speaker": "quan.dinh",
     "text": "Phần backend em đề xuất tách module biên bản riêng, có hàng đợi job để không chặn request."
    },
    {
-    "speaker": "anh.dang",
-    "text": "Đồng ý. Thuyết phụ trách thiết kế module biên bản, hoàn thành bản thiết kế trước ngày {+7}."
+    "speaker": "@duy",
+    "text": "Đồng ý. Quân phụ trách thiết kế module biên bản, hoàn thành bản thiết kế trước ngày {+7}."
    },
    {
-    "speaker": "thuyet.ngo",
+    "speaker": "quan.dinh",
     "text": "Vâng, em nhận."
    },
    {
-    "speaker": "khoa.tran",
+    "speaker": "son.pham",
     "text": "Bên AI, mô hình hiện tại tóm tắt được nhưng hay bịa thông tin. Em muốn bắt buộc mỗi quyết định phải có đoạn transcript nguồn."
    },
    {
-    "speaker": "hoang.tran",
+    "speaker": "duc.nguyen",
     "text": "Cái này rất quan trọng, biên bản mà bịa là mất uy tín. Thống nhất: mọi quyết định và việc cần làm phải có dẫn nguồn."
    },
    {
-    "speaker": "nga.do",
+    "speaker": "@thuyet",
     "text": "Ghi nhận đây là quyết định thứ nhất của buổi họp."
    },
    {
-    "speaker": "khoa.tran",
+    "speaker": "son.pham",
     "text": "Em sẽ làm prompt mới có mã đoạn S1, S2 để mô hình trích dẫn, xong bản thử nghiệm trước ngày {+10}."
    },
    {
-    "speaker": "ha.duong",
+    "speaker": "tuan.vo",
     "text": "Bên kiểm thử cần bộ dữ liệu transcript mẫu để đánh giá độ chính xác."
    },
    {
-    "speaker": "khoa.tran",
-    "text": "Em sẽ chuẩn bị 20 cuộc họp mẫu, gửi chị Dương cùng lúc với bản thử nghiệm."
+    "speaker": "son.pham",
+    "text": "Em sẽ chuẩn bị 20 cuộc họp mẫu, gửi bên kiểm thử cùng lúc với bản thử nghiệm."
    },
    {
-    "speaker": "vy.phan",
+    "speaker": "yen.ly",
     "text": "Về giao diện, em sẽ làm lại trình soạn biên bản theo bố cục hai cột: transcript bên trái, biên bản bên phải."
    },
    {
-    "speaker": "nga.do",
-    "text": "Vy làm wireframe trình soạn biên bản, hạn ngày {+5} để cả nhóm góp ý."
+    "speaker": "@thuyet",
+    "text": "Yến làm wireframe trình soạn biên bản, hạn ngày {+5} để cả nhóm góp ý."
    },
    {
-    "speaker": "vy.phan",
+    "speaker": "yen.ly",
     "text": "Dạ được ạ."
    },
    {
-    "speaker": "nam.nguyen",
+    "speaker": "lan.mai",
     "text": "Frontend em cần thống nhất thư viện giao diện. Em đề xuất dùng ng-zorro như các module khác."
    },
    {
-    "speaker": "anh.dang",
+    "speaker": "@duy",
     "text": "Thống nhất dùng ng-zorro, không thêm thư viện giao diện khác."
    },
    {
-    "speaker": "nga.do",
+    "speaker": "@thuyet",
     "text": "Đó là quyết định thứ hai. Về mốc thời gian, mình chia ba giai đoạn."
    },
    {
-    "speaker": "nga.do",
+    "speaker": "@thuyet",
     "text": "Giai đoạn một đến ngày {+21}: xong phòng họp và phụ đề. Giai đoạn hai đến ngày {+35}: biên bản AI. Giai đoạn ba: bảng công việc và kiểm thử."
    },
    {
-    "speaker": "hoang.tran",
+    "speaker": "duc.nguyen",
     "text": "Mốc ra mắt chính thức là ngày {+60}, không lùi."
    },
    {
-    "speaker": "ha.duong",
+    "speaker": "tuan.vo",
     "text": "Kiểm thử cần ít nhất hai tuần cho bản Beta, vậy bản Beta phải có trước ngày {+45}."
    },
    {
-    "speaker": "nga.do",
+    "speaker": "@thuyet",
     "text": "Chốt bản Beta trước ngày {+45}."
    },
    {
-    "speaker": "anh.dang",
+    "speaker": "@duy",
     "text": "Nam phụ trách dựng khung frontend và màn phòng họp, xong khung trước ngày {+10}."
    },
    {
-    "speaker": "nam.nguyen",
+    "speaker": "lan.mai",
     "text": "Em nhận ạ."
    },
    {
-    "speaker": "hoang.tran",
+    "speaker": "duc.nguyen",
     "text": "Ngân sách máy chủ AI thì sao?"
    },
    {
-    "speaker": "khoa.tran",
+    "speaker": "son.pham",
     "text": "Hiện dùng máy chủ nội bộ, đủ cho giai đoạn thử nghiệm. Khi ra mắt cần thêm một card GPU."
    },
    {
-    "speaker": "hoang.tran",
-    "text": "Khoa lập đề xuất cấu hình và chi phí GPU gửi anh trước ngày {+14}."
+    "speaker": "duc.nguyen",
+    "text": "Sơn lập đề xuất cấu hình và chi phí GPU gửi anh trước ngày {+14}."
    },
    {
-    "speaker": "khoa.tran",
+    "speaker": "son.pham",
     "text": "Vâng anh."
    },
    {
-    "speaker": "nga.do",
+    "speaker": "@thuyet",
     "text": "Rủi ro lớn nhất là chất lượng nhận dạng giọng nói tiếng Việt khi nhiều người nói cùng lúc."
    },
    {
-    "speaker": "khoa.tran",
+    "speaker": "son.pham",
     "text": "Bản v2 mình vẫn dùng nhận dạng trên trình duyệt, chưa tách người nói tự động. Cái đó để bản sau."
    },
    {
-    "speaker": "hoang.tran",
+    "speaker": "duc.nguyen",
     "text": "Đồng ý để tách người nói tự động ra khỏi phạm vi v2."
    },
    {
-    "speaker": "nga.do",
+    "speaker": "@thuyet",
     "text": "Đó là quyết định thứ ba. Hàng tuần mình họp tiến độ chiều thứ Năm."
    },
    {
-    "speaker": "huy.bui",
+    "speaker": "hieu.ta",
     "text": "Em sẽ gửi biên bản buổi này và lịch họp tiến độ cho cả nhóm."
    },
    {
-    "speaker": "nga.do",
+    "speaker": "@thuyet",
     "text": "Cảm ơn mọi người, kết thúc buổi kick-off."
    }
   ],
   "sprint12": [
    {
-    "speaker": "anh.dang",
+    "speaker": "@duy",
     "text": "Bắt đầu lập kế hoạch Sprint 12 nhé. Sprint kéo dài hai tuần, kết thúc ngày {+13}."
    },
    {
-    "speaker": "nga.do",
+    "speaker": "@toan",
     "text": "Ưu tiên cao nhất là luồng tạo cuộc họp và phòng chờ, khách hàng An Phát cần xem bản demo."
    },
    {
-    "speaker": "anh.dang",
+    "speaker": "@duy",
     "text": "Backlog có 14 hạng mục, mình rà từ trên xuống."
    },
    {
-    "speaker": "thuyet.ngo",
+    "speaker": "tam.ho",
     "text": "API phòng chờ em ước lượng 5 điểm, cần thêm bảng yêu cầu vào phòng."
    },
    {
-    "speaker": "anh.dang",
-    "text": "Ok, Thuyết nhận API phòng chờ, xong trước ngày {+6}."
+    "speaker": "@duy",
+    "text": "Ok, Tâm nhận API phòng chờ, xong trước ngày {+6}."
    },
    {
-    "speaker": "nam.nguyen",
-    "text": "Màn phòng chờ phía frontend em ước lượng 3 điểm, làm song song với Thuyết."
+    "speaker": "lan.mai",
+    "text": "Màn phòng chờ phía frontend em ước lượng 3 điểm, làm song song với Tâm."
    },
    {
-    "speaker": "anh.dang",
+    "speaker": "@duy",
     "text": "Nam nhận màn phòng chờ, hạn ngày {+8}."
    },
    {
-    "speaker": "khoa.tran",
+    "speaker": "uyen.trinh",
     "text": "Bên AI em cần sprint này lưu transcript xuống cơ sở dữ liệu, hiện đang nằm trong bộ nhớ, khởi động lại là mất."
    },
    {
-    "speaker": "anh.dang",
-    "text": "Cái này bắt buộc phải làm. Khoa phụ trách chuyển transcript sang lưu DB, hạn ngày {+7}."
+    "speaker": "@duy",
+    "text": "Cái này bắt buộc phải làm. Uyên phụ trách chuyển transcript sang lưu DB, hạn ngày {+7}."
    },
    {
-    "speaker": "linh.vu",
-    "text": "Em hỗ trợ anh Khoa viết script tạo bảng và test."
+    "speaker": "hieu.ta",
+    "text": "Em hỗ trợ bạn phụ trách phần lưu DB viết script tạo bảng và test."
    },
    {
-    "speaker": "giang.le",
+    "speaker": "binh.cao",
     "text": "Kiểm thử cần môi trường staging ổn định, tuần trước bị sập hai lần."
    },
    {
-    "speaker": "anh.dang",
-    "text": "Staging do anh Trung bên hạ tầng quản lý, anh sẽ nhắn anh ấy."
+    "speaker": "@duy",
+    "text": "Staging do bên hạ tầng quản lý, anh sẽ nhắn bên đó."
    },
    {
-    "speaker": "ha.duong",
+    "speaker": "duc.nguyen",
     "text": "Đề nghị sprint này dành một ngày để sửa lỗi tồn đọng, hiện có 9 lỗi mức cao."
    },
    {
-    "speaker": "nga.do",
+    "speaker": "@toan",
     "text": "Đồng ý dành ngày thứ Sáu tuần thứ hai để sửa lỗi."
    },
    {
-    "speaker": "anh.dang",
+    "speaker": "@duy",
     "text": "Thống nhất: cuối sprint có một ngày chỉ sửa lỗi, không nhận tính năng mới."
    },
    {
-    "speaker": "giang.le",
+    "speaker": "binh.cao",
     "text": "Em sẽ viết kịch bản kiểm thử phòng chờ, xong trước ngày {+9}."
    },
    {
-    "speaker": "anh.dang",
+    "speaker": "@duy",
     "text": "Tốt. Còn tính năng bảng trắng thì để sprint sau."
    },
    {
-    "speaker": "nga.do",
+    "speaker": "@toan",
     "text": "Đồng ý dời bảng trắng sang Sprint 13."
    },
    {
-    "speaker": "thuyet.ngo",
+    "speaker": "tam.ho",
     "text": "Em có câu hỏi về phân quyền phòng chờ: khách bên ngoài có được xin vào không?"
    },
    {
-    "speaker": "nga.do",
+    "speaker": "@toan",
     "text": "Chỉ khi cuộc họp để chế độ công khai và bật cho phép khách."
    },
    {
-    "speaker": "anh.dang",
+    "speaker": "@duy",
     "text": "Ghi nhận quy tắc này vào tài liệu. Tổng sprint mình cam kết 31 điểm."
    },
    {
-    "speaker": "ha.duong",
+    "speaker": "duc.nguyen",
     "text": "Năng lực nhóm khoảng 34 điểm, cam kết 31 là hợp lý."
    },
    {
-    "speaker": "anh.dang",
+    "speaker": "@duy",
     "text": "Chốt cam kết 31 điểm. Kết thúc họp, cảm ơn mọi người."
    }
   ],
   "cloud": [
    {
-    "speaker": "hung.pham",
-    "text": "Hôm nay mình đánh giá hai phương án chuyển hạ tầng lên Cloud. Trung trình bày hiện trạng trước nhé."
+    "speaker": "@toan",
+    "text": "Hôm nay mình đánh giá hai phương án chuyển hạ tầng lên Cloud. Bình trình bày hiện trạng trước nhé."
    },
    {
-    "speaker": "trung.bui",
+    "speaker": "binh.cao",
     "text": "Hiện công ty có 14 máy chủ vật lý, ba máy đã hết bảo hành, tải trung bình khoảng 35 phần trăm."
    },
    {
-    "speaker": "trung.bui",
+    "speaker": "binh.cao",
     "text": "Mỗi tháng tốn khoảng 42 triệu tiền điện, thuê chỗ đặt máy và bảo trì."
    },
    {
-    "speaker": "hung.pham",
+    "speaker": "@toan",
     "text": "Phương án AWS thế nào?"
    },
    {
-    "speaker": "manh.hoang",
+    "speaker": "lan.mai",
     "text": "AWS ước tính 58 triệu mỗi tháng nếu chạy theo nhu cầu, giảm còn 41 triệu nếu mua gói dài hạn ba năm."
    },
    {
-    "speaker": "quan.dinh",
+    "speaker": "hieu.ta",
     "text": "Azure ước tính 55 triệu, có ưu đãi cho doanh nghiệp đã dùng Microsoft 365 như mình, còn khoảng 39 triệu."
    },
    {
-    "speaker": "huong.le",
+    "speaker": "quan.dinh",
     "text": "Chi phí hai bên gần nhau. Tôi quan tâm chi phí chuyển đổi một lần."
    },
    {
-    "speaker": "trung.bui",
+    "speaker": "binh.cao",
     "text": "Chi phí chuyển đổi khoảng 180 triệu, chủ yếu là công sức và thuê tư vấn."
    },
    {
-    "speaker": "hoang.tran",
+    "speaker": "@duy",
     "text": "Về kỹ thuật, đội phát triển quen với dịch vụ nào hơn?"
    },
    {
-    "speaker": "anh.dang",
+    "speaker": "son.pham",
     "text": "Nhóm em đã làm nhiều với Azure DevOps, pipeline hiện tại cũng chạy trên đó."
    },
    {
-    "speaker": "hung.pham",
+    "speaker": "@toan",
     "text": "Vậy chọn Azure làm nhà cung cấp chính."
    },
    {
-    "speaker": "hoang.tran",
+    "speaker": "@duy",
     "text": "Đồng ý chọn Azure."
    },
    {
-    "speaker": "hung.pham",
+    "speaker": "@toan",
     "text": "Ghi quyết định: chọn Azure, mua gói cam kết một năm trước, sau đó đánh giá lại."
    },
    {
-    "speaker": "huong.le",
+    "speaker": "quan.dinh",
     "text": "Tài chính đồng ý gói một năm, không cam kết ba năm ngay."
    },
    {
-    "speaker": "hung.pham",
+    "speaker": "@toan",
     "text": "Lộ trình chuyển đổi chia hai giai đoạn. Giai đoạn một chuyển môi trường kiểm thử và staging."
    },
    {
-    "speaker": "trung.bui",
+    "speaker": "binh.cao",
     "text": "Giai đoạn một em ước tính bốn tuần, xong trước ngày {+30}."
    },
    {
-    "speaker": "hung.pham",
-    "text": "Trung chịu trách nhiệm giai đoạn một, hạn ngày {+30}."
+    "speaker": "@toan",
+    "text": "Bình chịu trách nhiệm giai đoạn một, hạn ngày {+30}."
    },
    {
-    "speaker": "manh.hoang",
+    "speaker": "lan.mai",
     "text": "Em đề xuất làm hạ tầng bằng mã với Terraform để dựng lại được khi cần."
    },
    {
-    "speaker": "hung.pham",
-    "text": "Đồng ý dùng Terraform. Mạnh viết bộ Terraform cho staging, hạn ngày {+14}."
+    "speaker": "@toan",
+    "text": "Đồng ý dùng Terraform. Lan viết bộ Terraform cho staging, hạn ngày {+14}."
    },
    {
-    "speaker": "quan.dinh",
+    "speaker": "hieu.ta",
     "text": "Em lo phần sao lưu và giám sát, cấu hình cảnh báo trước ngày {+21}."
    },
    {
-    "speaker": "hoang.tran",
+    "speaker": "@duy",
     "text": "Rủi ro dữ liệu khách hàng nằm ngoài lãnh thổ thì sao?"
    },
    {
-    "speaker": "trung.bui",
+    "speaker": "binh.cao",
     "text": "Azure có vùng Đông Nam Á đặt tại Singapore. Hợp đồng với khách hàng doanh nghiệp cần rà lại điều khoản lưu trữ dữ liệu."
    },
    {
-    "speaker": "huong.le",
+    "speaker": "quan.dinh",
     "text": "Tôi sẽ nhờ pháp chế rà điều khoản, phản hồi trước ngày {+10}."
    },
    {
-    "speaker": "hung.pham",
+    "speaker": "@toan",
     "text": "Giai đoạn hai chuyển môi trường chạy thật, chỉ làm sau khi giai đoạn một ổn định hai tuần."
    },
    {
-    "speaker": "hoang.tran",
+    "speaker": "@duy",
     "text": "Thống nhất. Hàng tháng báo cáo chi phí Cloud cho Ban giám đốc."
    },
    {
-    "speaker": "manh.hoang",
+    "speaker": "lan.mai",
     "text": "Em sẽ dựng bảng theo dõi chi phí tự động."
    },
    {
-    "speaker": "hung.pham",
+    "speaker": "@toan",
     "text": "Cảm ơn mọi người, kết thúc họp."
    }
   ],
   "client": [
    {
-    "speaker": "danh.trinh",
+    "speaker": "@thuyet",
     "text": "Xin chào anh chị bên An Phát, hôm nay bên em muốn lắng nghe nhu cầu họp trực tuyến của tập đoàn."
    },
    {
-    "speaker": "phong.nguyen",
+    "speaker": "uyen.trinh",
     "text": "Bên em gửi kèm hồ sơ năng lực, anh chị xem thêm sau buổi họp ạ."
    },
    {
-    "speaker": "danh.trinh",
+    "speaker": "@thuyet",
     "text": "Theo anh Minh bên An Phát chia sẻ trước, tập đoàn có khoảng 1.200 nhân sự, mỗi tuần hơn 300 cuộc họp."
    },
    {
-    "speaker": "loc.nguyen",
+    "speaker": "tam.ho",
     "text": "Khó khăn lớn nhất hiện nay là gì ạ?"
    },
    {
-    "speaker": "danh.trinh",
+    "speaker": "@thuyet",
     "text": "Họ nói biên bản họp làm thủ công, thư ký mất trung bình hai giờ cho mỗi biên bản và hay thiếu phần phân công việc."
    },
    {
-    "speaker": "nga.do",
+    "speaker": "yen.ly",
     "text": "Đây đúng là điểm mạnh của Smart Meeting: biên bản do AI soạn, có dẫn nguồn từng câu và tự tạo công việc sau khi duyệt."
    },
    {
-    "speaker": "danh.trinh",
+    "speaker": "@thuyet",
     "text": "An Phát yêu cầu dữ liệu phải lưu tại Việt Nam hoặc máy chủ riêng của họ."
    },
    {
-    "speaker": "nga.do",
+    "speaker": "yen.ly",
     "text": "Sản phẩm triển khai được trên máy chủ riêng của khách hàng, kể cả phần AI."
    },
    {
-    "speaker": "danh.trinh",
+    "speaker": "@thuyet",
     "text": "Họ cũng cần mẫu biên bản theo đúng định dạng văn bản hành chính của tập đoàn."
    },
    {
-    "speaker": "nga.do",
+    "speaker": "yen.ly",
     "text": "Hệ thống cho tải mẫu biên bản riêng lên, biên bản xuất ra theo đúng mẫu đó."
    },
    {
-    "speaker": "loc.nguyen",
+    "speaker": "tam.ho",
     "text": "Về hỗ trợ sau triển khai, bên em cam kết phản hồi trong bốn giờ làm việc."
    },
    {
-    "speaker": "danh.trinh",
+    "speaker": "@thuyet",
     "text": "Về giá, bên em báo sơ bộ theo số người dùng, khoảng 45 nghìn đồng mỗi người mỗi tháng cho gói doanh nghiệp."
    },
    {
-    "speaker": "phong.nguyen",
+    "speaker": "uyen.trinh",
     "text": "Nếu triển khai trên máy chủ riêng thì tính phí bản quyền một lần cộng phí bảo trì hằng năm."
    },
    {
-    "speaker": "danh.trinh",
+    "speaker": "@thuyet",
     "text": "An Phát muốn dùng thử 30 ngày cho hai phòng ban trước khi quyết định."
    },
    {
-    "speaker": "nga.do",
+    "speaker": "yen.ly",
     "text": "Bên mình đồng ý cho dùng thử 30 ngày, tối đa 50 người dùng."
    },
    {
-    "speaker": "danh.trinh",
+    "speaker": "@thuyet",
     "text": "Thống nhất phương án dùng thử 30 ngày cho 50 người dùng."
    },
    {
-    "speaker": "danh.trinh",
+    "speaker": "@thuyet",
     "text": "Phong gửi báo giá chính thức cho An Phát trước ngày {+3}."
    },
    {
-    "speaker": "phong.nguyen",
+    "speaker": "uyen.trinh",
     "text": "Vâng anh, em gửi kèm điều khoản bảo mật dữ liệu."
    },
    {
-    "speaker": "nga.do",
+    "speaker": "yen.ly",
     "text": "Em sẽ chuẩn bị môi trường dùng thử riêng cho An Phát, sẵn sàng trước ngày {+10}."
    },
    {
-    "speaker": "loc.nguyen",
+    "speaker": "tam.ho",
     "text": "Bên chăm sóc khách hàng sẽ tổ chức một buổi hướng dẫn sử dụng cho người dùng An Phát."
    },
    {
-    "speaker": "danh.trinh",
+    "speaker": "@thuyet",
     "text": "Buổi tiếp theo bên mình trình diễn giải pháp trực tiếp cho Ban công nghệ thông tin của An Phát."
    },
    {
-    "speaker": "thao.vu",
+    "speaker": "duc.nguyen",
     "text": "Em sẽ gửi biên bản và lịch hẹn buổi trình diễn cho anh chị An Phát."
    },
    {
-    "speaker": "danh.trinh",
+    "speaker": "@thuyet",
     "text": "Cảm ơn anh chị, hẹn gặp lại buổi trình diễn."
    }
   ],
   "budget": [
    {
-    "speaker": "huong.le",
-    "text": "Chúng ta rà ngân sách quý IV của khối Công nghệ. Thảo trình bày số thực chi nhé."
+    "speaker": "@duy",
+    "text": "Chúng ta rà ngân sách quý IV của khối Công nghệ. Đức trình bày số thực chi nhé."
    },
    {
-    "speaker": "thao.nguyen",
+    "speaker": "duc.nguyen",
     "text": "Chín tháng đầu năm khối Công nghệ đã chi 2,4 tỷ, đạt 78 phần trăm kế hoạch năm."
    },
    {
-    "speaker": "thao.nguyen",
+    "speaker": "duc.nguyen",
     "text": "Khoản vượt nhiều nhất là bản quyền phần mềm, vượt 120 triệu do mua thêm giấy phép thiết kế."
    },
    {
-    "speaker": "hung.pham",
+    "speaker": "tuan.vo",
     "text": "Khoản đó do nhóm thiết kế tăng thêm hai người, đã được duyệt từ quý II."
    },
    {
-    "speaker": "huong.le",
+    "speaker": "@duy",
     "text": "Dự toán quý IV đề xuất bao nhiêu?"
    },
    {
-    "speaker": "hung.pham",
+    "speaker": "tuan.vo",
     "text": "Đề xuất 780 triệu, trong đó 180 triệu cho chuyển đổi Cloud và 90 triệu cho card GPU phục vụ AI."
    },
    {
-    "speaker": "hoang.tran",
+    "speaker": "lan.mai",
     "text": "Card GPU là bắt buộc nếu muốn ra mắt tính năng biên bản AI cho khách hàng lớn."
    },
    {
-    "speaker": "huong.le",
+    "speaker": "@duy",
     "text": "Tổng cộng vậy vượt kế hoạch năm khoảng 60 triệu."
    },
    {
-    "speaker": "thao.nguyen",
+    "speaker": "duc.nguyen",
     "text": "Có thể bù bằng cách hoãn gia hạn hai giấy phép phần mềm ít dùng, tiết kiệm khoảng 45 triệu."
    },
    {
-    "speaker": "hung.pham",
+    "speaker": "tuan.vo",
     "text": "Đồng ý hoãn hai giấy phép đó sang năm sau."
    },
    {
-    "speaker": "huong.le",
+    "speaker": "@duy",
     "text": "Phần còn thiếu 15 triệu tôi đồng ý lấy từ quỹ dự phòng."
    },
    {
-    "speaker": "huong.le",
+    "speaker": "@duy",
     "text": "Chốt: duyệt ngân sách quý IV khối Công nghệ 780 triệu, bù bằng hoãn giấy phép và quỹ dự phòng."
    },
    {
-    "speaker": "dat.pham",
+    "speaker": "uyen.trinh",
     "text": "Em sẽ cập nhật bảng dự toán và trình chị ký trước ngày {+3}."
    },
    {
-    "speaker": "hoang.tran",
+    "speaker": "lan.mai",
     "text": "Việc mua card GPU cần làm ngay vì thời gian giao hàng khoảng ba tuần."
    },
    {
-    "speaker": "huong.le",
-    "text": "Đồng ý mua trước. Anh Hưng gửi ba báo giá để so sánh trước ngày {+5}."
+    "speaker": "@duy",
+    "text": "Đồng ý mua trước. Bên phụ trách mua sắm gửi ba báo giá để so sánh trước ngày {+5}."
    },
    {
-    "speaker": "hung.pham",
+    "speaker": "tuan.vo",
     "text": "Vâng, tôi sẽ gửi."
    },
    {
-    "speaker": "thao.nguyen",
+    "speaker": "duc.nguyen",
     "text": "Chi phí Cloud hằng tháng cần theo dõi riêng một mã chi phí."
    },
    {
-    "speaker": "huong.le",
+    "speaker": "@duy",
     "text": "Đồng ý tạo mã chi phí riêng cho Cloud từ tháng sau."
    },
    {
-    "speaker": "dat.pham",
+    "speaker": "uyen.trinh",
     "text": "Em tạo mã chi phí mới trên phần mềm kế toán trước ngày {+7}."
    },
    {
-    "speaker": "huong.le",
+    "speaker": "@duy",
     "text": "Cảm ơn mọi người."
    }
   ],
   "qa": [
    {
-    "speaker": "ha.duong",
+    "speaker": "@toan",
     "text": "Mình tổng kết kiểm thử bản Beta. Tổng cộng chạy 412 ca kiểm thử, đạt 371, lỗi 41."
    },
    {
-    "speaker": "giang.le",
+    "speaker": "yen.ly",
     "text": "Trong 41 lỗi có 3 lỗi nghiêm trọng, 12 lỗi cao, còn lại mức trung bình và thấp."
    },
    {
-    "speaker": "ha.duong",
+    "speaker": "@toan",
     "text": "Lỗi nghiêm trọng thứ nhất: phụ đề không được lưu khi người nói tắt mic giữa câu."
    },
    {
-    "speaker": "thuyet.ngo",
+    "speaker": "binh.cao",
     "text": "Lỗi đó do sai tên trường dữ liệu giữa frontend và backend, em đã sửa, đang chờ kiểm thử lại."
    },
    {
-    "speaker": "ha.duong",
+    "speaker": "@toan",
     "text": "Lỗi thứ hai: phòng chờ cho người không được mời vào thẳng khi đường mạng chập chờn."
    },
    {
-    "speaker": "nam.nguyen",
+    "speaker": "hieu.ta",
     "text": "Em đã tìm ra nguyên nhân ở bước kết nối lại, sửa xong trước ngày {+2}."
    },
    {
-    "speaker": "ha.duong",
+    "speaker": "@toan",
     "text": "Lỗi thứ ba: xuất biên bản ra file Word bị lỗi phông chữ tiếng Việt trên máy Mac."
    },
    {
-    "speaker": "thuyet.ngo",
+    "speaker": "binh.cao",
     "text": "Em nhận lỗi phông chữ, hạn ngày {+3}."
    },
    {
-    "speaker": "yen.ly",
+    "speaker": "tam.ho",
     "text": "Về hiệu năng, phòng 30 người thì độ trễ phụ đề trung bình 1,4 giây, đạt yêu cầu dưới 2 giây."
    },
    {
-    "speaker": "ha.duong",
+    "speaker": "@toan",
     "text": "Nhưng phòng 50 người thì bảng trắng bị giật, độ trễ nét vẽ lên tới 3 giây."
    },
    {
-    "speaker": "anh.dang",
+    "speaker": "quan.dinh",
     "text": "Bảng trắng 50 người không phải yêu cầu của bản 2.0, mình ghi nhận để tối ưu ở bản 2.1."
    },
    {
-    "speaker": "nga.do",
+    "speaker": "@thuyet",
     "text": "Đồng ý, giới hạn khuyến nghị bảng trắng tối đa 30 người cho bản 2.0."
    },
    {
-    "speaker": "ha.duong",
+    "speaker": "@toan",
     "text": "Điều kiện phát hành em đề xuất: không còn lỗi nghiêm trọng, lỗi cao còn tối đa 3 và có hướng khắc phục."
    },
    {
-    "speaker": "nga.do",
+    "speaker": "@thuyet",
     "text": "Đồng ý điều kiện phát hành này."
    },
    {
-    "speaker": "anh.dang",
-    "text": "Thống nhất điều kiện phát hành như chị Dương đề xuất."
-   },
-   {
-    "speaker": "giang.le",
-    "text": "Em sẽ kiểm thử lại toàn bộ lỗi nghiêm trọng và lỗi cao sau khi sửa, xong trước ngày {+6}."
+    "speaker": "quan.dinh",
+    "text": "Thống nhất điều kiện phát hành như bên kiểm thử đề xuất."
    },
    {
     "speaker": "yen.ly",
+    "text": "Em sẽ kiểm thử lại toàn bộ lỗi nghiêm trọng và lỗi cao sau khi sửa, xong trước ngày {+6}."
+   },
+   {
+    "speaker": "tam.ho",
     "text": "Em chạy lại bộ kiểm thử hiệu năng sau khi sửa lỗi kết nối lại."
    },
    {
-    "speaker": "ha.duong",
-    "text": "Yến nhận kiểm thử hiệu năng, hạn ngày {+7}."
+    "speaker": "@toan",
+    "text": "Tâm nhận kiểm thử hiệu năng, hạn ngày {+7}."
    },
    {
-    "speaker": "nga.do",
+    "speaker": "@thuyet",
     "text": "Nếu đạt, mình chốt phát hành bản 2.0 trong buổi release review."
    },
    {
-    "speaker": "ha.duong",
+    "speaker": "@toan",
     "text": "Cảm ơn mọi người."
    }
   ],
   "mkt": [
    {
-    "speaker": "kien.tran",
+    "speaker": "@duy",
     "text": "Hôm nay chốt kế hoạch truyền thông ra mắt SMR v2. Thông điệp chính mình đề xuất là: họp xong, biên bản xong."
    },
    {
-    "speaker": "nga.do",
+    "speaker": "hieu.ta",
     "text": "Thông điệp rất trúng điểm mạnh của sản phẩm."
    },
    {
-    "speaker": "vy.phan",
+    "speaker": "quan.dinh",
     "text": "Bên thiết kế đã có ba phương án key visual, cả nhóm xem trên màn hình nhé."
    },
    {
-    "speaker": "danh.trinh",
+    "speaker": "binh.cao",
     "text": "Kinh doanh thích phương án hai, màu xanh dương và hình ảnh biên bản tự động."
    },
    {
-    "speaker": "kien.tran",
+    "speaker": "@duy",
     "text": "Thống nhất chọn key visual phương án hai."
    },
    {
-    "speaker": "lan.mai",
+    "speaker": "yen.ly",
     "text": "Về kênh, em đề xuất LinkedIn, Facebook và bài PR trên hai trang báo công nghệ."
    },
    {
-    "speaker": "kien.tran",
+    "speaker": "@duy",
     "text": "Đồng ý ba kênh đó. Lan lên lịch đăng bài cho bốn tuần trước và sau ra mắt."
    },
    {
-    "speaker": "trang.hoang",
+    "speaker": "son.pham",
     "text": "Em làm video demo 90 giây quay màn hình tạo biên bản bằng AI."
    },
    {
-    "speaker": "kien.tran",
+    "speaker": "@duy",
     "text": "Trang phụ trách video demo."
    },
    {
-    "speaker": "danh.trinh",
+    "speaker": "binh.cao",
     "text": "Kinh doanh cần bộ tài liệu giới thiệu để gửi khách hàng doanh nghiệp."
    },
    {
-    "speaker": "kien.tran",
+    "speaker": "@duy",
     "text": "Ngân sách đợt ra mắt mình xin khoảng 150 triệu, trong đó 60 triệu cho quảng cáo trả phí."
    },
    {
-    "speaker": "nga.do",
+    "speaker": "hieu.ta",
     "text": "Sự kiện ra mắt nên làm họp báo trực tuyến ngay trên Smart Meeting, vừa demo vừa tiết kiệm."
    },
    {
-    "speaker": "kien.tran",
+    "speaker": "@duy",
     "text": "Ý hay, thống nhất họp báo trực tuyến trên chính sản phẩm."
    },
    {
-    "speaker": "lan.mai",
+    "speaker": "yen.ly",
     "text": "Em sẽ gửi thư mời báo chí và khách hàng."
    },
    {
-    "speaker": "trang.hoang",
+    "speaker": "son.pham",
     "text": "Em cần anh chị bên sản phẩm duyệt kịch bản video."
    },
    {
-    "speaker": "nga.do",
+    "speaker": "hieu.ta",
     "text": "Chị duyệt kịch bản trong ngày nhận được."
    },
    {
-    "speaker": "kien.tran",
+    "speaker": "@duy",
     "text": "Cảm ơn mọi người, mình sẽ gửi kế hoạch chi tiết sau."
    }
   ],
   "sprint13": [
    {
-    "speaker": "anh.dang",
+    "speaker": "@thuyet",
     "text": "Lập kế hoạch Sprint 13 nhanh nhé, nhiều việc dời từ sprint trước."
    },
    {
-    "speaker": "thuyet.ngo",
+    "speaker": "tam.ho",
     "text": "Bảng trắng đã dời sang sprint này."
    },
    {
-    "speaker": "anh.dang",
+    "speaker": "@thuyet",
     "text": "Ừ, bảng trắng là ưu tiên một."
    },
    {
-    "speaker": "son.pham",
+    "speaker": "uyen.trinh",
     "text": "Phần vẽ trên canvas em làm được, cần thống nhất định dạng lưu."
    },
    {
-    "speaker": "duc.nguyen",
+    "speaker": "lan.mai",
     "text": "Backend lưu dạng JSON các nét vẽ, có khóa phiên bản để tránh ghi đè."
    },
    {
-    "speaker": "anh.dang",
+    "speaker": "@thuyet",
     "text": "Được, làm theo hướng đó."
    },
    {
-    "speaker": "khoa.tran",
+    "speaker": "duc.nguyen",
     "text": "Bên AI muốn thêm trợ lý hỏi đáp theo cuộc họp."
    },
    {
-    "speaker": "anh.dang",
+    "speaker": "@thuyet",
     "text": "Trợ lý AI để sau bảng trắng, nếu còn thời gian thì làm."
    },
    {
-    "speaker": "giang.le",
+    "speaker": "son.pham",
     "text": "Kiểm thử bảng trắng cần ít nhất hai người vẽ cùng lúc."
    },
    {
-    "speaker": "anh.dang",
+    "speaker": "@thuyet",
     "text": "Ừ, mọi người nhớ hỗ trợ khi test."
    },
    {
-    "speaker": "thuyet.ngo",
+    "speaker": "tam.ho",
     "text": "Còn lỗi phông chữ file Word thì sao?"
    },
    {
-    "speaker": "anh.dang",
+    "speaker": "@thuyet",
     "text": "Sửa trong sprint này luôn."
    },
    {
-    "speaker": "anh.dang",
+    "speaker": "@thuyet",
     "text": "Vậy tạm thế, chi tiết mình cập nhật trên bảng công việc sau."
    }
   ],
   "incident": [
    {
-    "speaker": "trung.bui",
+    "speaker": "@thuyet",
     "text": "Mình phân tích sự cố đăng nhập hôm thứ Ba. Người dùng không đăng nhập được trong khoảng 40 phút, từ 8 giờ 52 đến 9 giờ 32."
    },
    {
-    "speaker": "loc.nguyen",
+    "speaker": "binh.cao",
     "text": "Bộ phận chăm sóc khách hàng nhận 27 cuộc gọi phản ánh trong thời gian đó."
    },
    {
-    "speaker": "manh.hoang",
+    "speaker": "tuan.vo",
     "text": "Nguyên nhân trực tiếp là chứng chỉ ký token đăng nhập hết hạn lúc 8 giờ 50."
    },
    {
-    "speaker": "trung.bui",
+    "speaker": "@thuyet",
     "text": "Tại sao không có cảnh báo trước?"
    },
    {
-    "speaker": "manh.hoang",
+    "speaker": "tuan.vo",
     "text": "Giám sát chỉ theo dõi chứng chỉ HTTPS của website, không theo dõi chứng chỉ ký token."
    },
    {
-    "speaker": "thuyet.ngo",
+    "speaker": "@duy",
     "text": "Khi chứng chỉ hết hạn, dịch vụ xác thực từ chối toàn bộ token mới nhưng thông báo lỗi chung chung nên mất thời gian tìm."
    },
    {
-    "speaker": "trung.bui",
+    "speaker": "@thuyet",
     "text": "Nguyên nhân gốc là chưa có danh mục và lịch gia hạn cho mọi loại chứng chỉ, khóa bí mật."
    },
    {
-    "speaker": "ha.duong",
+    "speaker": "son.pham",
     "text": "Kiểm thử cũng chưa có kịch bản chứng chỉ sắp hết hạn."
    },
    {
-    "speaker": "trung.bui",
+    "speaker": "@thuyet",
     "text": "Biện pháp khắc phục đã làm: gia hạn chứng chỉ, khởi động lại dịch vụ xác thực lúc 9 giờ 30."
    },
    {
-    "speaker": "quan.dinh",
+    "speaker": "duc.nguyen",
     "text": "Em đề xuất đưa mọi chứng chỉ vào kho quản lý khóa, tự động cảnh báo trước 30 ngày."
    },
    {
-    "speaker": "trung.bui",
-    "text": "Đồng ý. Quân lập danh mục toàn bộ chứng chỉ và khóa, hạn ngày {+5}."
+    "speaker": "@thuyet",
+    "text": "Đồng ý. Đức lập danh mục toàn bộ chứng chỉ và khóa, hạn ngày {+5}."
    },
    {
-    "speaker": "manh.hoang",
+    "speaker": "tuan.vo",
     "text": "Em cấu hình cảnh báo hết hạn chứng chỉ trên hệ thống giám sát, hạn ngày {+4}."
    },
    {
-    "speaker": "thuyet.ngo",
+    "speaker": "@duy",
     "text": "Em sửa thông báo lỗi của dịch vụ xác thực cho rõ nguyên nhân, kèm mã lỗi."
    },
    {
-    "speaker": "trung.bui",
-    "text": "Thuyết làm trong tuần này."
+    "speaker": "@thuyet",
+    "text": "Duy làm trong tuần này."
    },
    {
-    "speaker": "ha.duong",
+    "speaker": "son.pham",
     "text": "Em bổ sung kịch bản kiểm thử chứng chỉ hết hạn vào bộ kiểm thử định kỳ."
    },
    {
-    "speaker": "loc.nguyen",
+    "speaker": "binh.cao",
     "text": "Bên em cần mẫu thông báo sự cố gửi khách hàng để dùng cho lần sau."
    },
    {
-    "speaker": "trung.bui",
+    "speaker": "@thuyet",
     "text": "Thống nhất: mọi sự cố trên 15 phút phải có thông báo cho khách hàng trong vòng 30 phút."
    },
    {
-    "speaker": "trung.bui",
+    "speaker": "@thuyet",
     "text": "Cảm ơn mọi người, mình sẽ gửi báo cáo sự cố cho Ban giám đốc."
    }
   ],
   "khoaluan": [
    {
-    "speaker": "khoa.tran",
+    "speaker": "@duy",
     "text": "Chào cả nhóm, hôm nay mình rà soát tiến độ và chốt kế hoạch demo hệ thống SMR. Có ba nội dung: tiến độ các mô-đun, bộ dữ liệu đánh giá, và kế hoạch báo cáo."
    },
    {
-    "speaker": "linh.vu",
+    "speaker": "yen.ly",
     "text": "Em là thư ký, em sẽ ghi lại các quyết định và việc cần làm, cuối buổi em đọc lại để mọi người xác nhận."
    },
    {
-    "speaker": "khoa.tran",
-    "text": "Được. Tuấn báo cáo mô-đun nhận dạng giọng nói trước."
+    "speaker": "@duy",
+    "text": "Được. Quân báo cáo mô-đun nhận dạng giọng nói trước."
    },
    {
-    "speaker": "tuan.vo",
+    "speaker": "quan.dinh",
     "text": "Mô-đun nhận dạng giọng nói chạy ổn với họp tiếng Việt sạch, sai số từ khoảng 9 phần trăm. Khi có tiếng ồn hoặc nói chồng thì tăng lên khoảng 18 phần trăm."
    },
    {
-    "speaker": "khoa.tran",
+    "speaker": "@duy",
     "text": "18 phần trăm hơi cao. Em đã thử khử nhiễu trước khi nhận dạng chưa?"
    },
    {
-    "speaker": "tuan.vo",
+    "speaker": "quan.dinh",
     "text": "Em chưa thử. Em đề xuất thêm bước lọc nhiễu, dự kiến giảm được vài điểm phần trăm."
    },
    {
-    "speaker": "khoa.tran",
-    "text": "Vậy thống nhất thêm bước lọc nhiễu vào luồng xử lý. Tuấn thực hiện và đo lại sai số, hạn là {+3}."
+    "speaker": "@duy",
+    "text": "Vậy thống nhất thêm bước lọc nhiễu vào luồng xử lý. Quân thực hiện và đo lại sai số, hạn là {+3}."
    },
    {
-    "speaker": "tuan.vo",
+    "speaker": "quan.dinh",
     "text": "Em nhận, em sẽ báo cáo số liệu trước và sau khi lọc nhiễu."
    },
    {
-    "speaker": "anh.dang",
+    "speaker": "@toan",
     "text": "Phần tóm tắt thì em đã chạy trên mười họp mẫu. Bản tóm tắt đủ ý chính nhưng đôi khi bỏ sót người phụ trách của công việc."
    },
    {
-    "speaker": "nga.do",
+    "speaker": "hieu.ta",
     "text": "Em cũng thấy vậy. Có hai trường hợp công việc không ghi người phụ trách dù trong cuộc họp có nói rõ tên."
    },
    {
-    "speaker": "khoa.tran",
+    "speaker": "@duy",
     "text": "Đây là lỗi quan trọng vì mục tiêu của hệ thống là giúp người dùng nắm việc sau họp. Anh, em chỉnh lại câu lệnh để bắt buộc trích xuất người phụ trách và hạn hoàn thành."
    },
    {
-    "speaker": "anh.dang",
+    "speaker": "@toan",
     "text": "Dạ, em sẽ chỉnh câu lệnh và chạy lại mười họp mẫu, hạn là {+4}."
    },
    {
-    "speaker": "khoa.tran",
-    "text": "Tốt. Giờ sang bộ dữ liệu đánh giá. Nga trình bày phương án."
+    "speaker": "@duy",
+    "text": "Tốt. Giờ sang bộ dữ liệu đánh giá. Hiếu trình bày phương án."
    },
    {
-    "speaker": "nga.do",
+    "speaker": "hieu.ta",
     "text": "Em đề xuất dùng ba nguồn. Một là bộ dữ liệu công khai AMI và MeetingBank để so sánh với bản tóm tắt chuẩn. Hai là các cuộc họp kịch bản do nhóm tự tạo, có sẵn danh sách quyết định và việc cần làm làm đáp án. Ba là ít nhất ba cuộc họp thật của nhóm."
    },
    {
-    "speaker": "khoa.tran",
+    "speaker": "@duy",
     "text": "Phương án hợp lý. Trong báo cáo phải ghi rõ nguồn nào là dữ liệu mô phỏng, nguồn nào là họp thật, không được trình bày lẫn."
    },
    {
-    "speaker": "nga.do",
+    "speaker": "hieu.ta",
     "text": "Dạ vâng, em sẽ ghi rõ nguồn và cách tạo dữ liệu trong chương thực nghiệm."
    },
    {
-    "speaker": "linh.vu",
+    "speaker": "yen.ly",
     "text": "Anh ơi, bao nhiêu cuộc họp kịch bản thì đủ ạ?"
    },
    {
-    "speaker": "khoa.tran",
-    "text": "Chốt ba mươi cuộc họp kịch bản và năm cuộc họp thật. Nga phụ trách tạo ba mươi cuộc họp kịch bản, hạn là {+7}."
+    "speaker": "@duy",
+    "text": "Chốt ba mươi cuộc họp kịch bản và năm cuộc họp thật. Hiếu phụ trách tạo ba mươi cuộc họp kịch bản, hạn là {+7}."
    },
    {
-    "speaker": "nga.do",
+    "speaker": "hieu.ta",
     "text": "Em nhận. Em sẽ tạo bằng mô hình ngôn ngữ rồi đọc thành âm thanh bằng nhiều giọng khác nhau."
    },
    {
-    "speaker": "tuan.vo",
+    "speaker": "quan.dinh",
     "text": "Em đề nghị thêm tiếng ồn nền và đoạn nói chồng vào âm thanh để giống họp thật, nếu không sai số sẽ thấp bất thường."
    },
    {
-    "speaker": "khoa.tran",
-    "text": "Đồng ý. Nga thêm bước làm bẩn âm thanh vào quy trình tạo dữ liệu."
+    "speaker": "@duy",
+    "text": "Đồng ý. Hiếu thêm bước làm bẩn âm thanh vào quy trình tạo dữ liệu."
    },
    {
-    "speaker": "anh.dang",
+    "speaker": "@toan",
     "text": "Còn họp thật thì ai ghi lại ạ? Mỗi buổi cần có người gõ lại nội dung làm chuẩn."
    },
    {
-    "speaker": "khoa.tran",
+    "speaker": "@duy",
     "text": "Linh phụ trách tổ chức năm cuộc họp thật, mỗi buổi khoảng hai mươi phút, và gõ lại nội dung làm đáp án. Hạn hoàn thành là {+10}."
    },
    {
-    "speaker": "linh.vu",
+    "speaker": "yen.ly",
     "text": "Em nhận. Em sẽ họp qua chính hệ thống để vừa lấy dữ liệu vừa kiểm thử."
    },
    {
-    "speaker": "khoa.tran",
+    "speaker": "@duy",
     "text": "Về cách đánh giá, chốt dùng ba chỉ số: tỷ lệ sai từ cho nhận dạng, điểm ROUGE và BERTScore cho tóm tắt, và độ chính xác, độ phủ cho việc trích xuất công việc."
    },
    {
-    "speaker": "nga.do",
+    "speaker": "hieu.ta",
     "text": "Em đề xuất thêm khảo sát người dùng, mời khoảng mười người chấm điểm từ một đến năm."
    },
    {
-    "speaker": "khoa.tran",
-    "text": "Hay đấy, thêm vào. Nga soạn mẫu phiếu khảo sát, hạn là {+8}."
+    "speaker": "@duy",
+    "text": "Hay đấy, thêm vào. Hiếu soạn mẫu phiếu khảo sát, hạn là {+8}."
    },
    {
-    "speaker": "nga.do",
+    "speaker": "hieu.ta",
     "text": "Dạ, em soạn xong sẽ gửi nhóm xem trước khi phát."
    },
    {
-    "speaker": "khoa.tran",
+    "speaker": "@duy",
     "text": "Nội dung cuối là kế hoạch demo và báo cáo. Buổi demo thử với giảng viên hướng dẫn dự kiến vào ngày {+12}."
    },
    {
-    "speaker": "anh.dang",
+    "speaker": "@toan",
     "text": "Anh ơi, em lo phần demo sẽ gặp sự cố mạng. Em đề nghị chuẩn bị sẵn một video quay màn hình làm phương án dự phòng."
    },
    {
-    "speaker": "khoa.tran",
+    "speaker": "@duy",
     "text": "Đồng ý. Anh Đăng quay video dự phòng quy trình họp và sau họp, hạn là {+11}."
    },
    {
-    "speaker": "anh.dang",
+    "speaker": "@toan",
     "text": "Dạ, em nhận."
    },
    {
-    "speaker": "tuan.vo",
+    "speaker": "quan.dinh",
     "text": "Em cần chốt luôn máy chủ chạy demo. Em đề nghị dùng máy của nhóm, không dùng mạng ký túc xá."
    },
    {
-    "speaker": "khoa.tran",
-    "text": "Thống nhất chạy demo trên máy chủ của nhóm. Tuấn kiểm tra cấu hình và chạy thử một lần trước hôm demo."
+    "speaker": "@duy",
+    "text": "Thống nhất chạy demo trên máy chủ của nhóm. Quân kiểm tra cấu hình và chạy thử một lần trước hôm demo."
    },
    {
-    "speaker": "tuan.vo",
+    "speaker": "quan.dinh",
     "text": "Dạ, em chạy thử trước ngày {+11}."
    },
    {
-    "speaker": "khoa.tran",
+    "speaker": "@duy",
     "text": "Về chương báo cáo, mỗi người tự viết phần mô-đun của mình, tôi sẽ tổng hợp. Hạn nộp bản nháp là {+13}."
    },
    {
-    "speaker": "linh.vu",
+    "speaker": "yen.ly",
     "text": "Em xin đọc lại các quyết định. Một: thêm bước lọc nhiễu. Hai: chốt ba mươi họp kịch bản và năm họp thật. Ba: dùng ba chỉ số đánh giá và khảo sát người dùng. Bốn: chạy demo trên máy chủ của nhóm."
    },
    {
-    "speaker": "khoa.tran",
+    "speaker": "@duy",
     "text": "Đúng rồi. Còn việc cần làm thì mọi người xem biên bản em gửi. Cảm ơn mọi người, kết thúc buổi họp."
    }
   ],
   "ai": [
    {
-    "speaker": "khoa.tran",
+    "speaker": "@toan",
     "text": "Cập nhật nhanh tình hình mô-đun tóm tắt biên bản."
    },
    {
-    "speaker": "tuan.vo",
+    "speaker": "lan.mai",
     "text": "Trên 20 cuộc họp mẫu, 94 phần trăm quyết định có dẫn nguồn đúng đoạn transcript."
    },
    {
-    "speaker": "linh.vu",
+    "speaker": "uyen.trinh",
     "text": "Còn khoảng 6 phần trăm trích sai đoạn, thường là đoạn liền trước hoặc liền sau."
    },
    {
-    "speaker": "anh.dang",
+    "speaker": "tam.ho",
     "text": "Tốc độ sinh biên bản thế nào?"
    },
    {
-    "speaker": "tuan.vo",
+    "speaker": "lan.mai",
     "text": "Trung bình 25 giây cho cuộc họp một giờ."
    },
    {
-    "speaker": "nga.do",
+    "speaker": "binh.cao",
     "text": "Khách hàng có hỏi về tiếng Anh xen tiếng Việt."
    },
    {
-    "speaker": "khoa.tran",
+    "speaker": "@toan",
     "text": "Mô hình xử lý được, nhưng phụ đề trên trình duyệt nhận dạng kém khi chuyển ngôn ngữ giữa câu."
    },
    {
-    "speaker": "anh.dang",
+    "speaker": "tam.ho",
     "text": "Vậy vướng mắc chính là nhận dạng giọng nói chứ không phải tóm tắt."
    },
    {
-    "speaker": "khoa.tran",
+    "speaker": "@toan",
     "text": "Đúng vậy. Bọn em sẽ thử thêm mô hình nhận dạng chạy trên máy chủ."
    },
    {
-    "speaker": "nga.do",
+    "speaker": "binh.cao",
     "text": "Ok, cập nhật tiếp ở buổi sau."
    }
   ],
   "retro11": [
    {
-    "speaker": "anh.dang",
+    "speaker": "@duy",
     "text": "Bắt đầu retro Sprint 11 nhé. Mỗi người nêu một điều làm tốt, một điều cần cải thiện, rồi mình chốt hành động."
    },
    {
-    "speaker": "nam.nguyen",
+    "speaker": "yen.ly",
     "text": "Em tổng hợp số liệu trước: sprint cam kết 34 điểm, hoàn thành 27 điểm, còn 7 điểm dời sang Sprint 12."
    },
    {
-    "speaker": "anh.dang",
+    "speaker": "@duy",
     "text": "Bảy điểm dời là những thẻ nào?"
    },
    {
-    "speaker": "nam.nguyen",
+    "speaker": "yen.ly",
     "text": "Chủ yếu là phần lưu bảng trắng và xuất biên bản ra file Word."
    },
    {
-    "speaker": "thuyet.ngo",
+    "speaker": "@thuyet",
     "text": "Điều làm tốt bên backend là API cuộc họp đã ổn định, không còn lỗi trùng lịch như sprint trước."
    },
    {
-    "speaker": "thuyet.ngo",
+    "speaker": "@thuyet",
     "text": "Điều cần cải thiện là yêu cầu xuất Word đổi hai lần giữa sprint nên em phải làm lại phần mẫu."
    },
    {
-    "speaker": "anh.dang",
+    "speaker": "@duy",
     "text": "Ừ, cái đó lỗi ở khâu chốt yêu cầu. Từ sprint sau, yêu cầu đã vào sprint thì không đổi nếu không qua mình."
    },
    {
-    "speaker": "khoa.tran",
+    "speaker": "duc.nguyen",
     "text": "Bên AI làm tốt phần prompt trích nguồn, tỷ lệ biên bản có dẫn nguồn đúng lên khoảng 85 phần trăm."
    },
    {
-    "speaker": "khoa.tran",
+    "speaker": "duc.nguyen",
     "text": "Cần cải thiện là máy chủ AI hay quá tải buổi chiều, có lần job chờ gần hai phút."
    },
    {
-    "speaker": "anh.dang",
-    "text": "Khoa đo lại thời gian xử lý trung bình theo giờ trong ngày, gửi số liệu trước ngày {+5} để mình làm việc với bên hạ tầng."
+    "speaker": "@duy",
+    "text": "Đức đo lại thời gian xử lý trung bình theo giờ trong ngày, gửi số liệu trước ngày {+5} để mình làm việc với bên hạ tầng."
    },
    {
-    "speaker": "khoa.tran",
+    "speaker": "duc.nguyen",
     "text": "Vâng, em nhận."
    },
    {
-    "speaker": "ha.duong",
+    "speaker": "tam.ho",
     "text": "Bên kiểm thử làm tốt là đã có bộ test hồi quy cho luồng tạo cuộc họp, chạy mất khoảng mười phút."
    },
    {
-    "speaker": "ha.duong",
+    "speaker": "tam.ho",
     "text": "Cần cải thiện là bản build lên môi trường test thường muộn, nhiều hôm chiều thứ Năm mới có nên không kịp test."
    },
    {
-    "speaker": "giang.le",
+    "speaker": "son.pham",
     "text": "Em bổ sung: có ba lỗi được báo là đã sửa nhưng lên môi trường test vẫn còn, do chưa merge vào nhánh chính."
    },
    {
-    "speaker": "anh.dang",
+    "speaker": "@duy",
     "text": "Vậy thống nhất: bản build lên môi trường test muộn nhất mười hai giờ trưa thứ Tư hằng tuần."
    },
    {
-    "speaker": "nam.nguyen",
+    "speaker": "yen.ly",
     "text": "Em ghi nhận đây là quyết định thứ nhất."
    },
    {
-    "speaker": "anh.dang",
+    "speaker": "@duy",
     "text": "Thêm nữa, lỗi chỉ chuyển sang trạng thái đã sửa khi đã có trên môi trường test. Đây là quyết định thứ hai."
    },
    {
-    "speaker": "thuyet.ngo",
+    "speaker": "@thuyet",
     "text": "Em đề xuất dựng pipeline tự động build lên môi trường test mỗi khi merge vào nhánh chính, đỡ phụ thuộc người."
    },
    {
-    "speaker": "anh.dang",
+    "speaker": "@duy",
     "text": "Hợp lý. Thuyết dựng pipeline đó, hoàn thành trước ngày {+10}."
    },
    {
-    "speaker": "thuyet.ngo",
+    "speaker": "@thuyet",
     "text": "Em cần quyền trên máy chủ build, anh duyệt giúp em."
    },
    {
-    "speaker": "anh.dang",
+    "speaker": "@duy",
     "text": "Được, chiều nay anh cấp quyền."
    },
    {
-    "speaker": "giang.le",
+    "speaker": "son.pham",
     "text": "Em muốn có checklist kiểm tra trước khi chuyển thẻ sang cột chờ test, để tránh thiếu bước."
    },
    {
-    "speaker": "ha.duong",
-    "text": "Đồng ý, Giang soạn checklist đó nhé, khoảng năm đến bảy mục là đủ."
+    "speaker": "tam.ho",
+    "text": "Đồng ý, Sơn soạn checklist đó nhé, khoảng năm đến bảy mục là đủ."
    },
    {
-    "speaker": "giang.le",
+    "speaker": "son.pham",
     "text": "Vâng, em gửi bản nháp trước ngày {+3}."
    },
    {
-    "speaker": "khoa.tran",
+    "speaker": "duc.nguyen",
     "text": "Còn họp daily đang kéo dài hai mươi phút, em thấy hơi lâu."
    },
    {
-    "speaker": "anh.dang",
+    "speaker": "@duy",
     "text": "Đúng, daily giữ mười lăm phút, vấn đề kỹ thuật chi tiết thì tách ra trao đổi riêng sau daily."
    },
    {
-    "speaker": "nam.nguyen",
+    "speaker": "yen.ly",
     "text": "Em sẽ bấm giờ và nhắc khi quá mười lăm phút."
    },
    {
-    "speaker": "ha.duong",
+    "speaker": "tam.ho",
     "text": "Một điểm nữa là tài liệu API chưa cập nhật theo code, bên test phải hỏi lại nhiều lần."
    },
    {
-    "speaker": "thuyet.ngo",
+    "speaker": "@thuyet",
     "text": "Bên em sẽ bật sinh tài liệu Swagger tự động, mỗi bản build đều có tài liệu mới."
    },
    {
-    "speaker": "anh.dang",
+    "speaker": "@duy",
     "text": "Thuyết gộp việc đó vào pipeline luôn."
    },
    {
-    "speaker": "anh.dang",
+    "speaker": "@duy",
     "text": "Tổng kết: hai quyết định về lịch build và trạng thái lỗi, ba việc cần làm là đo tải AI, dựng pipeline, soạn checklist."
    },
    {
-    "speaker": "nam.nguyen",
+    "speaker": "yen.ly",
     "text": "Em sẽ gửi biên bản và cập nhật lên bảng công việc trong hôm nay."
    },
    {
-    "speaker": "anh.dang",
+    "speaker": "@duy",
     "text": "Cảm ơn mọi người, Sprint 11 vất vả rồi."
    }
   ],
   "uireview": [
    {
-    "speaker": "vy.phan",
+    "speaker": "@thuyet",
     "text": "Chào mọi người, hôm nay review vòng một thiết kế giao diện SMR v2, gồm ba luồng: tạo cuộc họp, phòng họp và trình soạn biên bản."
    },
    {
-    "speaker": "vy.phan",
+    "speaker": "@thuyet",
     "text": "Mình sẽ trình bày từng luồng khoảng mười phút, sau đó mọi người góp ý."
    },
    {
-    "speaker": "huy.bui",
+    "speaker": "hieu.ta",
     "text": "Luồng tạo cuộc họp hiện có ba bước: thông tin chung, người tham gia, cài đặt phòng. Bước nào cũng lưu nháp được."
    },
    {
-    "speaker": "nga.do",
+    "speaker": "uyen.trinh",
     "text": "Ba bước hơi nhiều với cuộc họp nhanh. Người dùng chỉ cần tên, giờ và người mời là xong."
    },
    {
-    "speaker": "vy.phan",
+    "speaker": "@thuyet",
     "text": "Bọn mình có tính đến, nên thêm nút Họp nhanh ở trang chủ, tạo phòng ngay không qua ba bước."
    },
    {
-    "speaker": "anh.dang",
+    "speaker": "tuan.vo",
     "text": "Nút Họp nhanh thì backend đã có API, chỉ cần nối vào."
    },
    {
-    "speaker": "nga.do",
+    "speaker": "uyen.trinh",
     "text": "Tốt. Vậy chốt giữ ba bước cho cuộc họp có lịch, thêm Họp nhanh cho trường hợp gấp."
    },
    {
-    "speaker": "huy.bui",
+    "speaker": "hieu.ta",
     "text": "Ở bước người tham gia, khi chọn người sẽ hiện cảnh báo nếu người đó bị trùng lịch."
    },
    {
-    "speaker": "nam.nguyen",
+    "speaker": "quan.dinh",
     "text": "Cảnh báo trùng lịch nên hiện ngay cạnh tên người, đừng để dồn xuống cuối form, người tạo dễ bỏ sót."
    },
    {
-    "speaker": "vy.phan",
-    "text": "Ý hay, Huy sửa lại vị trí cảnh báo nhé."
+    "speaker": "@thuyet",
+    "text": "Ý hay, Hiếu sửa lại vị trí cảnh báo nhé."
    },
    {
-    "speaker": "huy.bui",
+    "speaker": "hieu.ta",
     "text": "Vâng, em sửa trong bản vòng hai."
    },
    {
-    "speaker": "vy.phan",
+    "speaker": "@thuyet",
     "text": "Tiếp theo là phòng họp. Thanh công cụ dưới cùng gồm mic, camera, chia sẻ màn hình, phụ đề, bảng trắng và rời phòng."
    },
    {
-    "speaker": "anh.dang",
+    "speaker": "tuan.vo",
     "text": "Nút rời phòng và kết thúc cuộc họp đang đặt sát nhau, chủ trì bấm nhầm là kết thúc cho cả phòng."
    },
    {
-    "speaker": "vy.phan",
+    "speaker": "@thuyet",
     "text": "Đúng, bọn mình sẽ tách nút kết thúc ra, đổi màu đỏ và luôn có hộp xác nhận."
    },
    {
-    "speaker": "nga.do",
+    "speaker": "uyen.trinh",
     "text": "Thống nhất: kết thúc cuộc họp bắt buộc có bước xác nhận. Ghi là quyết định nhé."
    },
    {
-    "speaker": "nam.nguyen",
+    "speaker": "quan.dinh",
     "text": "Phụ đề hiện ở đâu ạ?"
    },
    {
-    "speaker": "huy.bui",
+    "speaker": "hieu.ta",
     "text": "Phụ đề hiện dải dưới khung video, tối đa hai dòng, có tên người nói phía trước."
    },
    {
-    "speaker": "nam.nguyen",
+    "speaker": "quan.dinh",
     "text": "Em là thư ký hay phải xem lại phụ đề, nên có khung xem lịch sử phụ đề bên phải."
    },
    {
-    "speaker": "vy.phan",
+    "speaker": "@thuyet",
     "text": "Mình sẽ thêm tab Phụ đề trong bảng bên phải, cạnh tab Trò chuyện và Người tham gia."
    },
    {
-    "speaker": "vy.phan",
+    "speaker": "@thuyet",
     "text": "Cuối cùng là trình soạn biên bản. Bên trái là transcript, bên phải là biên bản AI sinh, bấm vào nguồn S1, S2 sẽ cuộn tới đoạn transcript."
    },
    {
-    "speaker": "nga.do",
+    "speaker": "uyen.trinh",
     "text": "Phần này mình rất thích, đúng ý tưởng biên bản có dẫn nguồn."
    },
    {
-    "speaker": "anh.dang",
+    "speaker": "tuan.vo",
     "text": "Trên màn hình nhỏ hai cột sẽ bị chật. Bản di động xử lý thế nào?"
    },
    {
-    "speaker": "huy.bui",
+    "speaker": "hieu.ta",
     "text": "Trên di động bọn em chuyển thành hai tab, transcript và biên bản."
    },
    {
-    "speaker": "nga.do",
+    "speaker": "uyen.trinh",
     "text": "Ổn. Phần duyệt biên bản cần hiện rõ trạng thái: nháp, chờ duyệt, đã duyệt, đã phát hành."
    },
    {
-    "speaker": "vy.phan",
+    "speaker": "@thuyet",
     "text": "Mình sẽ thêm thanh trạng thái phía trên trình soạn, kèm người duyệt và thời điểm."
    },
    {
-    "speaker": "anh.dang",
+    "speaker": "tuan.vo",
     "text": "Về màu sắc, mình thấy nhiều chỗ chữ xám trên nền trắng hơi mờ, có đạt độ tương phản không?"
    },
    {
-    "speaker": "vy.phan",
+    "speaker": "@thuyet",
     "text": "Bọn mình sẽ kiểm tra lại toàn bộ theo tiêu chuẩn tương phản 4.5:1."
    },
    {
-    "speaker": "vy.phan",
+    "speaker": "@thuyet",
     "text": "Tổng hợp lại, vòng hai sẽ sửa: vị trí cảnh báo trùng lịch, tách nút kết thúc, tab phụ đề, thanh trạng thái biên bản và độ tương phản."
    },
    {
-    "speaker": "vy.phan",
-    "text": "Mình và Huy gửi bản thiết kế vòng hai trước ngày {+7}."
+    "speaker": "@thuyet",
+    "text": "Mình và Hiếu gửi bản thiết kế vòng hai trước ngày {+7}."
    },
    {
-    "speaker": "nga.do",
+    "speaker": "uyen.trinh",
     "text": "Sau vòng hai, nhóm phát triển bắt đầu dựng giao diện luôn, không chờ vòng ba."
    },
    {
-    "speaker": "anh.dang",
+    "speaker": "tuan.vo",
     "text": "Đồng ý, bên mình chuẩn bị sẵn khung component."
    },
    {
-    "speaker": "huy.bui",
+    "speaker": "hieu.ta",
     "text": "Em sẽ xuất bộ biểu tượng và màu sắc thành design token cho bên phát triển dùng."
    },
    {
-    "speaker": "vy.phan",
+    "speaker": "@thuyet",
     "text": "Cảm ơn mọi người đã góp ý."
    }
   ],
   "oneonone": [
    {
-    "speaker": "hung.pham",
-    "text": "Tuấn Anh, dạo này nhóm thế nào? Anh thấy mấy tuần nay mọi người về khá muộn."
+    "speaker": "@thuyet",
+    "text": "Đức, dạo này nhóm thế nào? Anh thấy mấy tuần nay mọi người về khá muộn."
    },
    {
-    "speaker": "anh.dang",
+    "speaker": "duc.nguyen",
     "text": "Dạ đúng anh, từ khi chuẩn bị bản Beta, nhóm làm thêm giờ gần như mỗi tối."
    },
    {
-    "speaker": "hung.pham",
+    "speaker": "@thuyet",
     "text": "Kéo dài thì không ổn. Em thấy nguyên nhân chính là gì?"
    },
    {
-    "speaker": "anh.dang",
+    "speaker": "duc.nguyen",
     "text": "Phạm vi bản v2 tăng thêm bảng trắng và trợ lý AI, nhưng nhân sự vẫn như cũ."
    },
    {
-    "speaker": "hung.pham",
+    "speaker": "@thuyet",
     "text": "Vậy có nên lùi bớt tính năng không?"
    },
    {
-    "speaker": "anh.dang",
-    "text": "Em nghĩ trợ lý AI có thể để sau ngày ra mắt, nhưng cần hỏi ý chị Nga bên quản lý dự án."
+    "speaker": "duc.nguyen",
+    "text": "Em nghĩ trợ lý AI có thể để sau ngày ra mắt, nhưng cần hỏi ý bên quản lý dự án."
    },
    {
-    "speaker": "hung.pham",
+    "speaker": "@thuyet",
     "text": "Ừ, chuyện đó cần trao đổi thêm với bên dự án, chưa chốt hôm nay được."
    },
    {
-    "speaker": "anh.dang",
-    "text": "Còn một việc là bạn Sơn bên frontend có nguyện vọng chuyển sang làm backend."
+    "speaker": "duc.nguyen",
+    "text": "Còn một việc là một bạn bên frontend có nguyện vọng chuyển sang làm backend."
    },
    {
-    "speaker": "hung.pham",
-    "text": "Em thấy Sơn có phù hợp không?"
+    "speaker": "@thuyet",
+    "text": "Em thấy bạn ấy có phù hợp không?"
    },
    {
-    "speaker": "anh.dang",
+    "speaker": "duc.nguyen",
     "text": "Bạn ấy học nhanh, nhưng nếu chuyển bây giờ thì frontend thiếu người đúng lúc gấp."
    },
    {
-    "speaker": "hung.pham",
-    "text": "Vậy để sau đợt ra mắt rồi tính, em nói chuyện với Sơn cho bạn ấy yên tâm."
+    "speaker": "@thuyet",
+    "text": "Vậy để sau đợt ra mắt rồi tính, em nói chuyện với bạn ấy cho yên tâm."
    },
    {
-    "speaker": "anh.dang",
-    "text": "Dạ, em sẽ nói chuyện với Sơn."
+    "speaker": "duc.nguyen",
+    "text": "Dạ, em sẽ nói chuyện với bạn ấy."
    },
    {
-    "speaker": "hung.pham",
+    "speaker": "@thuyet",
     "text": "Tuyển thêm người thì sao, bên nhân sự đã có ứng viên nào chưa?"
    },
    {
-    "speaker": "anh.dang",
+    "speaker": "duc.nguyen",
     "text": "Có hai hồ sơ Senior Backend, nhưng lịch phỏng vấn chưa xếp được."
    },
    {
-    "speaker": "hung.pham",
+    "speaker": "@thuyet",
     "text": "Cái này nên đẩy nhanh, nhưng anh chưa rõ ai bên nhân sự đang phụ trách."
    },
    {
-    "speaker": "anh.dang",
+    "speaker": "duc.nguyen",
     "text": "Em cũng chưa rõ, để em hỏi lại."
    },
    {
-    "speaker": "hung.pham",
+    "speaker": "@thuyet",
     "text": "Về cá nhân em, anh thấy em ôm nhiều việc review code quá."
    },
    {
-    "speaker": "anh.dang",
+    "speaker": "duc.nguyen",
     "text": "Dạ, em đang review gần như toàn bộ pull request."
    },
    {
-    "speaker": "hung.pham",
+    "speaker": "@thuyet",
     "text": "Nên phân bớt cho Thuyết và Đức review chéo, em chỉ duyệt phần kiến trúc."
    },
    {
-    "speaker": "anh.dang",
+    "speaker": "duc.nguyen",
     "text": "Em sẽ thử áp dụng, nhưng cần thống nhất quy trình với nhóm trước."
    },
    {
-    "speaker": "hung.pham",
+    "speaker": "@thuyet",
     "text": "Được. Tháng sau mình nói chuyện lại xem tình hình thế nào."
    },
    {
-    "speaker": "anh.dang",
+    "speaker": "duc.nguyen",
     "text": "Vâng, cảm ơn anh."
    }
   ],
   "hr": [
    {
-    "speaker": "ngoc.phan",
+    "speaker": "@toan",
     "text": "Chào các anh chị, hôm nay chốt kế hoạch tuyển dụng quý IV: nhu cầu từng khối, ngân sách và kênh tuyển."
    },
    {
-    "speaker": "anh.le",
+    "speaker": "tam.ho",
     "text": "Em đã tổng hợp đề xuất từ các phòng: tổng cộng 9 vị trí, trong đó khối Công nghệ 4, Kinh doanh 3, Tài chính 1, Hành chính 1."
    },
    {
-    "speaker": "ngoc.phan",
-    "text": "Anh Tuấn Anh nói rõ nhu cầu bên Công nghệ giúp em."
+    "speaker": "@toan",
+    "text": "Anh bên Công nghệ nói rõ nhu cầu giúp em."
    },
    {
-    "speaker": "anh.dang",
+    "speaker": "duc.nguyen",
     "text": "Bên mình cần 2 Senior Backend, 1 Frontend và 1 kỹ sư kiểm thử tự động. Ưu tiên cao nhất là Senior Backend vì dự án SMR v2 đang thiếu người."
    },
    {
-    "speaker": "vinh.vu",
+    "speaker": "quan.dinh",
     "text": "Bên Kinh doanh cần 3 nhân viên kinh doanh khách hàng doanh nghiệp, phục vụ chiến dịch Q4."
    },
    {
-    "speaker": "ngoc.phan",
-    "text": "Ba người cùng lúc thì đào tạo có kịp không anh Vinh?"
+    "speaker": "@toan",
+    "text": "Ba người cùng lúc thì đào tạo có kịp không anh?"
    },
    {
-    "speaker": "vinh.vu",
+    "speaker": "quan.dinh",
     "text": "Bên mình sẽ tuyển 2 người trong tháng này, người thứ ba tháng sau để kịp kèm cặp."
    },
    {
-    "speaker": "huong.le",
+    "speaker": "yen.ly",
     "text": "Phòng Tài chính cần 1 kế toán tổng hợp thay bạn nghỉ sinh, cần có người trước giữa tháng 11."
    },
    {
-    "speaker": "van.doan",
+    "speaker": "lan.mai",
     "text": "Hành chính cần 1 nhân viên lễ tân, có thể tuyển thực tập sinh chuyển chính thức."
    },
    {
-    "speaker": "ngoc.phan",
-    "text": "Về ngân sách, chị Hương cho biết ngân sách tuyển dụng quý này còn bao nhiêu?"
+    "speaker": "@toan",
+    "text": "Về ngân sách, bên tài chính cho biết ngân sách tuyển dụng quý này còn bao nhiêu?"
    },
    {
-    "speaker": "huong.le",
+    "speaker": "yen.ly",
     "text": "Ngân sách tuyển dụng quý IV được duyệt 180 triệu, đã dùng 25 triệu cho đăng tin tháng trước."
    },
    {
-    "speaker": "anh.le",
+    "speaker": "tam.ho",
     "text": "Nếu dùng headhunter cho 2 vị trí Senior Backend, phí khoảng 15 phần trăm lương năm, tương đương 90 triệu."
    },
    {
-    "speaker": "huong.le",
+    "speaker": "yen.ly",
     "text": "Như vậy vẫn nằm trong ngân sách, nhưng các vị trí khác phải dùng kênh tự tuyển."
    },
    {
-    "speaker": "ngoc.phan",
+    "speaker": "@toan",
     "text": "Thống nhất: Senior Backend dùng headhunter, các vị trí còn lại tự đăng tin và lấy giới thiệu nội bộ."
    },
    {
-    "speaker": "van.doan",
+    "speaker": "lan.mai",
     "text": "Em ghi nhận quyết định thứ nhất."
    },
    {
-    "speaker": "ngoc.phan",
+    "speaker": "@toan",
     "text": "Thưởng giới thiệu nội bộ hiện là 3 triệu một người. Em đề xuất tăng lên 5 triệu cho vị trí kỹ thuật."
    },
    {
-    "speaker": "huong.le",
+    "speaker": "yen.ly",
     "text": "Tài chính đồng ý, với điều kiện ứng viên qua thử việc mới chi thưởng."
    },
    {
-    "speaker": "ngoc.phan",
+    "speaker": "@toan",
     "text": "Vậy chốt thưởng giới thiệu 5 triệu cho vị trí kỹ thuật, chi sau khi qua thử việc. Đây là quyết định thứ hai."
    },
    {
-    "speaker": "anh.le",
+    "speaker": "tam.ho",
     "text": "Em sẽ làm việc với hai công ty headhunter, gửi báo giá và hợp đồng mẫu trước ngày {+5}."
    },
    {
-    "speaker": "ngoc.phan",
-    "text": "Được, Tuấn Anh bên nhân sự phụ trách việc đó."
+    "speaker": "@toan",
+    "text": "Được, bên nhân sự phụ trách việc đó."
    },
    {
-    "speaker": "anh.dang",
+    "speaker": "duc.nguyen",
     "text": "Bên mình cần chuẩn bị đề bài kiểm tra kỹ thuật cho Senior Backend. Mình sẽ gửi đề trước ngày {+7}."
    },
    {
-    "speaker": "vinh.vu",
+    "speaker": "quan.dinh",
     "text": "Bản mô tả công việc cho nhân viên kinh doanh, mình gửi phòng nhân sự trước ngày {+3}."
    },
    {
-    "speaker": "van.doan",
+    "speaker": "lan.mai",
     "text": "Em đăng tin tuyển lễ tân và kế toán trên các trang tuyển dụng trong tuần này, hạn ngày {+4}."
    },
    {
-    "speaker": "ngoc.phan",
+    "speaker": "@toan",
     "text": "Lịch phỏng vấn thống nhất vào chiều thứ Ba và thứ Năm hằng tuần để các trưởng phòng sắp xếp."
    },
    {
-    "speaker": "anh.dang",
+    "speaker": "duc.nguyen",
     "text": "Phỏng vấn kỹ thuật mình cần thêm một người, mình sẽ mời Thuyết hoặc Đức cùng tham gia."
    },
    {
-    "speaker": "huong.le",
+    "speaker": "yen.ly",
     "text": "Kế toán tổng hợp cần gấp, đề nghị ưu tiên xếp lịch phỏng vấn trước."
    },
    {
-    "speaker": "ngoc.phan",
-    "text": "Đồng ý. Chị Vân tổng hợp lịch phỏng vấn chung trên hệ thống và gửi cho các phòng mỗi thứ Hai."
+    "speaker": "@toan",
+    "text": "Đồng ý. Bên hành chính tổng hợp lịch phỏng vấn chung trên hệ thống và gửi cho các phòng mỗi thứ Hai."
    },
    {
-    "speaker": "van.doan",
+    "speaker": "lan.mai",
     "text": "Vâng, em nhận, bắt đầu từ thứ Hai tuần sau."
    },
    {
-    "speaker": "ngoc.phan",
+    "speaker": "@toan",
     "text": "Cuối quý mình sẽ báo cáo Ban Giám đốc tỷ lệ tuyển thành công và chi phí trên mỗi vị trí."
    },
    {
-    "speaker": "anh.le",
+    "speaker": "tam.ho",
     "text": "Em sẽ theo dõi số liệu đó trên bảng tính chung."
    },
    {
-    "speaker": "ngoc.phan",
+    "speaker": "@toan",
     "text": "Cảm ơn các anh chị, buổi họp kết thúc."
    }
   ]
@@ -2328,12 +2302,12 @@
    "actions": [
     [
      "Gửi tài liệu nội quy và hướng dẫn bảo mật cho nhân viên mới",
-     "anh.le",
+     "binh.cao",
      2
     ],
     [
      "Tổng hợp kết quả bài kiểm tra an toàn thông tin",
-     "van.doan",
+     "@toan",
      7
     ]
    ]
@@ -2343,7 +2317,7 @@
   {
    "key": "smr2",
    "title": "Dự án SMR v2",
-   "owner": "nga.do",
+   "owner": "@thuyet",
    "meeting": "kickoff",
    "color": "#0079BF",
    "public": false,
@@ -2372,15 +2346,15 @@
    ],
    "shares": [
     [
-     "hoang.tran",
+     "duc.nguyen",
      0
     ],
     [
-     "ha.duong",
+     "tuan.vo",
      1
     ],
     [
-     "anh.dang",
+     "@duy",
      1
     ]
    ],
@@ -2405,7 +2379,7 @@
       },
       {
        "title": "Tối ưu bảng trắng cho phòng 50 người",
-       "assignee": "son.pham",
+       "assignee": "tam.ho",
        "due": 60,
        "status": 0,
        "start": null,
@@ -2420,7 +2394,7 @@
       },
       {
        "title": "Xuất biên bản ra PDF",
-       "assignee": "duc.nguyen",
+       "assignee": "binh.cao",
        "due": 55,
        "status": 0,
        "start": null,
@@ -2450,7 +2424,7 @@
       },
       {
        "title": "Trợ lý AI hỏi đáp trên nhiều cuộc họp",
-       "assignee": "khoa.tran",
+       "assignee": "son.pham",
        "due": 80,
        "status": 0,
        "start": null,
@@ -2470,7 +2444,7 @@
      "cards": [
       {
        "title": "Bảng trắng cộng tác thời gian thực",
-       "assignee": "son.pham",
+       "assignee": "tam.ho",
        "due": 4,
        "status": 1,
        "start": -7,
@@ -2499,12 +2473,12 @@
        ],
        "comments": [
         [
-         "anh.dang",
+         "@duy",
          "Nhớ có khóa phiên bản khi lưu để tránh ghi đè.",
          -5
         ],
         [
-         "son.pham",
+         "tam.ho",
          "Đã thêm, anh review giúp em.",
          -3
         ]
@@ -2514,7 +2488,7 @@
       },
       {
        "title": "Lưu bảng trắng có khóa phiên bản",
-       "assignee": "duc.nguyen",
+       "assignee": "binh.cao",
        "due": 3,
        "status": 1,
        "start": -6,
@@ -2529,7 +2503,7 @@
       },
       {
        "title": "Sửa lỗi phông chữ tiếng Việt khi xuất Word",
-       "assignee": "thuyet.ngo",
+       "assignee": "quan.dinh",
        "due": -1,
        "status": 1,
        "start": -9,
@@ -2541,7 +2515,7 @@
        "checklist": [],
        "comments": [
         [
-         "ha.duong",
+         "tuan.vo",
          "Đã quá hạn, em ưu tiên giúp chị trước release review nhé.",
          -1
         ]
@@ -2551,7 +2525,7 @@
       },
       {
        "title": "Trợ lý AI hỏi đáp theo cuộc họp",
-       "assignee": "khoa.tran",
+       "assignee": "son.pham",
        "due": 6,
        "status": 1,
        "start": -4,
@@ -2579,7 +2553,7 @@
       },
       {
        "title": "Mẫu biên bản do người dùng tải lên",
-       "assignee": "thuyet.ngo",
+       "assignee": "quan.dinh",
        "due": 5,
        "status": 1,
        "start": -3,
@@ -2595,7 +2569,7 @@
       },
       {
        "title": "Trang danh bạ",
-       "assignee": "nam.nguyen",
+       "assignee": "lan.mai",
        "due": 2,
        "status": 1,
        "start": -5,
@@ -2615,7 +2589,7 @@
      "cards": [
       {
        "title": "Phòng chờ và duyệt người vào phòng",
-       "assignee": "giang.le",
+       "assignee": "@toan",
        "due": -2,
        "status": 1,
        "start": -12,
@@ -2639,7 +2613,7 @@
       },
       {
        "title": "Kiểm thử hiệu năng phòng 30 người",
-       "assignee": "yen.ly",
+       "assignee": "uyen.trinh",
        "due": 1,
        "status": 1,
        "start": -4,
@@ -2652,7 +2626,7 @@
       },
       {
        "title": "Kiểm thử lưu transcript khi tắt mic giữa câu",
-       "assignee": "giang.le",
+       "assignee": "@toan",
        "due": -3,
        "status": 1,
        "start": null,
@@ -2672,7 +2646,7 @@
      "cards": [
       {
        "title": "Thiết kế module biên bản",
-       "assignee": "thuyet.ngo",
+       "assignee": "quan.dinh",
        "due": -33,
        "status": 2,
        "start": -40,
@@ -2687,7 +2661,7 @@
       },
       {
        "title": "Wireframe trình soạn biên bản",
-       "assignee": "vy.phan",
+       "assignee": "yen.ly",
        "due": -35,
        "status": 2,
        "start": -40,
@@ -2702,7 +2676,7 @@
       },
       {
        "title": "Dựng khung frontend Angular 20",
-       "assignee": "nam.nguyen",
+       "assignee": "lan.mai",
        "due": -30,
        "status": 2,
        "start": -40,
@@ -2717,7 +2691,7 @@
       },
       {
        "title": "Prompt biên bản có dẫn nguồn S1, S2",
-       "assignee": "khoa.tran",
+       "assignee": "son.pham",
        "due": -30,
        "status": 2,
        "start": -38,
@@ -2732,7 +2706,7 @@
       },
       {
        "title": "Bộ 20 cuộc họp mẫu để đánh giá AI",
-       "assignee": "khoa.tran",
+       "assignee": "son.pham",
        "due": -29,
        "status": 2,
        "start": null,
@@ -2747,7 +2721,7 @@
       },
       {
        "title": "API phòng chờ",
-       "assignee": "thuyet.ngo",
+       "assignee": "quan.dinh",
        "due": -22,
        "status": 2,
        "start": -28,
@@ -2762,7 +2736,7 @@
       },
       {
        "title": "Màn phòng chờ",
-       "assignee": "nam.nguyen",
+       "assignee": "lan.mai",
        "due": -20,
        "status": 2,
        "start": -28,
@@ -2777,7 +2751,7 @@
       },
       {
        "title": "Lưu transcript xuống cơ sở dữ liệu",
-       "assignee": "khoa.tran",
+       "assignee": "son.pham",
        "due": -21,
        "status": 2,
        "start": -28,
@@ -2793,7 +2767,7 @@
       },
       {
        "title": "Kịch bản kiểm thử phòng chờ",
-       "assignee": "giang.le",
+       "assignee": "@toan",
        "due": -19,
        "status": 2,
        "start": null,
@@ -2806,7 +2780,7 @@
       },
       {
        "title": "Phụ đề tiếng Việt trong phòng họp",
-       "assignee": "son.pham",
+       "assignee": "tam.ho",
        "due": -15,
        "status": 2,
        "start": null,
@@ -2826,7 +2800,7 @@
   {
    "key": "cloud",
    "title": "Chuyển đổi hạ tầng lên Cloud",
-   "owner": "hung.pham",
+   "owner": "@toan",
    "meeting": "cloud",
    "color": "#519839",
    "public": false,
@@ -2851,11 +2825,11 @@
    ],
    "shares": [
     [
-     "huong.le",
+     "quan.dinh",
      0
     ],
     [
-     "trung.bui",
+     "binh.cao",
      1
     ]
    ],
@@ -2865,7 +2839,7 @@
      "cards": [
       {
        "title": "Chuyển cơ sở dữ liệu chạy thật lên Azure SQL",
-       "assignee": "trung.bui",
+       "assignee": "binh.cao",
        "due": 40,
        "status": 0,
        "start": null,
@@ -2880,7 +2854,7 @@
       },
       {
        "title": "Diễn tập khôi phục sau thảm họa",
-       "assignee": "quan.dinh",
+       "assignee": "hieu.ta",
        "due": 45,
        "status": 0,
        "start": null,
@@ -2895,7 +2869,7 @@
       },
       {
        "title": "Rà soát phân quyền IAM",
-       "assignee": "manh.hoang",
+       "assignee": "lan.mai",
        "due": 3,
        "status": 0,
        "start": null,
@@ -2910,7 +2884,7 @@
       },
       {
        "title": "Mua gói cam kết Azure một năm",
-       "assignee": "hung.pham",
+       "assignee": "@toan",
        "due": 8,
        "status": 0,
        "start": null,
@@ -2930,7 +2904,7 @@
      "cards": [
       {
        "title": "Chuyển môi trường staging lên Azure",
-       "assignee": "trung.bui",
+       "assignee": "binh.cao",
        "due": 4,
        "status": 1,
        "start": -20,
@@ -2962,7 +2936,7 @@
       },
       {
        "title": "Sao lưu và giám sát",
-       "assignee": "quan.dinh",
+       "assignee": "hieu.ta",
        "due": -5,
        "status": 1,
        "start": -20,
@@ -2973,8 +2947,8 @@
        "checklist": [],
        "comments": [
         [
-         "hung.pham",
-         "Quân cập nhật tiến độ giúp anh, việc này quá hạn rồi.",
+         "@toan",
+         "Hiếu cập nhật tiến độ giúp anh, việc này quá hạn rồi.",
          -2
         ]
        ],
@@ -2983,7 +2957,7 @@
       },
       {
        "title": "Bảng theo dõi chi phí Cloud tự động",
-       "assignee": "manh.hoang",
+       "assignee": "lan.mai",
        "due": 6,
        "status": 1,
        "start": null,
@@ -2998,7 +2972,7 @@
       },
       {
        "title": "Rà điều khoản lưu trữ dữ liệu với pháp chế",
-       "assignee": "huong.le",
+       "assignee": "quan.dinh",
        "due": -10,
        "status": 1,
        "start": null,
@@ -3018,7 +2992,7 @@
      "cards": [
       {
        "title": "Bộ Terraform cho staging",
-       "assignee": "manh.hoang",
+       "assignee": "lan.mai",
        "due": -12,
        "status": 2,
        "start": -24,
@@ -3033,7 +3007,7 @@
       },
       {
        "title": "Danh mục chứng chỉ và khóa bí mật",
-       "assignee": "quan.dinh",
+       "assignee": "hieu.ta",
        "due": 0,
        "status": 2,
        "start": null,
@@ -3048,7 +3022,7 @@
       },
       {
        "title": "Cảnh báo hết hạn chứng chỉ",
-       "assignee": "manh.hoang",
+       "assignee": "lan.mai",
        "due": -1,
        "status": 2,
        "start": null,
@@ -3063,7 +3037,7 @@
       },
       {
        "title": "Khảo sát hiện trạng 14 máy chủ",
-       "assignee": "trung.bui",
+       "assignee": "binh.cao",
        "due": -27,
        "status": 2,
        "start": null,
@@ -3081,7 +3055,7 @@
   {
    "key": "b2b",
    "title": "Chiến dịch khách hàng doanh nghiệp Q4",
-   "owner": "danh.trinh",
+   "owner": "@thuyet",
    "meeting": "client",
    "color": "#D29034",
    "public": false,
@@ -3101,7 +3075,7 @@
    ],
    "shares": [
     [
-     "nga.do",
+     "yen.ly",
      0
     ]
    ],
@@ -3111,7 +3085,7 @@
      "cards": [
       {
        "title": "Liên hệ Tập đoàn Minh Long hẹn lại demo",
-       "assignee": "phong.nguyen",
+       "assignee": "uyen.trinh",
        "due": 3,
        "status": 0,
        "start": null,
@@ -3126,7 +3100,7 @@
       },
       {
        "title": "Danh sách 20 doanh nghiệp tiềm năng ngành tài chính",
-       "assignee": "thao.vu",
+       "assignee": "duc.nguyen",
        "due": 12,
        "status": 0,
        "start": null,
@@ -3139,7 +3113,7 @@
       },
       {
        "title": "Hội thảo giới thiệu sản phẩm cho hiệp hội doanh nghiệp",
-       "assignee": "danh.trinh",
+       "assignee": "@thuyet",
        "due": 25,
        "status": 0,
        "start": null,
@@ -3157,7 +3131,7 @@
      "cards": [
       {
        "title": "Môi trường dùng thử cho An Phát (50 người dùng)",
-       "assignee": "nga.do",
+       "assignee": "yen.ly",
        "due": -11,
        "status": 1,
        "start": -20,
@@ -3168,7 +3142,7 @@
        "checklist": [],
        "comments": [
         [
-         "danh.trinh",
+         "@thuyet",
          "An Phát hỏi khi nào có môi trường, em đẩy nhanh giúp anh.",
          -8
         ]
@@ -3178,7 +3152,7 @@
       },
       {
        "title": "Hướng dẫn sử dụng cho người dùng An Phát",
-       "assignee": "loc.nguyen",
+       "assignee": "tam.ho",
        "due": 4,
        "status": 1,
        "start": null,
@@ -3193,7 +3167,7 @@
       },
       {
        "title": "Kịch bản trình diễn cho Ban CNTT An Phát",
-       "assignee": "phong.nguyen",
+       "assignee": "uyen.trinh",
        "due": 1,
        "status": 1,
        "start": null,
@@ -3213,7 +3187,7 @@
      "cards": [
       {
        "title": "Gửi báo giá chính thức cho An Phát",
-       "assignee": "phong.nguyen",
+       "assignee": "uyen.trinh",
        "due": -18,
        "status": 2,
        "start": null,
@@ -3229,7 +3203,7 @@
       },
       {
        "title": "Hồ sơ năng lực công ty bản 2026",
-       "assignee": "thao.vu",
+       "assignee": "duc.nguyen",
        "due": -25,
        "status": 2,
        "start": null,
@@ -3247,7 +3221,7 @@
   {
    "key": "launch",
    "title": "Ra mắt SMR v2 – Truyền thông",
-   "owner": "kien.tran",
+   "owner": "@duy",
    "meeting": "mkt",
    "color": "#B04632",
    "public": true,
@@ -3271,7 +3245,7 @@
      "cards": [
       {
        "title": "Thư mời báo chí và khách hàng dự họp báo",
-       "assignee": "lan.mai",
+       "assignee": "yen.ly",
        "due": 5,
        "status": 0,
        "start": null,
@@ -3286,7 +3260,7 @@
       },
       {
        "title": "Bài PR trên hai trang báo công nghệ",
-       "assignee": "lan.mai",
+       "assignee": "yen.ly",
        "due": 9,
        "status": 0,
        "start": null,
@@ -3301,7 +3275,7 @@
       },
       {
        "title": "Kịch bản dẫn chương trình họp báo",
-       "assignee": "trang.hoang",
+       "assignee": "son.pham",
        "due": 7,
        "status": 0,
        "start": null,
@@ -3321,7 +3295,7 @@
      "cards": [
       {
        "title": "Video demo 90 giây",
-       "assignee": "trang.hoang",
+       "assignee": "son.pham",
        "due": 2,
        "status": 1,
        "start": -8,
@@ -3353,7 +3327,7 @@
       },
       {
        "title": "Lịch đăng bài 4 tuần",
-       "assignee": "lan.mai",
+       "assignee": "yen.ly",
        "due": -1,
        "status": 1,
        "start": null,
@@ -3368,7 +3342,7 @@
       },
       {
        "title": "Bộ tài liệu giới thiệu cho khách hàng doanh nghiệp",
-       "assignee": "vy.phan",
+       "assignee": "quan.dinh",
        "due": 6,
        "status": 1,
        "start": null,
@@ -3388,7 +3362,7 @@
      "cards": [
       {
        "title": "Chốt thông điệp: họp xong, biên bản xong",
-       "assignee": "kien.tran",
+       "assignee": "@duy",
        "due": -10,
        "status": 2,
        "start": null,
@@ -3401,7 +3375,7 @@
       },
       {
        "title": "Key visual phương án hai",
-       "assignee": "vy.phan",
+       "assignee": "quan.dinh",
        "due": -8,
        "status": 2,
        "start": null,
@@ -3416,12 +3390,13 @@
       }
      ]
     }
-   ]
+   ],
+   "shares": []
   },
   {
    "key": "hiring",
    "title": "Tuyển dụng quý IV",
-   "owner": "ngoc.phan",
+   "owner": "@toan",
    "meeting": "hr",
    "color": "#89609E",
    "public": false,
@@ -3437,7 +3412,7 @@
    ],
    "shares": [
     [
-     "vinh.vu",
+     "quan.dinh",
      0
     ]
    ],
@@ -3447,7 +3422,7 @@
      "cards": [
       {
        "title": "Tuyển 1 Senior Backend",
-       "assignee": "anh.le",
+       "assignee": "tam.ho",
        "due": 20,
        "status": 1,
        "start": null,
@@ -3479,7 +3454,7 @@
       },
       {
        "title": "Tuyển 2 nhân viên kinh doanh B2B",
-       "assignee": "binh.cao",
+       "assignee": "tuan.vo",
        "due": 25,
        "status": 1,
        "start": null,
@@ -3494,7 +3469,7 @@
       },
       {
        "title": "Tuyển 1 kỹ sư kiểm thử tự động",
-       "assignee": "anh.le",
+       "assignee": "tam.ho",
        "due": 30,
        "status": 0,
        "start": null,
@@ -3514,7 +3489,7 @@
      "cards": [
       {
        "title": "Tuyển 2 kỹ sư frontend",
-       "assignee": "anh.le",
+       "assignee": "tam.ho",
        "due": -20,
        "status": 2,
        "start": null,
@@ -3529,7 +3504,7 @@
       },
       {
        "title": "Tuyển 1 kỹ sư AI",
-       "assignee": "anh.le",
+       "assignee": "tam.ho",
        "due": -22,
        "status": 2,
        "start": null,
@@ -3544,7 +3519,7 @@
       },
       {
        "title": "Chương trình hội nhập cho nhân viên mới",
-       "assignee": "van.doan",
+       "assignee": "lan.mai",
        "due": -30,
        "status": 2,
        "start": null,
@@ -3562,7 +3537,7 @@
   {
    "key": "office",
    "title": "Vận hành văn phòng",
-   "owner": "van.doan",
+   "owner": "@thuyet",
    "meeting": null,
    "color": "#00AECC",
    "public": true,
@@ -3573,7 +3548,7 @@
      "cards": [
       {
        "title": "Gia hạn hợp đồng thuê văn phòng tầng 7",
-       "assignee": "van.doan",
+       "assignee": "@thuyet",
        "due": 14,
        "status": 0,
        "start": null,
@@ -3586,7 +3561,7 @@
       },
       {
        "title": "Kiểm tra thiết bị phòng cháy chữa cháy định kỳ",
-       "assignee": "van.doan",
+       "assignee": "@thuyet",
        "due": -4,
        "status": 0,
        "start": null,
@@ -3599,7 +3574,7 @@
       },
       {
        "title": "Đặt tiệc cuối năm",
-       "assignee": "anh.le",
+       "assignee": "duc.nguyen",
        "due": 35,
        "status": 0,
        "start": null,
@@ -3617,7 +3592,7 @@
      "cards": [
       {
        "title": "Thay máy chiếu phòng họp lớn",
-       "assignee": "van.doan",
+       "assignee": "@thuyet",
        "due": -15,
        "status": 2,
        "start": null,
@@ -3630,7 +3605,7 @@
       },
       {
        "title": "Cập nhật danh bạ nội bộ",
-       "assignee": "anh.le",
+       "assignee": "duc.nguyen",
        "due": -6,
        "status": 2,
        "start": null,
@@ -3643,7 +3618,8 @@
       }
      ]
     }
-   ]
+   ],
+   "shares": []
   }
  ],
  "meetingTemplates": {

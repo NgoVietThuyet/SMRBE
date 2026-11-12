@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
@@ -17,10 +18,8 @@ import java.util.Map;
 public record DemoData(
         int version,
         String company,
-        String emailDomain,
         List<Account> accounts,
-        List<String> managerTitles,
-        List<String> junkAccounts,
+        List<HostAccount> hostAccounts,
         List<Recurring> recurring,
         List<Meeting> meetings,
         Map<String, List<Line>> transcripts,
@@ -30,17 +29,36 @@ public record DemoData(
 ) {
     public static final String RESOURCE = "/seed/demo-data.json";
 
+    /** Đọc nội dung, các tên giữ chỗ chủ trì ({@code "@thuyet"}…) còn nguyên. */
     public static DemoData load(ObjectMapper mapper) {
+        return load(mapper, Map.of());
+    }
+
+    /**
+     * Đọc nội dung và thay tên giữ chỗ chủ trì bằng tên đăng nhập thật trong DB
+     * ({@code aliasToUser}: "@thuyet" → "thuyet.ngo"…). Chỉ thay khi giá trị JSON khớp đúng cả dấu nháy.
+     */
+    public static DemoData load(ObjectMapper mapper, Map<String, String> aliasToUser) {
         try (InputStream in = DemoData.class.getResourceAsStream(RESOURCE)) {
             if (in == null) throw new IllegalStateException("Không tìm thấy " + RESOURCE);
-            return mapper.readValue(in, DemoData.class);
+            String json = new String(in.readAllBytes(), StandardCharsets.UTF_8);
+            for (Map.Entry<String, String> e : aliasToUser.entrySet()) {
+                json = json.replace(mapper.writeValueAsString(e.getKey()), mapper.writeValueAsString(e.getValue()));
+            }
+            return mapper.readValue(json, DemoData.class);
         } catch (IOException e) {
             throw new UncheckedIOException("Không đọc được " + RESOURCE, e);
         }
     }
 
+    /** Tài khoản có sẵn trong DB. {@code alias} là tên giữ chỗ trong JSON; tìm theo họ tên. */
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public record Account(String userName, String fullName, String orgId, String titleCode, String phone,
+    public record HostAccount(String alias, String fullName) {
+    }
+
+    /** Phòng ban và chức danh không ghi ở đây: lấy ngẫu nhiên từ DB lúc nạp. Email, mật khẩu theo tên đăng nhập. */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record Account(String userName, String fullName, String phone,
                           boolean locked, boolean mustChangePassword, boolean denyAiSummary) {
     }
 
