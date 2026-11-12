@@ -193,7 +193,17 @@ public class MinutesServiceImpl implements MinutesService {
                 .orElseThrow(() -> new IllegalArgumentException("Cuộc họp không tồn tại."));
         List<MeetingPersonal> people = personalRepository.findByMeetingId(meetingId);
         MeetingPersonal me = people.stream().filter(p -> p.getUserName().equalsIgnoreCase(userName)).findFirst()
-                .orElseThrow(() -> new SecurityException("Bạn không phải thành viên cuộc họp này."));
+                .orElse(null);
+        if (me == null) {
+            if (adminAccess == null || !adminAccess.isAdmin(userName)) {
+                throw new SecurityException("Bạn không phải thành viên cuộc họp này.");
+            }
+            // Admin hệ thống không nằm trong cuộc họp: coi như chủ trì (đối tượng tạm, không lưu DB).
+            me = new MeetingPersonal();
+            me.setMeetingId(meetingId);
+            me.setUserName(userName);
+            me.setChairperson(true);
+        }
         return new Ctx(m, people, me);
     }
 
@@ -228,9 +238,12 @@ public class MinutesServiceImpl implements MinutesService {
         int p = Math.max(1, page);
         int size = Math.clamp(pageSize, 1, 100);
         // Đang diễn ra (đã có transcript dần) + đã kết thúc + đã lưu trữ.
-        Page<MeetingInfo> meetings = meetingRepository.searchMeetings(userName, false, List.of(2, 3, 5),
-                keyword == null ? "" : keyword.trim(), null, null,
-                PageRequest.of(p - 1, size, Sort.by(Sort.Direction.DESC, "expectedStartTime")));
+        String kw = keyword == null ? "" : keyword.trim();
+        PageRequest pr = PageRequest.of(p - 1, size, Sort.by(Sort.Direction.DESC, "expectedStartTime"));
+        // Admin thấy biên bản của mọi cuộc họp trong hệ thống.
+        Page<MeetingInfo> meetings = adminAccess != null && adminAccess.isAdmin(userName)
+                ? meetingRepository.searchAllMeetings(false, List.of(2, 3, 5), kw, null, null, pr)
+                : meetingRepository.searchMeetings(userName, false, List.of(2, 3, 5), kw, null, null, pr);
         List<String> ids = meetings.getContent().stream().map(MeetingInfo::getId).toList();
         Map<String, Long> counts = ids.isEmpty() ? Map.of() : segmentRepository.countByMeetingIds(ids).stream()
                 .collect(Collectors.toMap(r -> (String) r[0], r -> (Long) r[1]));
