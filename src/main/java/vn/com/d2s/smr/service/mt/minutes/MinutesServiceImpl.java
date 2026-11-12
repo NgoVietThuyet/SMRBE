@@ -261,7 +261,7 @@ public class MinutesServiceImpl implements MinutesService {
     // ===================== Chi tiết =====================
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public MinutesDetailResponse detail(String userName, String meetingId, Integer version) {
         Ctx c = ctx(userName, meetingId);
         List<MtMinutes> all = minutesRepository.findByMeetingIdOrderByVersionDesc(meetingId);
@@ -271,7 +271,7 @@ public class MinutesServiceImpl implements MinutesService {
                 : visible.stream().filter(m -> m.getVersion() == version).findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy phiên bản biên bản."));
         MinutesJobResponse job = c.editor()
-                ? jobRepository.findFirstByRefIdAndTypeOrderByCreatedAtDesc(meetingId, JOB_TYPE).map(j -> toJob(j, false)).orElse(null)
+                ? jobRepository.findFirstByRefIdAndTypeOrderByCreatedAtDesc(meetingId, JOB_TYPE).map(j -> toJob(expireIfStale(j), false)).orElse(null)
                 : null;
         int transcriptCount = segmentRepository.findByMeetingIdOrderBySpokenAtAsc(meetingId).size();
         return new MinutesDetailResponse(meetingId, c.meeting().getName(), c.meeting().getStatus(),
@@ -301,7 +301,7 @@ public class MinutesServiceImpl implements MinutesService {
         }
 
         String key = "MINUTES:" + meetingId + ":" + sourceHash(segs, docFiles);
-        Optional<SyBackgroundJob> existing = jobRepository.findByIdempotencyKey(key);
+        Optional<SyBackgroundJob> existing = jobRepository.findByIdempotencyKey(key).map(this::expireIfStale);
         if (existing.isPresent() && existing.get().getStatus() != SyBackgroundJob.FAILED) {
             return toJob(existing.get(), true);
         }
@@ -330,6 +330,20 @@ public class MinutesServiceImpl implements MinutesService {
         String jobId = job.getId();
         if (runJobsInline) runJob(jobId); else executor.submit(() -> runJob(jobId));
         return toJob(job, false);
+    }
+
+    /** Quá hạn này mà job vẫn Pending/Running → coi như treo (BE khởi động lại giữa chừng, AI không trả lời...). */
+    static final java.time.Duration STALE_AFTER = java.time.Duration.ofMinutes(6);
+
+    /** Đánh dấu Failed cho job treo để màn hình không chờ mãi và cho phép bấm sinh lại. */
+    private SyBackgroundJob expireIfStale(SyBackgroundJob j) {
+        if (j.getStatus() != SyBackgroundJob.PENDING && j.getStatus() != SyBackgroundJob.RUNNING) return j;
+        LocalDateTime since = j.getStartedAt() != null ? j.getStartedAt() : j.getCreatedAt();
+        if (since == null || java.time.Duration.between(since, LocalDateTime.now(clock)).compareTo(STALE_AFTER) < 0) return j;
+        j.setStatus(SyBackgroundJob.FAILED);
+        j.setError("AI không phản hồi (máy chủ có thể vừa khởi động lại). Hãy bấm Sinh biên bản lại.");
+        j.setFinishedAt(LocalDateTime.now(clock));
+        return jobRepository.save(j);
     }
 
     void runJob(String jobId) {
@@ -372,7 +386,7 @@ public class MinutesServiceImpl implements MinutesService {
             // actor null ("Hệ thống") để cả người bấm sinh cũng nhận thông báo khi rời trang.
             events.publishEvent(new NotificationEvents.MinutesReady(meeting.getId(), null, m.getVersion(), editors));
             notifyStatus(meeting.getId(), "ready", m.getVersion());
-        } catch (Exception e) {
+        } catch (Throwable e) {
             log.warn("Sinh biên bản thất bại (job {}): {}", jobId, e.getMessage());
             job.setStatus(SyBackgroundJob.FAILED);
             job.setError(truncate(e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage(), 2000));
