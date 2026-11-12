@@ -438,11 +438,11 @@ public class MeetingRoomServiceImpl implements MeetingRoomService {
         return new ExportedFile("ThamDu_" + meeting.getRoomCode() + date + ".xlsx", content);
     }
 
-    /** Chủ trì của cuộc họp hoặc Quản trị viên (trang Thống kê P5). */
+    /** Ai thấy cuộc họp (thành viên hoặc Quản trị viên) đều xem được lịch sử tham dự. */
     private void checkAttendanceAccess(String userName, List<MeetingPersonal> personals) {
-        boolean host = personals.stream().anyMatch(p -> p.getUserName().equalsIgnoreCase(userName) && RoomAdmission.isModerator(p));
-        if (!host && !adminAccess.isAdmin(userName)) {
-            throw new SecurityException("Chỉ chủ trì hoặc quản trị viên được xem lịch sử tham dự.");
+        boolean member = personals.stream().anyMatch(p -> p.getUserName().equalsIgnoreCase(userName));
+        if (!member && !adminAccess.isAdmin(userName)) {
+            throw new SecurityException("Bạn không có quyền xem lịch sử tham dự của cuộc họp này.");
         }
     }
 
