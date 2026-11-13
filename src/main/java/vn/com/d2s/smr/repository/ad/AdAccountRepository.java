@@ -49,7 +49,7 @@ public interface AdAccountRepository extends JpaRepository<AdAccount, String> {
                  or lower(a.fullName) like lower(concat('%', :keyword, '%'))
                  or lower(a.email) like lower(concat('%', :keyword, '%'))
               ))
-            order by a.fullName asc
+            order by a.createDate desc nulls last, a.fullName asc
             """)
     List<EmployeeItemResponse> findEmployees(
             @Param("orgId") String orgId,

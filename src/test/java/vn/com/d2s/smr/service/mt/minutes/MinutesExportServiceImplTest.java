@@ -107,7 +107,6 @@ class MinutesExportServiceImplTest {
         seg.setText("Thống nhất ra mắt vào thứ Hai.");
         seg.setSpokenAt(T0.minusMinutes(50));
         when(segmentRepository.findByMeetingIdOrderBySpokenAtAsc(MID)).thenReturn(List.of(seg));
-        when(minutesRepository.findFirstByMeetingIdAndStatusOrderByVersionDesc(MID, MtMinutes.PUBLISHED)).thenReturn(Optional.empty());
         when(taskRepository.findByMeetingId(MID)).thenReturn(List.of());
         when(accountRepository.findById(anyString())).thenReturn(Optional.empty());
 
@@ -229,7 +228,7 @@ class MinutesExportServiceImplTest {
         pub.setContentJson(mapper.writeValueAsString(new MinutesContent("Tóm tắt", List.of(),
                 List.of(new MinutesContent.Decision("d1", "Quyết định đã phát hành", List.of("s1"))),
                 List.of(new MinutesContent.ActionItem("a1", "Gửi báo cáo", "mem", "Thành Viên", "2026-10-20", List.of("s1"), true, "t1")))));
-        when(minutesRepository.findFirstByMeetingIdAndStatusOrderByVersionDesc(MID, MtMinutes.PUBLISHED)).thenReturn(Optional.of(pub));
+        when(minutesRepository.findByMeetingIdOrderByVersionDesc(MID)).thenReturn(List.of(pub));
         service.uploadTemplate("mem", MID, docx("mau.docx"));
 
         String text = text(service.download("mem", service.requestExport("mem", MID).id()).content());

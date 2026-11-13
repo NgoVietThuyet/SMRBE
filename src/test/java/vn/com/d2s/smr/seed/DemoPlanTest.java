@@ -63,11 +63,10 @@ class DemoPlanTest {
 
     @Test
     void contentIsConsistent() {
-        Set<String> users = new HashSet<>(List.of("khoa.tran", "linh.vu", "huong.le", "bao.nguyen", "hoang.tran", "vinh.vu", "loc.nguyen",
-                "mai.dang", "nam.nguyen", "anh.dang", "thuyet.ngo", "thao.nguyen", "dat.pham", "anh.le", "ngoc.phan", "van.doan", "trung.bui",
-                "manh.hoang", "kien.tran", "trang.hoang", "vy.phan", "nga.do", "huy.bui", "giang.le", "ha.duong", "danh.trinh", "phong.nguyen",
-                "thao.vu", "hung.pham"));
+        // Chỉ có 10 tài khoản mới và 3 chủ trì (tên giữ chỗ, được thay bằng tên đăng nhập thật lúc nạp).
+        Set<String> users = new HashSet<>();
         DATA.accounts().forEach(a -> users.add(a.userName()));
+        DATA.hostAccounts().forEach(h -> users.add(h.alias()));
         for (DemoPlan.PlannedMeeting p : DemoPlan.plan(DATA, NOW)) {
             Map<String, Integer> members = p.members();
             assertThat(users).as(p.source().key()).containsAll(members.keySet());

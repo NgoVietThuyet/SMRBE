@@ -47,9 +47,9 @@ class PermissionServiceImplTest {
         AdAccount account = account();
         account.setPermissionJson("{\"version\":1,\"permissions\":{\"ADMIN_ORGANIZATIONS\":\"Deny\"}}");
         MdTitle title = title();
-        title.setPermissionJson("{\"version\":1,\"permissions\":{\"ADMIN_ORGANIZATIONS\":\"Allow\",\"MEETING_RECORD\":\"Allow\",\"MEETING_CREATE\":\"Allow\"}}");
+        title.setPermissionJson("{\"version\":1,\"permissions\":{\"ADMIN_ORGANIZATIONS\":\"Allow\",\"ADMIN_TITLES\":\"Allow\",\"MEETING_CREATE\":\"Allow\"}}");
         MdOrganize organization = organization();
-        organization.setPermissionJson("{\"version\":1,\"permissions\":{\"FILE_UPLOAD\":\"Allow\"}}");
+        organization.setPermissionJson("{\"version\":1,\"permissions\":{\"ADMIN_ACCOUNTS\":\"Allow\"}}");
         stubHierarchy(account, title, organization);
 
         List<EffectivePermissionResponse> result = service.getEffectivePermissions("admin");
@@ -57,11 +57,11 @@ class PermissionServiceImplTest {
         EffectivePermissionResponse hrView = permission(result, "ADMIN_ORGANIZATIONS");
         assertThat(hrView.allowed()).isFalse();
         assertThat(hrView.sourceType()).isEqualTo("USER");
-        assertThat(permission(result, "MEETING_RECORD").sourceType()).isEqualTo("TITLE");
+        assertThat(permission(result, "ADMIN_TITLES").sourceType()).isEqualTo("TITLE");
         // Mã đã gỡ (MEETING_CREATE) trong JSON cũ bị bỏ qua, không gây lỗi.
         assertThat(result).noneMatch(r -> "MEETING_CREATE".equals(r.code()));
-        assertThat(permission(result, "FILE_UPLOAD").sourceType()).isEqualTo("ORGANIZATION");
-        assertThat(permission(result, "AI_SUMMARY").sourceType()).isEqualTo("DEFAULT");
+        assertThat(permission(result, "ADMIN_ACCOUNTS").sourceType()).isEqualTo("ORGANIZATION");
+        assertThat(permission(result, "ADMIN_SETTINGS").sourceType()).isEqualTo("DEFAULT");
     }
 
     @Test
@@ -72,9 +72,9 @@ class PermissionServiceImplTest {
 
         List<EffectivePermissionResponse> result = service.getEffectivePermissions("admin");
 
-        assertThat(result).hasSize(12).allMatch(EffectivePermissionResponse::allowed);
+        assertThat(result).hasSize(8).allMatch(EffectivePermissionResponse::allowed);
         assertThat(permission(result, "ADMIN").sourceType()).isEqualTo("TITLE");
-        assertThat(permission(result, "MEETING_RECORD").sourceType()).isEqualTo("ADMIN");
+        assertThat(permission(result, "ADMIN_SETTINGS").sourceType()).isEqualTo("ADMIN");
     }
 
     @Test
@@ -88,7 +88,7 @@ class PermissionServiceImplTest {
         List<EffectivePermissionResponse> result = service.getEffectivePermissions("admin");
 
         assertThat(permission(result, "ADMIN").allowed()).isFalse();
-        assertThat(permission(result, "MEETING_RECORD").allowed()).isFalse();
+        assertThat(permission(result, "ADMIN_SETTINGS").allowed()).isFalse();
     }
 
     @Test
@@ -99,7 +99,7 @@ class PermissionServiceImplTest {
 
         List<EffectivePermissionResponse> result = service.getEffectivePermissions("admin");
 
-        assertThat(result).hasSize(12).allMatch(EffectivePermissionResponse::allowed);
+        assertThat(result).hasSize(8).allMatch(EffectivePermissionResponse::allowed);
         assertThat(result).allMatch(permission -> "ROLE".equals(permission.sourceType()));
     }
 

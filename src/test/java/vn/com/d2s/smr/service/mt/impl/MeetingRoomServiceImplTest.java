@@ -280,11 +280,11 @@ class MeetingRoomServiceImplTest {
     }
 
     @Test
-    void attendanceForbiddenForPlainMember() {
+    void attendanceForbiddenForOutsider() {
         MeetingInfo m = meeting(3, 0, null);
         stubMembers(m, person("host", 1, true), person("u1", 4, false));
 
-        assertThatThrownBy(() -> service.attendance("u1", "m1")).isInstanceOf(SecurityException.class);
+        assertThatThrownBy(() -> service.attendance("stranger", "m1")).isInstanceOf(SecurityException.class);
     }
 
     @Test

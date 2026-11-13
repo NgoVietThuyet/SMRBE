@@ -276,4 +276,23 @@ class MinutesServiceImplTest {
             assertThat(text).contains("Họp giao ban").contains("Ra mắt vào thứ Hai").contains("Thành Viên").doesNotContain("{{");
         }
     }
+
+    @Test
+    void listShowsAllMeetingsToAdminAndOnlyOwnToMember() {
+        vn.com.d2s.smr.config.AdminAccess adminAccess = org.mockito.Mockito.mock(vn.com.d2s.smr.config.AdminAccess.class);
+        when(adminAccess.isAdmin("admin")).thenReturn(true);
+        when(adminAccess.isAdmin("mem")).thenReturn(false);
+        service.setAdminAccess(adminAccess);
+        MeetingInfo other = new MeetingInfo();
+        other.setId("other");
+        other.setName("Cuộc họp người khác");
+        other.setStatus(3);
+        when(meetingRepository.searchAllMeetings(org.mockito.ArgumentMatchers.eq(false), any(), any(), any(), any(), any()))
+                .thenReturn(new org.springframework.data.domain.PageImpl<>(List.of(other)));
+        when(meetingRepository.searchMeetings(org.mockito.ArgumentMatchers.eq("mem"), org.mockito.ArgumentMatchers.eq(false), any(), any(), any(), any(), any()))
+                .thenReturn(new org.springframework.data.domain.PageImpl<>(List.of()));
+
+        assertThat(service.list("admin", "", 1, 20).items()).extracting("meetingName").containsExactly("Cuộc họp người khác");
+        assertThat(service.list("mem", "", 1, 20).items()).isEmpty();
+    }
 }

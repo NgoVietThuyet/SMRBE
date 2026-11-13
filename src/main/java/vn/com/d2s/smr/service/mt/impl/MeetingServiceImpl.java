@@ -225,10 +225,8 @@ public class MeetingServiceImpl implements MeetingService {
     public PagedResultResponse<MeetingListItemResponse> searchMeetings(String userName, MeetingSearchRequest request) {
         String tab = request.tab().toLowerCase(Locale.ROOT);
         List<Integer> statuses = statusesForTab(tab, request.status());
-        // Sắp diễn ra: gần nhất lên đầu; các tab khác: mới nhất lên đầu.
-        Sort sort = "upcoming".equals(tab)
-                ? Sort.by(Sort.Direction.ASC, "expectedStartTime")
-                : Sort.by(Sort.Direction.DESC, "expectedStartTime");
+        // Mọi tab: mới nhất lên đầu.
+        Sort sort = Sort.by(Sort.Direction.DESC, "expectedStartTime");
 
         Page<MeetingInfo> pageResult = meetingInfoRepository.searchMeetings(
                 userName,
@@ -260,9 +258,7 @@ public class MeetingServiceImpl implements MeetingService {
         }
         String tab = request.tab().toLowerCase(Locale.ROOT);
         List<Integer> statuses = statusesForTab(tab, request.status());
-        Sort sort = "upcoming".equals(tab)
-                ? Sort.by(Sort.Direction.ASC, "expectedStartTime")
-                : Sort.by(Sort.Direction.DESC, "expectedStartTime");
+        Sort sort = Sort.by(Sort.Direction.DESC, "expectedStartTime");
         Page<MeetingInfo> pageResult = meetingInfoRepository.searchAllMeetings(
                 statuses.isEmpty(),
                 statuses.isEmpty() ? List.of(-1) : statuses,

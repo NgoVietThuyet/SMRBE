@@ -232,15 +232,13 @@ public class TaskServiceImpl implements TaskService {
             }
         }
 
-        Page<MeetingTask> taskPage = taskRepository.findAll(filteredSpec, PageRequest.of(page - 1, pageSize));
+        Page<MeetingTask> taskPage = taskRepository.findAll(filteredSpec, PageRequest.of(page - 1, pageSize,
+                org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Order.desc("createDate"), org.springframework.data.domain.Sort.Order.desc("id"))));
         List<MeetingTask> tasks = taskPage.getContent();
 
         List<TaskListItemResponse> items = tasks.stream()
                 .map(t -> toListItemResponse(t, userName))
-                .sorted(Comparator.comparing(TaskListItemResponse::meetingStartTime, Comparator.nullsLast(Comparator.reverseOrder()))
-                        .thenComparing(TaskListItemResponse::dueDate, Comparator.nullsLast(Comparator.naturalOrder()))
-                        .thenComparing(TaskListItemResponse::createDate, Comparator.nullsLast(Comparator.reverseOrder())))
-                .toList();
+                .toList(); // thứ tự do DB quyết định: mới tạo nhất lên đầu (xuyên suốt các trang)
 
         return new TaskSearchResultResponse(
                 items,
