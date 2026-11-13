@@ -484,10 +484,6 @@ public class MeetingServiceImpl implements MeetingService {
             throw new SecurityException("Bạn không có quyền cập nhật cuộc họp này.");
         }
 
-        if (meeting.getStatus() == 3 || meeting.getStatus() == 4) {
-            throw new IllegalStateException("Không thể cập nhật cuộc họp đã kết thúc hoặc đã bị hủy.");
-        }
-
         if (request.rowVersion() != null && !request.rowVersion().isBlank()) {
             String currentRowVersionHex = formatRowVersion(meeting.getRowVersion());
             if (!currentRowVersionHex.equalsIgnoreCase(request.rowVersion().trim())) {
@@ -549,7 +545,8 @@ public class MeetingServiceImpl implements MeetingService {
             boolean timeChanged = !Objects.equals(oldStart, meeting.getExpectedStartTime())
                     || !Objects.equals(oldEnd, meeting.getExpectedEndTime());
             // Bản nháp chưa ai được mời → không cần báo đổi giờ.
-            if (timeChanged && meeting.getStatus() != 0) {
+            // Chỉ báo đổi giờ khi cuộc họp còn hiệu lực (đã mời, chưa kết thúc / hủy).
+            if (timeChanged && (meeting.getStatus() == 1 || meeting.getStatus() == 2)) {
                 events.publishEvent(new NotificationEvents.MeetingRescheduled(meetingId, userName));
             }
         }
