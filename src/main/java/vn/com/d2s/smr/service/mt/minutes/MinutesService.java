@@ -37,6 +37,12 @@ public interface MinutesService {
     /** Phát hành: kiểm tra mọi mục có nguồn, tạo công việc từ việc cần làm đã xác nhận, báo thành viên. */
     MinutesVersionResponse publish(String userName, String meetingId, int version);
 
+    /**
+     * Hẹn tự sinh bản nháp biên bản sau khi cuộc họp kết thúc (chờ vài giây cho transcript cuối kịp lưu).
+     * Chỉ chạy khi cuộc họp bật "Biên bản AI", chưa có phiên bản nào và có transcript hoặc tài liệu.
+     */
+    void scheduleAutoDraft(String meetingId);
+
     ExportedDocx exportDocx(String userName, String meetingId, int version);
 
     MeetingCaptionDto updateSegment(String userName, String meetingId, String segmentId, String text, String speakerName);

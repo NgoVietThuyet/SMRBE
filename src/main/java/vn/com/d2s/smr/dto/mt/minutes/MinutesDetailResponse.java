@@ -21,7 +21,9 @@ public record MinutesDetailResponse(
         List<VersionItem> versions,
         MinutesJobResponse job,
         List<Person> participants,
-        int transcriptCount
+        int transcriptCount,
+        /** Bản AI đang xem được sinh từ nguồn (transcript / tài liệu) khác với nguồn hiện tại → nên sinh lại. */
+        boolean sourceChanged
 ) {
     public record VersionItem(int version, int status, String source, LocalDateTime createdAt) {
     }

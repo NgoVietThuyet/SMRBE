@@ -295,4 +295,55 @@ class MinutesServiceImplTest {
         assertThat(service.list("admin", "", 1, 20).items()).extracting("meetingName").containsExactly("Cuộc họp người khác");
         assertThat(service.list("mem", "", 1, 20).items()).isEmpty();
     }
+
+    @Test
+    void autoDraftGeneratesDraftAsOwnerWhenMeetingEnded() {
+        service.autoDraft(MID);
+
+        assertThat(minutes).hasSize(1);
+        assertThat(minutes.get(0).getStatus()).isEqualTo(MtMinutes.DRAFT);
+        assertThat(minutes.get(0).getSource()).isEqualTo("AI");
+        assertThat(jobs.values()).allMatch(j -> "host".equals(j.getCreatedBy()));
+    }
+
+    @Test
+    void autoDraftSkipsWhenAiMinutesOffOrMinutesExistOrNoSource() {
+        MeetingInfo m = new MeetingInfo();
+        m.setId(MID);
+        m.setName("Họp giao ban");
+        m.setRoomCode("ABC123");
+        m.setStatus(3);
+        m.setSettingsJson("{\"aiMinutesEnabled\":false}");
+        when(meetingRepository.findByIdAndDeletedFalse(MID)).thenReturn(Optional.of(m));
+        service.autoDraft(MID);
+        assertThat(minutes).isEmpty();
+
+        // Bật lại nhưng cuộc họp chưa kết thúc → không sinh.
+        m.setSettingsJson("{\"aiMinutesEnabled\":true}");
+        m.setStatus(2);
+        service.autoDraft(MID);
+        assertThat(minutes).isEmpty();
+
+        // Đã kết thúc, bật AI → sinh; gọi lại khi đã có bản → không sinh thêm.
+        m.setStatus(3);
+        service.autoDraft(MID);
+        service.autoDraft(MID);
+        assertThat(minutes).hasSize(1);
+
+        // Không có transcript / tài liệu → không tạo gì.
+        minutes.clear();
+        segments.clear();
+        service.autoDraft(MID);
+        assertThat(minutes).isEmpty();
+    }
+
+    @Test
+    void detailFlagsAiVersionWhenSourceChangedAfterGenerating() {
+        service.generate("sec", MID);
+        assertThat(service.detail("sec", MID, null).sourceChanged()).isFalse();
+
+        segments.add(seg("s3", "Chủ Trì", "Bổ sung ý kiến sau cùng.", T0.minusMinutes(40)));
+
+        assertThat(service.detail("sec", MID, null).sourceChanged()).isTrue();
+    }
 }

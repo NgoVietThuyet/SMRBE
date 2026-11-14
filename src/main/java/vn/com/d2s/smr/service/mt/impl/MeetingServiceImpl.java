@@ -964,6 +964,7 @@ public class MeetingServiceImpl implements MeetingService {
 
         saveAuditLog(meetingId, "END", userName, meeting.getVersion() + 1, "Kết thúc cuộc họp.");
         publishStatus(meetingId, 3, "ended");
+        events.publishEvent(new vn.com.d2s.smr.service.mt.MeetingEnded(meetingId));
     }
 
     @Override
@@ -1009,6 +1010,7 @@ public class MeetingServiceImpl implements MeetingService {
         saveAuditLog(meetingId, "AUTO_END", SYSTEM_ACTOR, meeting.getVersion() + 1,
                 "Hệ thống tự kết thúc cuộc họp: đã quá giờ kết thúc dự kiến và không còn ai trong phòng.");
         publishStatus(meetingId, 3, "ended");
+        events.publishEvent(new vn.com.d2s.smr.service.mt.MeetingEnded(meetingId));
         return true;
     }
 

@@ -95,6 +95,14 @@ public class MinutesServiceImpl implements MinutesService {
         return t;
     });
 
+    private final java.util.concurrent.ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
+        Thread t = new Thread(r, "minutes-auto-draft");
+        t.setDaemon(true);
+        return t;
+    });
+    /** Chờ sau khi họp kết thúc để transcript cuối kịp lưu rồi mới tự sinh bản nháp. */
+    private long autoDraftDelaySeconds = 20;
+
     private ApplicationEventPublisher events = e -> { };
     private RoomEventPublisher room = RoomEventPublisher.NO_OP;
     private AdminAccess adminAccess;
@@ -131,6 +139,11 @@ public class MinutesServiceImpl implements MinutesService {
         this.llmProperties = llmProperties;
         this.mapper = mapper;
         this.clock = clock;
+    }
+
+    @Autowired(required = false)
+    void setAutoDraftDelay(@org.springframework.beans.factory.annotation.Value("${smr.minutes.auto-draft-delay-seconds:20}") long seconds) {
+        this.autoDraftDelaySeconds = Math.max(0, seconds);
     }
 
     @Autowired(required = false)
@@ -178,6 +191,7 @@ public class MinutesServiceImpl implements MinutesService {
     @PreDestroy
     void shutdown() {
         executor.shutdownNow();
+        scheduler.shutdownNow();
     }
 
     // ===================== Vai trò =====================
@@ -274,7 +288,11 @@ public class MinutesServiceImpl implements MinutesService {
         MinutesJobResponse job = c.editor()
                 ? jobRepository.findFirstByRefIdAndTypeOrderByCreatedAtDesc(meetingId, JOB_TYPE).map(j -> toJob(expireIfStale(j), false)).orElse(null)
                 : null;
-        int transcriptCount = segmentRepository.findByMeetingIdOrderBySpokenAtAsc(meetingId).size();
+        List<MeetingTranscriptSegment> allSegs = segmentRepository.findByMeetingIdOrderBySpokenAtAsc(meetingId);
+        int transcriptCount = allSegs.size();
+        boolean sourceChanged = c.editor() && current != null && "AI".equals(current.getSource())
+                && current.getTranscriptHash() != null
+                && !current.getTranscriptHash().equals(sourceHash(allSegs, docFiles(c.meeting())));
         return new MinutesDetailResponse(meetingId, c.meeting().getName(), c.meeting().getStatus(),
                 c.meeting().getStartDate() != null ? c.meeting().getStartDate() : c.meeting().getExpectedStartTime(),
                 c.meeting().getEndDate(),
@@ -284,7 +302,7 @@ public class MinutesServiceImpl implements MinutesService {
                 job,
                 c.people().stream().filter(p -> !RoomAdmission.isGuest(p.getUserName()))
                         .map(p -> new MinutesDetailResponse.Person(p.getUserName(), p.getFullName())).toList(),
-                transcriptCount);
+                transcriptCount, sourceChanged);
     }
 
     // ===================== Sinh bằng AI =====================
@@ -295,8 +313,15 @@ public class MinutesServiceImpl implements MinutesService {
         if (c.meeting().getStatus() != 2 && c.meeting().getStatus() != 3 && c.meeting().getStatus() != 5) {
             throw new IllegalStateException("Cuộc họp chưa diễn ra nên chưa có transcript.");
         }
+        return startJob(c.meeting().getId(), userName);
+    }
+
+    /** Tạo job sinh biên bản (người bấm hoặc hệ thống thay chủ trì). Trả job cũ nếu nguồn chưa đổi. */
+    private MinutesJobResponse startJob(String meetingId, String userName) {
         List<MeetingTranscriptSegment> segs = segmentRepository.findByMeetingIdOrderBySpokenAtAsc(meetingId);
-        List<vn.com.d2s.smr.entity.cf.CmFile> docFiles = docFiles(c.meeting());
+        MeetingInfo meeting = meetingRepository.findByIdAndDeletedFalse(meetingId)
+                .orElseThrow(() -> new IllegalArgumentException("Cuộc họp không tồn tại."));
+        List<vn.com.d2s.smr.entity.cf.CmFile> docFiles = docFiles(meeting);
         if (segs.isEmpty() && docFiles.isEmpty()) {
             throw new IllegalStateException("Cuộc họp chưa có transcript hoặc tài liệu để AI tổng hợp.");
         }
@@ -331,6 +356,36 @@ public class MinutesServiceImpl implements MinutesService {
         String jobId = job.getId();
         if (runJobsInline) runJob(jobId); else executor.submit(() -> runJob(jobId));
         return toJob(job, false);
+    }
+
+    @Override
+    public void scheduleAutoDraft(String meetingId) {
+        if (runJobsInline || autoDraftDelaySeconds == 0) {
+            autoDraft(meetingId);
+            return;
+        }
+        scheduler.schedule(() -> autoDraft(meetingId), autoDraftDelaySeconds, java.util.concurrent.TimeUnit.SECONDS);
+    }
+
+    /** Họp đã kết thúc, bật Biên bản AI, chưa có biên bản nào → sinh bản nháp thay chủ trì. */
+    void autoDraft(String meetingId) {
+        try {
+            MeetingInfo meeting = meetingRepository.findByIdAndDeletedFalse(meetingId).orElse(null);
+            if (meeting == null || meeting.getStatus() != 3) return;
+            if (!MeetingSettingsDto.fromJson(meeting.getSettingsJson(), mapper).aiMinutesEnabled()) return;
+            if (!minutesRepository.findByMeetingIdOrderByVersionDesc(meetingId).isEmpty()) return;
+            List<MeetingPersonal> people = personalRepository.findByMeetingId(meetingId);
+            String creator = people.stream().filter(p -> p.getType() == 1).map(MeetingPersonal::getUserName).findFirst()
+                    .or(() -> people.stream().filter(MeetingPersonal::isChairperson).map(MeetingPersonal::getUserName).findFirst())
+                    .orElse(null);
+            if (creator == null) return;
+            startJob(meetingId, creator);
+            log.info("Tự sinh bản nháp biên bản cho cuộc họp {} (đã kết thúc).", meetingId);
+        } catch (IllegalStateException e) {
+            log.debug("Không tự sinh biên bản cuộc họp {}: {}", meetingId, e.getMessage()); // chưa có transcript / tài liệu
+        } catch (RuntimeException e) {
+            log.warn("Tự sinh biên bản cuộc họp {} lỗi: {}", meetingId, e.getMessage());
+        }
     }
 
     /** Quá hạn này mà job vẫn Pending/Running → coi như treo (BE khởi động lại giữa chừng, AI không trả lời...). */
