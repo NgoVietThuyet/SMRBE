@@ -84,7 +84,7 @@ class MinutesExportServiceImplTest {
     private MinutesExportServiceImpl service;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         service = new MinutesExportServiceImpl(meetingRepository, personalRepository, segmentRepository, minutesRepository,
                 taskRepository, jobRepository, fileRepository, accountRepository, storage, llm, mapper, Clock.fixed(NOW, ZoneOffset.UTC));
         service.runJobsInline = true;
@@ -135,6 +135,15 @@ class MinutesExportServiceImplTest {
                 .filter(j -> j.getIdempotencyKey().equals(i.getArgument(0))).findFirst());
         when(jobRepository.countByTypeAndRefIdAndCreatedByAndCreatedAtAfter(anyString(), anyString(), anyString(), any()))
                 .thenAnswer(i -> jobs.values().stream().filter(j -> j.getCreatedBy().equals(i.getArgument(2))).count());
+
+        // Mặc định cuộc họp đã có biên bản đã duyệt: file Word chỉ đóng gói bản này, không gọi AI.
+        MtMinutes approved = new MtMinutes();
+        approved.setId("minA");
+        approved.setVersion(1);
+        approved.setStatus(MtMinutes.APPROVED);
+        approved.setContentJson(mapper.writeValueAsString(new MinutesContent("Họp giao ban tuần.", List.of(),
+                List.of(new MinutesContent.Decision("d1", "Ra mắt thứ Hai", List.of("s1"))), List.of())));
+        when(minutesRepository.findByMeetingIdOrderByVersionDesc(MID)).thenReturn(List.of(approved));
 
         when(llm.generate(anyString(), anyString(), anyDouble(), anyInt())).thenAnswer(i -> {
             String user = i.getArgument(1);
@@ -213,8 +222,10 @@ class MinutesExportServiceImplTest {
                 .contains("Chủ trì: Chủ Trì")
                 .contains("Thành phần tham dự: Chủ Trì (Chủ trì); Thư Ký (Thư ký); Thành Viên")
                 .contains("Địa điểm: Họp trực tuyến trên hệ thống Smart Meeting (mã phòng ABC123)")
-                .contains("AI viết cho")
-                .contains("chưa qua duyệt");
+                .contains("Họp giao ban tuần.")
+                .contains("đã duyệt (phiên bản 1)")
+                .doesNotContain("AI viết cho");
+        verify(llm, never()).generate(anyString(), anyString(), anyDouble(), anyInt());
         // Người ngoài cuộc họp không tải được file.
         assertThatThrownBy(() -> service.download("stranger", r.id())).isInstanceOf(SecurityException.class);
     }
@@ -236,8 +247,7 @@ class MinutesExportServiceImplTest {
         assertThat(text).contains("1. Quyết định đã phát hành")
                 .contains("1. Gửi báo cáo — Phụ trách: Thành Viên — Hạn: 20/10/2026")
                 .contains("phiên bản 2");
-        // Hai mục Kết luận / Phân công không hỏi AI.
-        assertThat(text).doesNotContain("AI viết cho M6").doesNotContain("AI viết cho M7");
+        verify(llm, never()).generate(anyString(), anyString(), anyDouble(), anyInt());
     }
 
     @Test
@@ -247,7 +257,7 @@ class MinutesExportServiceImplTest {
 
         assertThat(again.id()).isEqualTo(first.id());
         assertThat(again.reused()).isTrue();
-        verify(llm, times(1)).generate(anyString(), anyString(), anyDouble(), anyInt());
+        verify(llm, never()).generate(anyString(), anyString(), anyDouble(), anyInt());
 
         // Tải mẫu mới → dữ liệu khác → job mới.
         service.uploadTemplate("mem", MID, docx("mau.docx"));
@@ -263,15 +273,23 @@ class MinutesExportServiceImplTest {
     }
 
     @Test
-    void failedAiMarksJobFailedAndLimitsRequestsPerHour() throws Exception {
-        when(llm.generate(anyString(), anyString(), anyDouble(), anyInt())).thenReturn(null);
-        MinutesExportResponse r = service.requestExport("mem", MID);
-        assertThat(jobs.get(r.id()).getStatus()).isEqualTo(SyBackgroundJob.FAILED);
-        assertThat(jobs.get(r.id()).getError()).contains("máy chủ AI");
-        assertThatThrownBy(() -> service.download("mem", r.id())).isInstanceOf(IllegalStateException.class);
+    void exportRequiresApprovedOrPublishedMinutes() throws Exception {
+        MtMinutes draft = new MtMinutes();
+        draft.setId("minD");
+        draft.setVersion(2);
+        draft.setStatus(MtMinutes.DRAFT);
+        draft.setContentJson("{}");
+        when(minutesRepository.findByMeetingIdOrderByVersionDesc(MID)).thenReturn(List.of(draft));
 
+        assertThatThrownBy(() -> service.requestExport("mem", MID)).isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Chưa có biên bản đã duyệt");
+        verify(llm, never()).generate(anyString(), anyString(), anyDouble(), anyInt());
+    }
+
+    @Test
+    void limitsRequestsPerHour() throws Exception {
         // Đã có 5 job trong giờ qua → từ chối.
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < 5; i++) {
             SyBackgroundJob j = new SyBackgroundJob();
             j.setId("x" + i);
             j.setIdempotencyKey("k" + i);

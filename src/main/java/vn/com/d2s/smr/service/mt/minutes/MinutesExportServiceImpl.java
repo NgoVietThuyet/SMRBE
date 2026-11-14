@@ -273,6 +273,9 @@ public class MinutesExportServiceImpl implements MinutesExportService {
     @Override
     public MinutesExportResponse requestExport(String userName, String meetingId) {
         Ctx c = member(userName, meetingId);
+        if (officialMinutes(meetingId).isEmpty()) {
+            throw new IllegalStateException("Chưa có biên bản đã duyệt hoặc đã phát hành. Hãy sinh biên bản bằng AI, duyệt rồi mới tải.");
+        }
         String key = "MINEXP:" + meetingId + ":" + dataHash(c);
         Optional<SyBackgroundJob> existing = jobRepository.findByIdempotencyKey(key);
         if (existing.isPresent()) {
@@ -390,27 +393,25 @@ public class MinutesExportServiceImpl implements MinutesExportService {
 
     /** Dựng file theo mẫu đang dùng. */
     byte[] build(MeetingInfo meeting, List<MeetingPersonal> people) throws IOException {
-        List<MeetingTranscriptSegment> segs = segmentRepository.findByMeetingIdOrderBySpokenAtAsc(meeting.getId());
-        MtMinutes publishedRow = officialMinutes(meeting.getId()).orElse(null);
-        MinutesContent published = publishedRow == null ? null : readContent(publishedRow.getContentJson());
-        String note = publishedRow != null
-                ? "Quyết định và việc cần làm lấy theo biên bản " + (publishedRow.getStatus() == MtMinutes.PUBLISHED ? "đã phát hành" : "đã duyệt")
-                        + " (phiên bản " + publishedRow.getVersion() + "). Các mục khác do AI tổng hợp."
-                : "Biên bản do AI tổng hợp, chưa qua duyệt.";
+        MtMinutes official = officialMinutes(meeting.getId())
+                .orElseThrow(() -> new IllegalStateException("Chưa có biên bản đã duyệt hoặc đã phát hành."));
+        MinutesContent content = readContent(official.getContentJson());
+        String note = "Biên bản " + (official.getStatus() == MtMinutes.PUBLISHED ? "đã phát hành" : "đã duyệt")
+                + " (phiên bản " + official.getVersion() + ").";
 
         Optional<CmFile> own = meetingTemplate(meeting.getId());
         if (own.isPresent()) {
             byte[] bytes = readObject(own.get().getObjectName());
             Template template = MinutesTemplateReader.read(own.get().getFileName(), bytes);
             if (!template.placeholderBased()) {
-                Map<String, String> content = sectionContent(template, meeting, people, segs, published);
+                Map<String, String> sections = sectionContent(template, meeting, people, content);
                 return template.format() == MinutesTemplateReader.Format.DOCX
-                        ? MinutesTemplateRenderer.fillDocx(bytes, template, content, note)
-                        : MinutesTemplateRenderer.buildNew(template, "BIÊN BẢN CUỘC HỌP", content, note);
+                        ? MinutesTemplateRenderer.fillDocx(bytes, template, sections, note)
+                        : MinutesTemplateRenderer.buildNew(template, "BIÊN BẢN CUỘC HỌP", sections, note);
             }
-            return MinutesDocxRenderer.render(new ByteArrayInputStream(bytes), placeholderValues(meeting, people, segs, published, note));
+            return MinutesDocxRenderer.render(new ByteArrayInputStream(bytes), placeholderValues(meeting, people, content, note));
         }
-        Map<String, String> values = placeholderValues(meeting, people, segs, published, note);
+        Map<String, String> values = placeholderValues(meeting, people, content, note);
         Optional<String> system = systemTemplateObject(meeting);
         if (system.isPresent()) {
             try (InputStream in = storage.download(system.get())) {
@@ -422,58 +423,42 @@ public class MinutesExportServiceImpl implements MinutesExportService {
         return MinutesDocxRenderer.render(null, values);
     }
 
-    /** Mẫu tự do: mục cố định lấy từ dữ liệu, mục còn lại AI viết. */
-    private Map<String, String> sectionContent(Template template, MeetingInfo meeting, List<MeetingPersonal> people,
-                                               List<MeetingTranscriptSegment> segs, MinutesContent published) {
+    /**
+     * Mẫu tự do: mục cố định lấy từ dữ liệu cuộc họp, quyết định / việc cần làm / tóm tắt lấy từ biên bản chính thức.
+     * Không gọi AI — file Word chỉ là bản đóng gói của biên bản đã duyệt.
+     */
+    private Map<String, String> sectionContent(Template template, MeetingInfo meeting, List<MeetingPersonal> people, MinutesContent content) {
         Map<String, String> out = new LinkedHashMap<>();
-        List<Section> ai = new java.util.ArrayList<>();
+        boolean summaryUsed = false;
         for (Section s : template.sections()) {
-            String fixed = switch (s.kind()) {
+            String text = switch (s.kind()) {
                 case MEETING_NAME -> meeting.getName();
                 case TIME -> timeText(meeting);
                 case PLACE -> "Họp trực tuyến trên hệ thống Smart Meeting (mã phòng " + meeting.getRoomCode() + ")";
                 case HOST -> names(people, 1);
                 case SECRETARY -> names(people, 3);
                 case PARTICIPANTS -> participantsText(people, s.inline());
-                case DECISIONS -> published == null ? null : decisionsText(published);
-                case ACTIONS -> published == null ? null : actionsText(published);
-                case AI -> null;
+                case DECISIONS -> decisionsText(content);
+                case ACTIONS -> actionsText(content);
+                case AI -> {
+                    String title = s.title() == null ? "" : s.title().toLowerCase(java.util.Locale.ROOT);
+                    if (title.contains("quyết định")) yield decisionsText(content);
+                    if (title.contains("phân công") || title.contains("việc cần làm") || title.contains("công việc")) yield actionsText(content);
+                    // Các mục diễn giải còn lại (nội dung, kết luận...) dùng phần tóm tắt, mục đầu tiên một lần.
+                    if (!summaryUsed) {
+                        summaryUsed = true;
+                        yield content.summary();
+                    }
+                    yield null;
+                }
             };
-            if (fixed == null && (s.kind() == Kind.AI || s.kind() == Kind.DECISIONS || s.kind() == Kind.ACTIONS)) {
-                ai.add(s);
-            } else {
-                out.put(s.id(), fixed == null || fixed.isBlank() ? MinutesTemplateRenderer.NO_INFO : fixed);
-            }
-        }
-        if (!ai.isEmpty()) {
-            MinutesTemplateGenerator.Prompt prompt = MinutesTemplateGenerator.build(ai, knowledge(meeting, people, segs, published));
-            String raw = llm.generate(prompt.system(), prompt.user(), 0.2, 3500);
-            if (raw == null || raw.isBlank()) {
-                throw new IllegalStateException("Không kết nối được máy chủ AI. Hãy thử lại sau.");
-            }
-            out.putAll(MinutesTemplateGenerator.parse(raw, ai, mapper));
+            out.put(s.id(), text == null || text.isBlank() ? MinutesTemplateRenderer.NO_INFO : text);
         }
         return out;
     }
 
     /** Mẫu dùng placeholder (P7) hoặc bố cục dựng sẵn. */
-    private Map<String, String> placeholderValues(MeetingInfo meeting, List<MeetingPersonal> people, List<MeetingTranscriptSegment> segs,
-                                                  MinutesContent published, String note) {
-        MinutesContent content = published;
-        if (content == null) {
-            if (segs.isEmpty()) {
-                content = new MinutesContent(MinutesTemplateRenderer.NO_INFO + " (cuộc họp chưa có transcript).", List.of(), List.of(), List.of());
-            } else {
-                List<MinutesAiGenerator.Participant> participants = people.stream().filter(p -> !RoomAdmission.isGuest(p.getUserName()))
-                        .map(p -> new MinutesAiGenerator.Participant(p.getUserName(), p.getFullName())).toList();
-                MinutesAiGenerator.Prompt prompt = MinutesAiGenerator.build(meeting.getName(), startOf(meeting), participants, segs);
-                String raw = llm.generate(prompt.system(), prompt.user(), 0.2, 3000);
-                if (raw == null || raw.isBlank()) {
-                    throw new IllegalStateException("Không kết nối được máy chủ AI. Hãy thử lại sau.");
-                }
-                content = MinutesAiGenerator.parse(raw, prompt.codeToSegment(), participants, mapper);
-            }
-        }
+    private Map<String, String> placeholderValues(MeetingInfo meeting, List<MeetingPersonal> people, MinutesContent content, String note) {
         Map<String, String> values = new HashMap<>();
         values.put("{{meeting_name}}", meeting.getName());
         values.put("{{time}}", timeText(meeting));
@@ -482,46 +467,6 @@ public class MinutesExportServiceImpl implements MinutesExportService {
         values.put("{{decisions}}", decisionsText(content));
         values.put("{{action_items}}", actionsText(content));
         return values;
-    }
-
-    // ===================== Kiến thức cuộc họp =====================
-
-    private String knowledge(MeetingInfo meeting, List<MeetingPersonal> people, List<MeetingTranscriptSegment> segs, MinutesContent published) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("## Thông tin cuộc họp\n");
-        sb.append("Tên: ").append(meeting.getName()).append('\n');
-        sb.append("Thời gian: ").append(timeText(meeting)).append('\n');
-        if (notBlank(meeting.getMeetContent())) sb.append("Mục tiêu / nội dung: ").append(meeting.getMeetContent()).append('\n');
-        if (notBlank(meeting.getAgenda())) sb.append("Chương trình họp: ").append(meeting.getAgenda()).append('\n');
-        sb.append("\n## Thành phần\n").append(participantsText(people, false)).append('\n');
-
-        List<MeetingTask> tasks = taskRepository.findByMeetingId(meeting.getId()).stream().filter(t -> t.getLevel() >= 2).toList();
-        if (!tasks.isEmpty()) {
-            sb.append("\n## Công việc của cuộc họp\n");
-            for (MeetingTask t : tasks) {
-                sb.append("- ").append(t.getTitle());
-                if (notBlank(t.getAssigneeUserName())) sb.append(" — phụ trách: ").append(fullName(people, t.getAssigneeUserName()));
-                if (t.getDueDate() != null) sb.append(" — hạn: ").append(vn(t.getDueDate(), VN_DATE));
-                sb.append(t.getStatus() == 2 ? " — đã hoàn thành" : "").append('\n');
-            }
-        }
-        if (published != null) {
-            sb.append("\n## Biên bản đã duyệt / phát hành (nguồn chính thức)\nTóm tắt: ").append(published.summary()).append('\n');
-            sb.append("Quyết định:\n").append(decisionsText(published)).append('\n');
-            sb.append("Việc cần làm:\n").append(actionsText(published)).append('\n');
-        }
-        sb.append("\n## Transcript (lời nói trong cuộc họp)\n");
-        if (segs.isEmpty()) {
-            sb.append("(Cuộc họp chưa có transcript.)\n");
-        } else {
-            LocalDateTime base = startOf(meeting);
-            for (MeetingTranscriptSegment s : segs) {
-                sb.append('[').append(MinutesAiGenerator.offset(base, s.getSpokenAt())).append("] ")
-                        .append(notBlank(s.getSpeakerName()) ? s.getSpeakerName() : "Người tham gia").append(": ")
-                        .append(s.getText().replace('\n', ' ')).append('\n');
-            }
-        }
-        return sb.toString();
     }
 
     /** Mã băm của mẫu + dữ liệu cuộc họp: chưa đổi thì dùng lại file đã dựng. */
@@ -534,17 +479,13 @@ public class MinutesExportServiceImpl implements MinutesExportService {
 
     private String dataHash(Ctx c) {
         MeetingInfo m = c.meeting();
-        StringBuilder sb = new StringBuilder(MinutesTemplateGenerator.PROMPT_VERSION).append('|');
+        StringBuilder sb = new StringBuilder("EXPORT-V2").append('|'); // file chỉ đóng gói biên bản chính thức, không còn phụ thuộc transcript / AI
         sb.append(meetingTemplate(m.getId()).map(CmFile::getId).orElseGet(() -> systemTemplateObject(m).orElse("BUILTIN"))).append('|');
         sb.append(m.getName()).append('|').append(startOf(m)).append('|').append(m.getEndDate()).append('|');
         c.people().stream().map(p -> p.getUserName() + ":" + p.getType()).sorted().forEach(x -> sb.append(x).append(','));
-        sb.append('|').append(MinutesServiceImpl.transcriptHash(segmentRepository.findByMeetingIdOrderBySpokenAtAsc(m.getId())));
         // Đổi phiên bản chính thức, trạng thái (duyệt → phát hành) hay nội dung đều làm file cũ hết hiệu lực.
         sb.append('|').append(officialMinutes(m.getId())
                 .map(x -> x.getId() + ":" + x.getStatus() + ":" + (x.getContentJson() == null ? 0 : x.getContentJson().hashCode())).orElse("-"));
-        taskRepository.findByMeetingId(m.getId()).stream().filter(t -> t.getLevel() >= 2)
-                .map(t -> t.getId() + ":" + t.getTitle() + ":" + t.getStatus() + ":" + t.getAssigneeUserName() + ":" + t.getDueDate())
-                .sorted().forEach(x -> sb.append('|').append(x));
         try {
             return HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(sb.toString().getBytes(StandardCharsets.UTF_8)));
         } catch (NoSuchAlgorithmException e) {

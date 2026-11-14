@@ -157,7 +157,8 @@ public class SignalRMeetingEventPublisher extends TextWebSocketHandler
         } else if ("SendWhiteboardOp".equalsIgnoreCase(target) && meetingId != null && args.size() > 1) {
             if (!inRoom(session, meetingId)) {
                 error = "Bạn chưa tham gia phòng họp này.";
-            } else if (!canDraw(session, meetingId)) {
+            } else if (!"o".equals(args.get(1).path("k").asText()) && !canDraw(session, meetingId)) {
+                // Lệnh mở / đóng bảng ("o") không bị khóa: ai cũng đóng được bảng để quay lại cuộc họp.
                 error = "Chủ trì đã khóa bảng trắng.";
             } else {
                 // Nét vẽ tạm thời (chưa lưu) — gửi cho người khác trong phòng; người vẽ tự lưu bản đầy đủ qua REST.
