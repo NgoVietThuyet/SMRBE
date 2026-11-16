@@ -19,6 +19,7 @@ import vn.com.d2s.smr.config.LlmProperties;
 import vn.com.d2s.smr.dto.common.PagedResultResponse;
 import vn.com.d2s.smr.dto.mt.meeting.MeetingCaptionDto;
 import vn.com.d2s.smr.dto.mt.meeting.MeetingSettingsDto;
+import vn.com.d2s.smr.dto.mt.minutes.MeetingRecordSnapshot;
 import vn.com.d2s.smr.dto.mt.minutes.MinutesContent;
 import vn.com.d2s.smr.dto.mt.minutes.MinutesDetailResponse;
 import vn.com.d2s.smr.dto.mt.minutes.MinutesJobResponse;
@@ -161,6 +162,27 @@ public class MinutesServiceImpl implements MinutesService {
     @Autowired(required = false)
     void setSettingService(SettingService settingService) { this.settingService = settingService; }
 
+    /** Hồ sơ cuộc họp chốt khi họp kết thúc; không có thì dùng dữ liệu sống như trước. */
+    private MeetingRecordService records;
+
+    @Autowired(required = false)
+    void setRecords(MeetingRecordService records) { this.records = records; }
+
+    private static boolean isClosed(MeetingInfo m) {
+        return m.getStatus() == 3 || m.getStatus() == 5;
+    }
+
+    /** Họp đã kết thúc → chốt (hoặc chốt lại nếu nội dung đổi) rồi dùng bản chốt; chưa kết thúc → null (dùng dữ liệu sống). */
+    private MeetingRecordSnapshot sealedSnapshot(MeetingInfo meeting, String actor) {
+        if (records == null || !isClosed(meeting)) return null;
+        return records.seal(meeting.getId(), actor);
+    }
+
+    private List<vn.com.d2s.smr.entity.cf.CmFile> docsOf(MeetingRecordSnapshot snap) {
+        if (fileRepository == null || storage == null || snap.docs().isEmpty()) return List.of();
+        return fileRepository.findAllById(snap.docs().stream().map(MeetingRecordSnapshot.Doc::fileId).toList());
+    }
+
     @Autowired(required = false)
     void setStorage(ObjectStorageService storage) { this.storage = storage; }
 
@@ -169,10 +191,8 @@ public class MinutesServiceImpl implements MinutesService {
 
     /** Tài liệu cuộc họp (type=1) đọc được văn bản — nguồn bổ sung cho AI cùng transcript. */
     private List<vn.com.d2s.smr.entity.cf.CmFile> docFiles(MeetingInfo meeting) {
-        if (fileRepository == null || storage == null || meeting.getReferenceFileId() == null) return List.of();
-        return fileRepository.findByTypeAndReferenceFileIdOrderByCreateDateDesc(1, meeting.getReferenceFileId()).stream()
-                .filter(f -> !f.isMinutesFile() && f.getObjectName() != null && MeetingDocumentText.supports(f.getExtension()))
-                .limit(10).toList();
+        if (storage == null) return List.of();
+        return MeetingRecordService.readableDocs(fileRepository, meeting);
     }
 
     private List<MinutesAiGenerator.Doc> readDocs(List<vn.com.d2s.smr.entity.cf.CmFile> files) {
@@ -318,10 +338,12 @@ public class MinutesServiceImpl implements MinutesService {
 
     /** Tạo job sinh biên bản (người bấm hoặc hệ thống thay chủ trì). Trả job cũ nếu nguồn chưa đổi. */
     private MinutesJobResponse startJob(String meetingId, String userName) {
-        List<MeetingTranscriptSegment> segs = segmentRepository.findByMeetingIdOrderBySpokenAtAsc(meetingId);
         MeetingInfo meeting = meetingRepository.findByIdAndDeletedFalse(meetingId)
                 .orElseThrow(() -> new IllegalArgumentException("Cuộc họp không tồn tại."));
-        List<vn.com.d2s.smr.entity.cf.CmFile> docFiles = docFiles(meeting);
+        MeetingRecordSnapshot snap = sealedSnapshot(meeting, userName);
+        List<MeetingTranscriptSegment> segs = snap != null ? snap.asSegments(meetingId)
+                : segmentRepository.findByMeetingIdOrderBySpokenAtAsc(meetingId);
+        List<vn.com.d2s.smr.entity.cf.CmFile> docFiles = snap != null ? docsOf(snap) : docFiles(meeting);
         if (segs.isEmpty() && docFiles.isEmpty()) {
             throw new IllegalStateException("Cuộc họp chưa có transcript hoặc tài liệu để AI tổng hợp.");
         }
@@ -372,6 +394,8 @@ public class MinutesServiceImpl implements MinutesService {
         try {
             MeetingInfo meeting = meetingRepository.findByIdAndDeletedFalse(meetingId).orElse(null);
             if (meeting == null || meeting.getStatus() != 3) return;
+            // Chốt hồ sơ cuộc họp ngay khi họp kết thúc (kể cả khi không bật Biên bản AI).
+            if (records != null) records.seal(meetingId, "system");
             if (!MeetingSettingsDto.fromJson(meeting.getSettingsJson(), mapper).aiMinutesEnabled()) return;
             if (!minutesRepository.findByMeetingIdOrderByVersionDesc(meetingId).isEmpty()) return;
             List<MeetingPersonal> people = personalRepository.findByMeetingId(meetingId);
@@ -410,15 +434,20 @@ public class MinutesServiceImpl implements MinutesService {
         jobRepository.save(job);
         notifyStatus(job.getRefId(), "running", null);
         try {
-            MeetingInfo meeting = meetingRepository.findById(job.getRefId()).orElseThrow();
-            List<MeetingPersonal> people = personalRepository.findByMeetingId(meeting.getId());
-            List<MeetingTranscriptSegment> segs = segmentRepository.findByMeetingIdOrderBySpokenAtAsc(meeting.getId());
+            MeetingInfo live = meetingRepository.findById(job.getRefId()).orElseThrow();
+            // Họp đã kết thúc: AI đọc đúng hồ sơ đã chốt (tên, giờ, thành phần, transcript, tài liệu), không đọc dữ liệu sống.
+            MeetingRecordSnapshot snap = records != null && isClosed(live) ? records.find(live.getId()).orElse(null) : null;
+            MeetingInfo meeting = snap != null ? snap.asMeeting(live) : live;
+            List<MeetingPersonal> people = snap != null ? snap.asPeople(live.getId())
+                    : personalRepository.findByMeetingId(meeting.getId());
+            List<MeetingTranscriptSegment> segs = snap != null ? snap.asSegments(live.getId())
+                    : segmentRepository.findByMeetingIdOrderBySpokenAtAsc(meeting.getId());
             List<MinutesAiGenerator.Participant> participants = people.stream()
                     .filter(p -> !RoomAdmission.isGuest(p.getUserName()))
                     .map(p -> new MinutesAiGenerator.Participant(p.getUserName(), p.getFullName())).toList();
             MinutesAiGenerator.Prompt prompt = MinutesAiGenerator.build(meeting.getName(),
                     meeting.getStartDate() != null ? meeting.getStartDate() : meeting.getExpectedStartTime(), participants, segs,
-                    readDocs(docFiles(meeting)));
+                    readDocs(snap != null ? docsOf(snap) : docFiles(meeting)));
             String raw = llm.generate(prompt.system(), prompt.user(), 0.2, 3000);
             if (raw == null || raw.isBlank()) throw new IllegalStateException("Không kết nối được máy chủ AI. Hãy thử lại sau.");
             MinutesContent content = MinutesAiGenerator.parse(raw, prompt.codeToSegment(), participants, mapper);
@@ -750,6 +779,9 @@ public class MinutesServiceImpl implements MinutesService {
         s.setEditedBy(userName);
         s.setEditedAt(LocalDateTime.now(clock));
         segmentRepository.save(s);
+        // Sửa transcript sau khi họp xong → chốt lại hồ sơ để biên bản và file Word dùng nội dung đã sửa.
+        MeetingInfo meeting = meetingRepository.findByIdAndDeletedFalse(meetingId).orElse(null);
+        if (records != null && meeting != null && isClosed(meeting)) records.seal(meetingId, userName);
         return MeetingTranscriptServiceImpl.toDto(s);
     }
 

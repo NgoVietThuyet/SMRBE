@@ -346,4 +346,31 @@ class MinutesServiceImplTest {
 
         assertThat(service.detail("sec", MID, null).sourceChanged()).isTrue();
     }
+
+    @Test
+    void generateAfterMeetingEndedReadsSealedRecordNotLiveData() {
+        java.util.concurrent.atomic.AtomicReference<vn.com.d2s.smr.entity.mt.MtMeetingRecord> row = new java.util.concurrent.atomic.AtomicReference<>();
+        vn.com.d2s.smr.repository.mt.MtMeetingRecordRepository recordRepo = org.mockito.Mockito.mock(vn.com.d2s.smr.repository.mt.MtMeetingRecordRepository.class);
+        when(recordRepo.findByMeetingId(MID)).thenAnswer(i -> Optional.ofNullable(row.get()));
+        when(recordRepo.save(any(vn.com.d2s.smr.entity.mt.MtMeetingRecord.class))).thenAnswer(i -> {
+            row.set(i.getArgument(0));
+            return i.getArgument(0);
+        });
+        service.setRecords(new MeetingRecordService(meetingRepository, personalRepository, segmentRepository, recordRepo,
+                org.mockito.Mockito.mock(vn.com.d2s.smr.repository.cf.CmFileRepository.class), mapper, Clock.fixed(NOW, ZoneOffset.UTC)));
+
+        service.generate("sec", MID);
+        assertThat(row.get().getRevision()).isEqualTo(1);
+
+        // Sau khi chốt: đổi tên cuộc họp và thêm một đoạn transcript mới. Sinh lại (nguồn đã đổi) sẽ chốt lại và dùng bản mới.
+        meetingRepository.findByIdAndDeletedFalse(MID).orElseThrow().setName("Tên mới");
+        segments.add(seg("s3", "Chủ Trì", "Ý kiến bổ sung.", T0.minusMinutes(40)));
+        service.generate("sec", MID);
+
+        assertThat(row.get().getRevision()).isEqualTo(2);
+        org.mockito.ArgumentCaptor<String> user = org.mockito.ArgumentCaptor.forClass(String.class);
+        verify(llm, times(2)).generate(anyString(), user.capture(), anyDouble(), anyInt());
+        assertThat(user.getAllValues().get(0)).contains("Họp giao ban").doesNotContain("Tên mới").doesNotContain("Ý kiến bổ sung");
+        assertThat(user.getAllValues().get(1)).contains("Tên mới").contains("Ý kiến bổ sung");
+    }
 }

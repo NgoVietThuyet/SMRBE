@@ -98,6 +98,10 @@ public class MinutesExportServiceImpl implements MinutesExportService {
     private ApplicationEventPublisher events = e -> { };
     private RoomEventPublisher room = RoomEventPublisher.NO_OP;
     private SettingService settingService;
+    private MeetingRecordService records;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    void setRecords(MeetingRecordService records) { this.records = records; }
     private vn.com.d2s.smr.config.AdminAccess adminAccess;
 
     @org.springframework.beans.factory.annotation.Autowired(required = false)
@@ -392,7 +396,11 @@ public class MinutesExportServiceImpl implements MinutesExportService {
     }
 
     /** Dựng file theo mẫu đang dùng. */
-    byte[] build(MeetingInfo meeting, List<MeetingPersonal> people) throws IOException {
+    byte[] build(MeetingInfo liveMeeting, List<MeetingPersonal> livePeople) throws IOException {
+        // Đã có hồ sơ chốt: tên, giờ, thành phần lấy như lúc họp, không đổi theo chỉnh sửa về sau.
+        vn.com.d2s.smr.dto.mt.minutes.MeetingRecordSnapshot snap = records == null ? null : records.find(liveMeeting.getId()).orElse(null);
+        MeetingInfo meeting = snap != null ? snap.asMeeting(liveMeeting) : liveMeeting;
+        List<MeetingPersonal> people = snap != null ? snap.asPeople(liveMeeting.getId()) : livePeople;
         MtMinutes official = officialMinutes(meeting.getId())
                 .orElseThrow(() -> new IllegalStateException("Chưa có biên bản đã duyệt hoặc đã phát hành."));
         MinutesContent content = readContent(official.getContentJson());
@@ -482,6 +490,7 @@ public class MinutesExportServiceImpl implements MinutesExportService {
         StringBuilder sb = new StringBuilder("EXPORT-V2").append('|'); // file chỉ đóng gói biên bản chính thức, không còn phụ thuộc transcript / AI
         sb.append(meetingTemplate(m.getId()).map(CmFile::getId).orElseGet(() -> systemTemplateObject(m).orElse("BUILTIN"))).append('|');
         sb.append(m.getName()).append('|').append(startOf(m)).append('|').append(m.getEndDate()).append('|');
+        sb.append(records == null ? "-" : records.fingerprint(m.getId()).orElse("-")).append('|');
         c.people().stream().map(p -> p.getUserName() + ":" + p.getType()).sorted().forEach(x -> sb.append(x).append(','));
         // Đổi phiên bản chính thức, trạng thái (duyệt → phát hành) hay nội dung đều làm file cũ hết hiệu lực.
         sb.append('|').append(officialMinutes(m.getId())
