@@ -11,6 +11,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import vn.com.d2s.smr.config.FaceProperties;
 import vn.com.d2s.smr.dto.ad.auth.AuthResultResponse;
 import vn.com.d2s.smr.dto.ad.face.FaceActionResult;
+import vn.com.d2s.smr.dto.ad.face.FaceAdminEnrollRequest;
 import vn.com.d2s.smr.dto.ad.face.FaceEnrollRequest;
 import vn.com.d2s.smr.dto.ad.face.FaceJoinRequest;
 import vn.com.d2s.smr.dto.ad.face.FaceLoginRequest;
@@ -266,6 +267,29 @@ class FaceAuthServiceImplTest {
                 .contains("tài khoản khác");
         assertThat(service.enroll("alice", new FaceEnrollRequest("pw", true, List.of("alice"))).message()).contains("Cần từ 3");
         assertThat(store).hasSize(1); // chỉ còn mẫu cũ của bob
+    }
+
+    @Test
+    void adminCanEnrollFaceForANewAccountWithoutItsPasswordButNeedsConsentAndNotSuperAdmin() {
+        account("newbie", "[]");
+        account("root", "[\"SUPER_ADMIN\"]");
+        enrolled("bob", "bob"); // mặt của bob đã đăng ký cho tài khoản khác
+        account("bob", "[]");
+
+        assertThat(service.enrollByAdmin("newbie", new FaceAdminEnrollRequest(false, List.of("alice", "alice", "alice"))).message())
+                .contains("đồng ý");
+        assertThat(service.enrollByAdmin("root", new FaceAdminEnrollRequest(true, List.of("alice", "alice", "alice"))).message())
+                .contains("quản trị");
+        assertThat(service.enrollByAdmin("ghost", new FaceAdminEnrollRequest(true, List.of("alice", "alice", "alice"))).success()).isFalse();
+        assertThat(service.enrollByAdmin("newbie", new FaceAdminEnrollRequest(true, List.of("bob", "bob", "bob"))).message())
+                .contains("tài khoản khác");
+
+        FaceActionResult ok = service.enrollByAdmin("newbie", new FaceAdminEnrollRequest(true, List.of("alice", "alice2", "alice")));
+
+        assertThat(ok.success()).isTrue();
+        assertThat(service.status("newbie").enrolled()).isTrue();
+        // Sau đó đăng nhập bằng mặt được.
+        assertThat(service.login(login("newbie", "alice", "alice"), IP).success()).isTrue();
     }
 
     private MeetingInfo meetingWith(int status, String... members) {

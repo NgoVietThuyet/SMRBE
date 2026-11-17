@@ -2,6 +2,7 @@ package vn.com.d2s.smr.service.ad;
 
 import vn.com.d2s.smr.dto.ad.auth.AuthResultResponse;
 import vn.com.d2s.smr.dto.ad.face.FaceActionResult;
+import vn.com.d2s.smr.dto.ad.face.FaceAdminEnrollRequest;
 import vn.com.d2s.smr.dto.ad.face.FaceChallengeResponse;
 import vn.com.d2s.smr.dto.ad.face.FaceEnrollRequest;
 import vn.com.d2s.smr.dto.ad.face.FaceJoinRequest;
@@ -18,6 +19,9 @@ public interface FaceAuthService {
     AuthResultResponse join(FaceJoinRequest request, String ip);
 
     FaceActionResult enroll(String userName, FaceEnrollRequest request);
+
+    /** Quản trị viên đăng ký mặt cho tài khoản khác ngay lúc tạo tài khoản (không cần mật khẩu của người đó). */
+    FaceActionResult enrollByAdmin(String targetUserName, FaceAdminEnrollRequest request);
 
     FaceStatusResponse status(String userName);
 

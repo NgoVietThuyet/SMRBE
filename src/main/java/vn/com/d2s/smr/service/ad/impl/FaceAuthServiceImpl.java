@@ -10,6 +10,7 @@ import vn.com.d2s.smr.config.AdminAccess;
 import vn.com.d2s.smr.config.FaceProperties;
 import vn.com.d2s.smr.dto.ad.auth.AuthResultResponse;
 import vn.com.d2s.smr.dto.ad.face.FaceActionResult;
+import vn.com.d2s.smr.dto.ad.face.FaceAdminEnrollRequest;
 import vn.com.d2s.smr.dto.ad.face.FaceChallengeResponse;
 import vn.com.d2s.smr.dto.ad.face.FaceEnrollRequest;
 import vn.com.d2s.smr.dto.ad.face.FaceJoinRequest;
@@ -240,13 +241,32 @@ public class FaceAuthServiceImpl implements FaceAuthService {
             return FaceActionResult.failure("Mật khẩu không chính xác.");
         }
         limiter.success(key);
+        return storeEnrollment(account, request.frames());
+    }
 
+    @Override
+    @Transactional
+    public FaceActionResult enrollByAdmin(String targetUserName, FaceAdminEnrollRequest request) {
+        if (!ready()) return FaceActionResult.failure("Tính năng đăng nhập bằng khuôn mặt chưa được bật.");
+        AdAccount account = accountRepository.findById(targetUserName).orElse(null);
+        if (account == null || !account.isActive()) return FaceActionResult.failure("Tài khoản không hợp lệ.");
+        if (!eligible(account)) {
+            return FaceActionResult.failure("Tài khoản quản trị không dùng đăng nhập bằng khuôn mặt.");
+        }
+        if (!request.consent()) {
+            return FaceActionResult.failure("Cần người dùng đồng ý cho hệ thống xử lý dữ liệu khuôn mặt (dữ liệu sinh trắc học).");
+        }
+        return storeEnrollment(account, request.frames());
+    }
+
+    /** Phân tích ảnh, kiểm tra cùng một người + không trùng tài khoản khác rồi lưu mẫu mã hóa (thay mẫu cũ). */
+    private FaceActionResult storeEnrollment(AdAccount account, List<String> frames) {
+        String userName = account.getUserName();
         List<float[]> embeddings = new ArrayList<>();
         double quality = 1;
         String model = "";
         int dim = 0;
         try {
-            List<String> frames = request.frames();
             if (frames.size() < MIN_ENROLL_FRAMES || frames.size() > props.maxEnrollFrames()) {
                 return FaceActionResult.failure("Cần từ " + MIN_ENROLL_FRAMES + " đến " + props.maxEnrollFrames() + " ảnh khuôn mặt.");
             }
