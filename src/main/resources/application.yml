@@ -67,4 +67,20 @@ smr:
     connect-timeout-ms: ${LLM_CONNECT_TIMEOUT_MS:5000}
     # 120 giây: tổng hợp biên bản theo mẫu (P13) trả lời dài hơn hỏi đáp thông thường.
     read-timeout-ms: ${LLM_READ_TIMEOUT_MS:120000}
+  # Đăng nhập / vào họp bằng khuôn mặt (dịch vụ phụ face-service). Mặc định TẮT. Ngưỡng cần chỉnh bằng dữ liệu thật.
+  face:
+    enabled: ${FACE_ENABLED:false}
+    url: ${FACE_URL:http://smr-face:8000}
+    api-key: ${FACE_API_KEY:}
+    enc-key: ${FACE_ENC_KEY:}            # 32 byte base64, mã hóa AES-GCM các mẫu khuôn mặt trong DB
+    connect-timeout-ms: ${FACE_CONNECT_TIMEOUT_MS:3000}
+    read-timeout-ms: ${FACE_READ_TIMEOUT_MS:20000}
+    threshold: ${FACE_THRESHOLD:0.45}     # độ giống cosine tối thiểu
+    margin: ${FACE_MARGIN:0.05}           # khi nhận dạng 1:N: người giống nhất phải hơn người thứ hai ít nhất mức này
+    sample-agreement: ${FACE_SAMPLE_AGREEMENT:0.5}  # các ảnh lúc đăng ký phải giống nhau ít nhất mức này
+    min-liveness: ${FACE_MIN_LIVENESS:0.6}
+    min-quality: ${FACE_MIN_QUALITY:0.3}
+    challenge-ttl-seconds: ${FACE_CHALLENGE_TTL_SECONDS:60}
+    max-failures: ${FACE_MAX_FAILURES:5}
+    lock-minutes: ${FACE_LOCK_MINUTES:15}
 

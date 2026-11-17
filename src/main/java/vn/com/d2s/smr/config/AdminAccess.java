@@ -41,6 +41,12 @@ public class AdminAccess implements AuthorizationManager<RequestAuthorizationCon
         this.permissionService = permissionService;
     }
 
+    /** Tài khoản quản trị = có role SUPER_ADMIN. KHÔNG tính người chỉ được gán quyền ADMIN (khác {@link #isAdmin}). */
+    public static boolean hasSuperAdminRole(vn.com.d2s.smr.entity.ad.AdAccount account) {
+        return account != null && account.getRoleCodes() != null
+                && account.getRoleCodes().toUpperCase(Locale.ROOT).contains(SUPER_ADMIN);
+    }
+
     /** Admin = role SUPER_ADMIN, hoặc được gán quyền ADMIN (tài khoản → chức danh → phòng ban). */
     public boolean isAdmin(String userName) {
         var account = accountRepository.findById(userName).orElse(null);

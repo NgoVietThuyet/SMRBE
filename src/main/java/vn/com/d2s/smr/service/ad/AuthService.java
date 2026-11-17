@@ -23,6 +23,9 @@ public interface AuthService {
 
     AuthResultResponse refresh(RefreshTokenRequest request);
 
+    /** Cấp phiên đăng nhập cho tài khoản đã được xác thực bằng cách khác mật khẩu (khuôn mặt). Kiểm tra tài khoản còn hoạt động. */
+    AuthResultResponse loginVerified(vn.com.d2s.smr.entity.ad.AdAccount account);
+
     Optional<UserProfileResponse> getProfile(String userName);
 
     Optional<UserProfileResponse> updateProfile(String userName, UpdateProfileRequest request);

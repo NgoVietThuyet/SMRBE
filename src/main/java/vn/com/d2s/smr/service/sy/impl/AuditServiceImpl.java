@@ -29,7 +29,7 @@ import java.util.UUID;
 public class AuditServiceImpl implements AuditService {
 
     private static final Logger LOG = LoggerFactory.getLogger(AuditServiceImpl.class);
-    private static final List<String> SENSITIVE_KEY_PARTS = List.of("password", "token", "secret", "otp");
+    private static final List<String> SENSITIVE_KEY_PARTS = List.of("password", "token", "secret", "otp", "image", "frame");
     private static final int MAX_PAYLOAD_LENGTH = 8000;
 
     private final SyAuditLogRepository repository;

@@ -171,22 +171,24 @@ public class AuthServiceImpl implements AuthService {
             return AuthResultResponse.failure("Mật khẩu không chính xác.");
         }
 
+        return completeLogin(account);
+    }
+
+    @Override
+    @Transactional
+    public AuthResultResponse loginVerified(AdAccount account) {
+        if (account == null || !account.isActive()) {
+            return AuthResultResponse.failure("Tài khoản đã bị khóa.");
+        }
+        return completeLogin(account);
+    }
+
+    private AuthResultResponse completeLogin(AdAccount account) {
         LocalDateTime now = LocalDateTime.now(clock);
         account.setLastLoginAt(now);
         account.setUpdateDate(now);
         accountRepository.save(account);
-
-        TokenPair tokens = tokenService.issueFor(account);
-        return new AuthResultResponse(
-                true,
-                "Đăng nhập thành công.",
-                tokens.accessToken(),
-                account.getUserName(),
-                account.getFullName(),
-                account.getEmail(),
-                account.isMustChangePassword(),
-                tokens.refreshToken()
-        );
+        return authSuccess(account, "Đăng nhập thành công.");
     }
 
     @Override

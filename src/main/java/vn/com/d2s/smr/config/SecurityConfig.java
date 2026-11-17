@@ -57,6 +57,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/Auth/ForgotPassword").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/Auth/ResetPassword").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/Auth/GuestSession").permitAll()
+                        // Đăng nhập / vào họp bằng khuôn mặt (có giới hạn thử + mã thử thách dùng một lần ở FaceAuthService).
+                        .requestMatchers(HttpMethod.GET, "/api/Auth/FaceChallenge").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/Auth/FaceLogin", "/api/Auth/FaceJoin").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/File/UploadFilesRecord").permitAll()
                         .requestMatchers("/meetinghub/**").permitAll()
                         // P10: màn /join/:roomCode cho khách chưa đăng nhập
