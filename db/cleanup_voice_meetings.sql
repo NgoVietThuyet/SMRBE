@@ -18,9 +18,9 @@ INSERT INTO @MeetingIds (Id) VALUES
 
 DECLARE @RefIds TABLE (RefId NVARCHAR(100) PRIMARY KEY);
 INSERT INTO @RefIds (RefId)
-SELECT DISTINCT ReferenceFileId
+SELECT DISTINCT RefrenceFileId
 FROM MeetingInfos
-WHERE Id IN (SELECT Id FROM @MeetingIds) AND ReferenceFileId IS NOT NULL;
+WHERE Id IN (SELECT Id FROM @MeetingIds) AND RefrenceFileId IS NOT NULL;
 
 DECLARE @TaskIds TABLE (Id NVARCHAR(100) PRIMARY KEY);
 INSERT INTO @TaskIds (Id)
@@ -41,9 +41,9 @@ DELETE FROM MeetingTasks WHERE Id IN (SELECT Id FROM @TaskIds) AND [Level] = 0;
 
 -- 2. Xóa tệp đính kèm / bản ghi / mẫu trong CmFiles
 DELETE FROM CmFiles
-WHERE ReferenceFileId IN (SELECT Id FROM @MeetingIds)
-   OR ReferenceFileId IN (SELECT RefId FROM @RefIds)
-   OR ReferenceFileId IN (SELECT Id FROM @TaskIds)
+WHERE RefrenceFileId IN (SELECT Id FROM @MeetingIds)
+   OR RefrenceFileId IN (SELECT RefId FROM @RefIds)
+   OR RefrenceFileId IN (SELECT Id FROM @TaskIds)
    OR Id IN (SELECT ResultRef FROM SyBackgroundJobs WHERE RefId IN (SELECT Id FROM @MeetingIds) AND ResultRef IS NOT NULL);
 
 -- 3. Xóa dữ liệu họp, transcript, biên bản AI, sự kiện, chat, thông báo, audit
