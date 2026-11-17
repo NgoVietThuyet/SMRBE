@@ -1,6 +1,8 @@
 fastapi>=0.110
 uvicorn[standard]>=0.29
-deepface>=0.0.93
+# Ghim đúng phiên bản đã kiểm tra mã nguồn: represent(anti_spoofing=True) ném SpoofDetected (ValueError) khi là ảnh giả,
+# và KHÔNG trả trường is_real; bộ dò mặt yunet có sẵn.
+deepface==0.0.105
+tensorflow
 tf-keras
-opencv-python-headless
 numpy

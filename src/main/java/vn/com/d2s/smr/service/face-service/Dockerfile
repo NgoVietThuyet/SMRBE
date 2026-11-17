@@ -16,7 +16,7 @@ COPY requirements.txt .
 RUN pip install -r requirements.txt
 
 # Tải sẵn trọng số lúc build để chạy offline; lỗi tải thì để lần chạy đầu tải (volume /models giữ lại cho lần sau).
-RUN python -c "from deepface import DeepFace; DeepFace.build_model('ArcFace')" || true
+RUN python -c "from deepface import DeepFace as D; D.build_model('ArcFace'); D.build_model('yunet', task='face_detector'); D.build_model('Fasnet', task='spoofing')" || true
 
 COPY app.py .
 

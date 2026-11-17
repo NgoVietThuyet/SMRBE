@@ -21,7 +21,9 @@ from pydantic import BaseModel
 
 API_KEY = os.environ.get("FACE_API_KEY", "")
 MODEL = os.environ.get("FACE_MODEL", "ArcFace")
-DETECTOR = os.environ.get("FACE_DETECTOR", "opencv")  # opencv nhanh; retinaface chính xác hơn nhưng chậm hơn
+# Bộ dò mặt. KHÔNG dùng "opencv": DeepFace gọi Haar cascade với minNeighbors=10 rất khắt khe nên hay báo "không thấy mặt" ngay
+# lập tức với ảnh selfie. "yunet" (ONNX) nhẹ và chính xác; "retinaface" chính xác nhất nhưng chậm hơn.
+DETECTOR = os.environ.get("FACE_DETECTOR", "yunet")
 MAX_BYTES = int(os.environ.get("FACE_MAX_IMAGE_BYTES", str(4 * 1024 * 1024)))
 MAX_SIDE = int(os.environ.get("FACE_MAX_SIDE", "640"))
 # FACE_ANTISPOOF=false: tắt kiểm tra "mặt thật" (chỉ để thử nghiệm / khi mô hình chống giả mạo báo nhầm). Tắt thì ảnh in hay video
@@ -100,7 +102,7 @@ def _quality(img: np.ndarray, area: dict) -> float:
     ratio = min(1.0, (fw * fh) / (h * w * 0.12))  # mặt chiếm ≥ ~12% khung là đạt
     x, y = max(int(area.get("x", 0)), 0), max(int(area.get("y", 0)), 0)
     crop = cv2.cvtColor(img[y:y + fh, x:x + fw], cv2.COLOR_BGR2GRAY) if fw > 1 and fh > 1 else None
-    sharp = 0.0 if crop is None or crop.size == 0 else min(1.0, float(cv2.Laplacian(crop, cv2.CV_64F).var()) / 100.0)
+    sharp = 0.0 if crop is None or crop.size == 0 else min(1.0, float(cv2.Laplacian(crop, cv2.CV_64F).var()) / 40.0)
     return round(min(ratio, sharp), 3)
 
 

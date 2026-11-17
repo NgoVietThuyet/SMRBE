@@ -24,7 +24,9 @@ Xem log để biết dịch vụ trả gì: `docker compose logs --tail=60 smr-f
 và `docker compose logs --tail=60 smr-backend` (dòng `Kết quả nhận dạng`).
 - `isReal=None` / `Dịch vụ nhận dạng không trả kết quả kiểm tra mặt thật`: bản DeepFace không có chống giả mạo hoặc thiếu thư viện.
 - `isReal=False` hoặc điểm thấp dù là mặt thật: mô hình chống giả mạo báo nhầm (hay gặp với ảnh thiếu sáng, camera điện thoại, mặt quá gần).
-  Thử `FACE_DETECTOR=retinaface` hoặc `yunet` (chính xác hơn `opencv`), hoặc hạ `FACE_MIN_LIVENESS` ở BE.
+  Bộ dò mặt mặc định là `yunet`; thử `FACE_DETECTOR=retinaface` (chính xác hơn, chậm hơn), hoặc hạ `FACE_MIN_LIVENESS` ở BE. Giữ mặt
+  chiếm khoảng 30–50% khung hình (không quá sát camera).
+- "Cần đúng một khuôn mặt rõ" trả về gần như tức thì: bộ dò mặt không thấy mặt. Đừng dùng `FACE_DETECTOR=opencv` (Haar, rất khắt khe).
 - Chỉ để thử nghiệm: `FACE_ANTISPOOF=false` trong `.env` tắt hẳn kiểm tra mặt thật (ảnh in / video phát lại sẽ qua được).
   Sau khi đổi `.env` chạy lại `docker compose up -d`.
 
