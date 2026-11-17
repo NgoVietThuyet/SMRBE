@@ -6,6 +6,8 @@ BE Spring Boot là nơi quyết định (so khớp, ngưỡng, cấp token). Ch�
 """
 import base64
 import hmac
+import importlib.metadata
+import inspect
 import logging
 import os
 import threading
@@ -35,6 +37,15 @@ _ready = threading.Event()
 def _warmup() -> None:
     """Nạp (và tải nếu chưa có) mô hình nhận dạng + chống giả mạo ngay lúc khởi động, để lần quét mặt đầu tiên không bị chậm
     quá timeout của BE. /health chỉ trả 200 khi xong nên Docker healthcheck phản ánh đúng trạng thái sẵn sàng."""
+    try:
+        ver = importlib.metadata.version("deepface")
+    except Exception:  # noqa: BLE001
+        ver = "?"
+    supports = "anti_spoofing" in inspect.signature(DeepFace.represent).parameters
+    log.info("DeepFace %s | represent(anti_spoofing=) được hỗ trợ: %s | ANTISPOOF=%s", ver, supports, ANTISPOOF)
+    if ANTISPOOF and not supports:
+        log.warning("Bản DeepFace này KHÔNG hỗ trợ anti_spoofing → mọi ảnh sẽ bị từ chối. Nâng cấp: pip install -U deepface "
+                    "(sửa requirements.txt rồi build lại), hoặc đặt FACE_ANTISPOOF=false để thử nghiệm.")
     try:
         DeepFace.build_model(MODEL)
     except Exception as e:  # noqa: BLE001
@@ -113,6 +124,7 @@ def represent(req: RepresentRequest, x_api_key: Optional[str] = Header(default=N
             antispoof = ANTISPOOF
         except TypeError:
             # Bản DeepFace cũ chưa có anti_spoofing: BE sẽ coi là không có điểm "mặt thật" và từ chối (fail-closed).
+            log.warning("represent: DeepFace không nhận tham số anti_spoofing (bản cũ) → không kiểm tra được mặt thật")
             faces = DeepFace.represent(
                 img_path=img, model_name=MODEL, detector_backend=DETECTOR, enforce_detection=True, align=True,
             )
@@ -131,7 +143,12 @@ def represent(req: RepresentRequest, x_api_key: Optional[str] = Header(default=N
                 "faceConfidence": 0.0, "quality": 0.0}
 
     f = faces[0]
-    is_real = bool(f.get("is_real")) if antispoof and "is_real" in f else None
+    # DeepFace khi bật anti_spoofing báo giả mạo bằng cách ném ValueError (đã xử lý ở trên); ảnh đi qua được tức là mặt thật,
+    # dù bản đó không kèm trường is_real. Có trường thì dùng giá trị trong đó. Gọi không có anti_spoofing (bản cũ) thì để None.
+    if antispoof:
+        is_real = bool(f["is_real"]) if "is_real" in f else True
+    else:
+        is_real = None
     score = float(f["antispoof_score"]) if antispoof and "antispoof_score" in f else None
     if not ANTISPOOF:
         is_real, score = True, None  # đã tắt chống giả mạo theo cấu hình
