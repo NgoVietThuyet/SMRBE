@@ -17,3 +17,4 @@ seed-credentials.local.txt
 
 # Cấu hình riêng máy dev (chứa mật khẩu)
 **/application-local.*
+**/face-service/

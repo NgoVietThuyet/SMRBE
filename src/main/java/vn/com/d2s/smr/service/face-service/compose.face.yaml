@@ -1,0 +1,37 @@
+# File ghép cho server còn dùng compose.yaml bản cũ: thêm service smr-face và các biến FACE_* cho smr-backend.
+# Dùng: docker compose -f compose.yaml -f BE-Java/src/main/java/vn/com/d2s/smr/service/face-service/compose.face.yaml up -d --build
+# (chạy từ ~/smr; đường dẫn build tính theo thư mục chứa compose.yaml đầu tiên). Cần FACE_API_KEY và FACE_ENC_KEY trong .env.
+services:
+  smr-backend:
+    environment:
+      FACE_ENABLED: ${FACE_ENABLED:-false}
+      FACE_URL: ${FACE_URL:-http://smr-face:8000}
+      FACE_API_KEY: ${FACE_API_KEY:-}
+      FACE_ENC_KEY: ${FACE_ENC_KEY:-}
+
+  smr-face:
+    build:
+      context: ./BE-Java/src/main/java/vn/com/d2s/smr/service/face-service
+    image: smr-face:latest
+    container_name: smr-face
+    restart: unless-stopped
+    environment:
+      FACE_API_KEY: ${FACE_API_KEY:-}
+      FACE_MODEL: ${FACE_MODEL:-ArcFace}
+      FACE_DETECTOR: ${FACE_DETECTOR:-opencv}
+      TZ: Asia/Ho_Chi_Minh
+    volumes:
+      - smr-face-models:/models
+    expose:
+      - "8000"
+    mem_limit: ${FACE_MEM_LIMIT:-3g}
+    networks:
+      - smr
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  smr-face-models:
