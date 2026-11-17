@@ -371,9 +371,14 @@ public class FaceAuthServiceImpl implements FaceAuthService {
             if (a.quality() < props.minQuality()) {
                 throw new Reject("Ảnh chưa đủ rõ. Hãy quét lại ở nơi đủ sáng, nhìn thẳng vào camera.", false);
             }
-            // Không có kết quả "mặt thật" (dịch vụ không hỗ trợ) cũng bị từ chối: fail-closed.
-            if (!Boolean.TRUE.equals(a.real()) || (a.antispoofScore() != null && a.antispoofScore() < props.minLiveness())) {
-                throw new Reject("Không xác nhận được khuôn mặt thật.", true);
+            log.info("Kết quả nhận dạng: faces={}, mặt thật={}, điểm={}, chất lượng={} (ngưỡng điểm {})",
+                    a.faces(), a.real(), a.antispoofScore(), a.quality(), props.minLiveness());
+            // Dịch vụ không trả kết quả "mặt thật" (cấu hình / phiên bản DeepFace không hỗ trợ): từ chối (fail-closed) nhưng nói rõ lý do.
+            if (a.real() == null) {
+                throw new Reject("Dịch vụ nhận dạng không trả kết quả kiểm tra mặt thật. Báo quản trị viên kiểm tra face-service.", false);
+            }
+            if (!a.real() || (a.antispoofScore() != null && a.antispoofScore() < props.minLiveness())) {
+                throw new Reject("Hệ thống nghi ngờ đây không phải khuôn mặt thật. Hãy quét ở nơi đủ sáng, nhìn thẳng, không dùng ảnh hoặc màn hình.", true);
             }
             embeddings.add(FaceMath.normalize(a.embedding()));
             quality = Math.min(quality, a.quality());

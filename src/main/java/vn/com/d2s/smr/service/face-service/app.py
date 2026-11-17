@@ -22,7 +22,11 @@ MODEL = os.environ.get("FACE_MODEL", "ArcFace")
 DETECTOR = os.environ.get("FACE_DETECTOR", "opencv")  # opencv nhanh; retinaface chính xác hơn nhưng chậm hơn
 MAX_BYTES = int(os.environ.get("FACE_MAX_IMAGE_BYTES", str(4 * 1024 * 1024)))
 MAX_SIDE = int(os.environ.get("FACE_MAX_SIDE", "640"))
+# FACE_ANTISPOOF=false: tắt kiểm tra "mặt thật" (chỉ để thử nghiệm / khi mô hình chống giả mạo báo nhầm). Tắt thì ảnh in hay video
+# phát lại sẽ qua được bước này — đừng tắt ở môi trường thật nếu không cần.
+ANTISPOOF = os.environ.get("FACE_ANTISPOOF", "true").strip().lower() not in ("0", "false", "no", "off")
 
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 log = logging.getLogger("face-service")
 app = FastAPI(title="smr-face-service")
 _ready = threading.Event()
@@ -104,9 +108,9 @@ def represent(req: RepresentRequest, x_api_key: Optional[str] = Header(default=N
         try:
             faces = DeepFace.represent(
                 img_path=img, model_name=MODEL, detector_backend=DETECTOR,
-                enforce_detection=True, align=True, anti_spoofing=True,
+                enforce_detection=True, align=True, anti_spoofing=ANTISPOOF,
             )
-            antispoof = True
+            antispoof = ANTISPOOF
         except TypeError:
             # Bản DeepFace cũ chưa có anti_spoofing: BE sẽ coi là không có điểm "mặt thật" và từ chối (fail-closed).
             faces = DeepFace.represent(
@@ -115,6 +119,7 @@ def represent(req: RepresentRequest, x_api_key: Optional[str] = Header(default=N
             antispoof = False
     except ValueError as e:
         msg = str(e).lower()
+        log.info("represent: ValueError: %s", e)
         if "spoof" in msg:
             return {"faces": 1, "embedding": None, "isReal": False, "antispoofScore": 0.0,
                     "faceConfidence": 0.0, "quality": 0.0}
@@ -126,13 +131,20 @@ def represent(req: RepresentRequest, x_api_key: Optional[str] = Header(default=N
                 "faceConfidence": 0.0, "quality": 0.0}
 
     f = faces[0]
+    is_real = bool(f.get("is_real")) if antispoof and "is_real" in f else None
+    score = float(f["antispoof_score"]) if antispoof and "antispoof_score" in f else None
+    if not ANTISPOOF:
+        is_real, score = True, None  # đã tắt chống giả mạo theo cấu hình
+    quality = _quality(img, f.get("facial_area", {}))
+    log.info("represent: faces=1 isReal=%s antispoofScore=%s quality=%s area=%s keys=%s",
+             is_real, score, quality, f.get("facial_area"), sorted(f.keys()))
     return {
         "faces": 1,
         "embedding": [float(v) for v in f["embedding"]],
-        "isReal": bool(f.get("is_real")) if antispoof and "is_real" in f else None,
-        "antispoofScore": float(f["antispoof_score"]) if antispoof and "antispoof_score" in f else None,
+        "isReal": is_real,
+        "antispoofScore": score,
         "faceConfidence": float(f.get("face_confidence") or 0.0),
-        "quality": _quality(img, f.get("facial_area", {})),
+        "quality": quality,
         "model": MODEL,
         "dim": len(f["embedding"]),
     }

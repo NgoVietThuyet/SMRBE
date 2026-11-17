@@ -19,6 +19,15 @@ Trên server thường chỉ có `~/smr/compose.yaml`, `~/smr/.env`, `~/smr/BE-J
      Luôn dùng đủ hai `-f` cho mọi lệnh `docker compose` sau đó (ps, logs, down...).
 4. Lần đầu `smr-face` tải mô hình nên mất vài phút; `docker compose ps` thấy `healthy` là xong. Cần thêm khoảng 3 GB RAM.
 
+## Khi quét mặt báo "nghi ngờ không phải khuôn mặt thật"
+Xem log để biết dịch vụ trả gì: `docker compose logs --tail=60 smr-face` (dòng `represent: ... isReal=... antispoofScore=...`)
+và `docker compose logs --tail=60 smr-backend` (dòng `Kết quả nhận dạng`).
+- `isReal=None` / `Dịch vụ nhận dạng không trả kết quả kiểm tra mặt thật`: bản DeepFace không có chống giả mạo hoặc thiếu thư viện.
+- `isReal=False` hoặc điểm thấp dù là mặt thật: mô hình chống giả mạo báo nhầm (hay gặp với ảnh thiếu sáng, camera điện thoại, mặt quá gần).
+  Thử `FACE_DETECTOR=retinaface` hoặc `yunet` (chính xác hơn `opencv`), hoặc hạ `FACE_MIN_LIVENESS` ở BE.
+- Chỉ để thử nghiệm: `FACE_ANTISPOOF=false` trong `.env` tắt hẳn kiểm tra mặt thật (ảnh in / video phát lại sẽ qua được).
+  Sau khi đổi `.env` chạy lại `docker compose up -d`.
+
 ## API
 - `GET /health`: 200 khi mô hình đã nạp xong, 503 khi đang khởi động.
 - `POST /represent` (header `X-Api-Key`): `{"image": "<base64 JPEG>"}` →
