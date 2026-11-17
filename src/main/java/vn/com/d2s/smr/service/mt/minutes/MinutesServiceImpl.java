@@ -164,6 +164,11 @@ public class MinutesServiceImpl implements MinutesService {
 
     /** Hồ sơ cuộc họp chốt khi họp kết thúc; không có thì dùng dữ liệu sống như trước. */
     private MeetingRecordService records;
+    /** Pipeline sau họp (làm sạch → diễn biến → quyết định → chỉ mục RAG); không có thì dùng luồng một lần gọi như cũ. */
+    private vn.com.d2s.smr.service.mt.pipeline.MeetingPipelineService pipeline;
+
+    @Autowired(required = false)
+    void setPipeline(vn.com.d2s.smr.service.mt.pipeline.MeetingPipelineService pipeline) { this.pipeline = pipeline; }
 
     @Autowired(required = false)
     void setRecords(MeetingRecordService records) { this.records = records; }
@@ -445,19 +450,34 @@ public class MinutesServiceImpl implements MinutesService {
             List<MinutesAiGenerator.Participant> participants = people.stream()
                     .filter(p -> !RoomAdmission.isGuest(p.getUserName()))
                     .map(p -> new MinutesAiGenerator.Participant(p.getUserName(), p.getFullName())).toList();
-            MinutesAiGenerator.Prompt prompt = MinutesAiGenerator.build(meeting.getName(),
-                    meeting.getStartDate() != null ? meeting.getStartDate() : meeting.getExpectedStartTime(), participants, segs,
-                    readDocs(snap != null ? docsOf(snap) : docFiles(meeting)));
-            String raw = llm.generate(prompt.system(), prompt.user(), 0.2, 3000);
-            if (raw == null || raw.isBlank()) throw new IllegalStateException("Không kết nối được máy chủ AI. Hãy thử lại sau.");
-            MinutesContent content = MinutesAiGenerator.parse(raw, prompt.codeToSegment(), participants, mapper);
+            LocalDateTime start = meeting.getStartDate() != null ? meeting.getStartDate() : meeting.getExpectedStartTime();
+            List<MinutesAiGenerator.Doc> docs = readDocs(snap != null ? docsOf(snap) : docFiles(meeting));
+            String sourceHash = job.getIdempotencyKey().substring(job.getIdempotencyKey().lastIndexOf(':') + 1);
+            MinutesContent content = null;
+            String promptVersion = MinutesAiGenerator.PROMPT_VERSION;
+            if (pipeline != null && !segs.isEmpty()) {
+                try {
+                    content = pipeline.run(new vn.com.d2s.smr.service.mt.pipeline.MeetingPipelineService.Input(meeting.getId(),
+                            meeting.getName(), start, meeting.getAgenda(), participants, segs, docs, sourceHash));
+                    promptVersion = vn.com.d2s.smr.service.mt.pipeline.MeetingExtractor.PROMPT_VERSION;
+                } catch (RuntimeException e) {
+                    // Pipeline lỗi (AI trả sai định dạng...) → thử luồng một lần gọi như cũ để người dùng vẫn có bản nháp.
+                    log.warn("Pipeline lỗi cho cuộc họp {}, dùng luồng cũ: {}", meeting.getId(), e.getMessage());
+                }
+            }
+            if (content == null) {
+                MinutesAiGenerator.Prompt prompt = MinutesAiGenerator.build(meeting.getName(), start, participants, segs, docs);
+                String raw = llm.generate(prompt.system(), prompt.user(), 0.2, 3000);
+                if (raw == null || raw.isBlank()) throw new IllegalStateException("Không kết nối được máy chủ AI. Hãy thử lại sau.");
+                content = MinutesAiGenerator.parse(raw, prompt.codeToSegment(), participants, mapper);
+            }
 
             MtMinutes m = newVersion(meeting.getId(), job.getCreatedBy());
             m.setContentJson(write(content));
             m.setSource("AI");
             m.setModel(llmProperties.model());
-            m.setPromptVersion(MinutesAiGenerator.PROMPT_VERSION);
-            m.setTranscriptHash(job.getIdempotencyKey().substring(job.getIdempotencyKey().lastIndexOf(':') + 1));
+            m.setPromptVersion(promptVersion);
+            m.setTranscriptHash(sourceHash);
             minutesRepository.save(m);
 
             job.setStatus(SyBackgroundJob.DONE);

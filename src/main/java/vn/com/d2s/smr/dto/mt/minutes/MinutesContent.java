@@ -14,17 +14,32 @@ public record MinutesContent(
         String summary,
         List<String> summarySources,
         List<Decision> decisions,
-        List<ActionItem> actions
+        List<ActionItem> actions,
+        List<Discussion> discussion
 ) {
     public MinutesContent {
         summary = summary == null ? "" : summary;
         summarySources = summarySources == null ? new ArrayList<>() : summarySources;
         decisions = decisions == null ? new ArrayList<>() : decisions;
         actions = actions == null ? new ArrayList<>() : actions;
+        discussion = discussion == null ? new ArrayList<>() : discussion;
+    }
+
+    /** Biên bản không có phần diễn biến thảo luận (bản nhập tay, bản cũ, bản sinh bằng luồng cũ). */
+    public MinutesContent(String summary, List<String> summarySources, List<Decision> decisions, List<ActionItem> actions) {
+        this(summary, summarySources, decisions, actions, null);
+    }
+
+    /** Diễn biến thảo luận theo từng chủ đề: ai đề xuất gì, ai phản biện, cuối cùng chốt ra sao (để lọc ý kiến đã bị bác bỏ). */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record Discussion(String topic, String text, List<String> sources) {
+        public Discussion {
+            sources = sources == null ? new ArrayList<>() : sources;
+        }
     }
 
     public static MinutesContent empty() {
-        return new MinutesContent("", List.of(), List.of(), List.of());
+        return new MinutesContent("", List.of(), List.of(), List.of(), List.of());
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)

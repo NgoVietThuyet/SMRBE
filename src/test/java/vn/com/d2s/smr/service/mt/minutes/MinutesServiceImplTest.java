@@ -373,4 +373,72 @@ class MinutesServiceImplTest {
         assertThat(user.getAllValues().get(0)).contains("Họp giao ban").doesNotContain("Tên mới").doesNotContain("Ý kiến bổ sung");
         assertThat(user.getAllValues().get(1)).contains("Tên mới").contains("Ý kiến bổ sung");
     }
+
+    private vn.com.d2s.smr.service.mt.LlmClientService pipelineLlm(String extractionAnswer) {
+        return new vn.com.d2s.smr.service.mt.LlmClientService() {
+            public String generateAnswer(String system, String user) {
+                return generate(system, user, 0.2, 1000);
+            }
+
+            public String generate(String system, String user, double t, int max) {
+                if (system.contains("biên tập viên")) {
+                    return "{\"turns\":[{\"ids\":[\"S1\"],\"text\":\"Thống nhất ra mắt thứ Hai.\"},{\"ids\":[\"S2\"],\"text\":\"Mem chuẩn bị tài liệu trước 20/10.\"}]}";
+                }
+                return extractionAnswer;
+            }
+
+            public boolean isAvailable() {
+                return true;
+            }
+        };
+    }
+
+    private vn.com.d2s.smr.service.mt.pipeline.MeetingPipelineService pipelineWith(vn.com.d2s.smr.service.mt.LlmClientService client) {
+        vn.com.d2s.smr.service.mt.pipeline.MeetingIndexStore store = new vn.com.d2s.smr.service.mt.pipeline.MeetingIndexStore(
+                org.mockito.Mockito.mock(vn.com.d2s.smr.repository.mt.MtMeetingAnalysisRepository.class),
+                org.mockito.Mockito.mock(vn.com.d2s.smr.repository.mt.MtRagChunkRepository.class));
+        vn.com.d2s.smr.service.mt.pipeline.embedding.EmbeddingClient off = new vn.com.d2s.smr.service.mt.pipeline.embedding.EmbeddingClient() {
+            public boolean available() {
+                return false;
+            }
+
+            public List<float[]> embed(List<String> texts) {
+                throw new vn.com.d2s.smr.service.mt.pipeline.embedding.EmbeddingException("off");
+            }
+        };
+        return new vn.com.d2s.smr.service.mt.pipeline.MeetingPipelineService(client, new ObjectMapper().findAndRegisterModules(), store, off, 40_000);
+    }
+
+    @Test
+    void generateUsesPipelineAndKeepsDiscussionBeforeDecisions() {
+        String answer = "{\"dien_bien_thao_luan\":[{\"chu_de\":\"Ra mắt\",\"dien_bien\":\"Đề xuất thứ Sáu, sau đó chốt thứ Hai.\",\"sources\":[\"T1\"]}],"
+                + "\"tom_tat\":\"Họp chốt lịch ra mắt.\",\"tom_tat_sources\":[\"T1\"],"
+                + "\"quyet_dinh_cuoi_cung\":[{\"text\":\"Ra mắt thứ Hai\",\"sources\":[\"T1\"]}],"
+                + "\"action_items\":[{\"text\":\"Chuẩn bị tài liệu\",\"assignee\":\"mem\",\"due_date\":\"2026-10-20\",\"sources\":[\"T2\"]}]}";
+        service.setPipeline(pipelineWith(pipelineLlm(answer)));
+
+        service.generate("sec", MID);
+
+        assertThat(minutes).hasSize(1);
+        assertThat(minutes.get(0).getPromptVersion()).isEqualTo("minutes-v3");
+        MinutesVersionResponse v = service.detail("sec", MID, null).current();
+        assertThat(v.content().discussion()).hasSize(1);
+        assertThat(v.content().discussion().get(0).text()).contains("chốt thứ Hai");
+        assertThat(v.content().decisions().get(0).text()).isEqualTo("Ra mắt thứ Hai");
+        assertThat(v.content().decisions().get(0).sources()).containsExactly("s1");
+        assertThat(v.content().actions().get(0).assignee()).isEqualTo("mem");
+        assertThat(v.content().actions().get(0).sources()).containsExactly("s2");
+        assertThat(v.warnings()).isEmpty();
+    }
+
+    @Test
+    void pipelineFailureFallsBackToTheSingleCallFlow() {
+        service.setPipeline(pipelineWith(pipelineLlm("không phải json")));
+
+        service.generate("sec", MID);
+
+        assertThat(minutes).hasSize(1);
+        assertThat(minutes.get(0).getPromptVersion()).isEqualTo("minutes-v2");
+        assertThat(service.detail("sec", MID, null).current().content().decisions().get(0).text()).isEqualTo("Ra mắt vào thứ Hai");
+    }
 }

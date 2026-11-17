@@ -67,6 +67,15 @@ smr:
     connect-timeout-ms: ${LLM_CONNECT_TIMEOUT_MS:5000}
     # 120 giây: tổng hợp biên bản theo mẫu (P13) trả lời dài hơn hỏi đáp thông thường.
     read-timeout-ms: ${LLM_READ_TIMEOUT_MS:120000}
+  # Embedding cho tìm kiếm theo ý nghĩa (RAG). Không có / lỗi thì hỏi đáp rơi về tìm kiếm từ khóa, không ảnh hưởng nghiệp vụ.
+  embedding:
+    enabled: ${EMBEDDING_ENABLED:true}
+    url: ${EMBEDDING_URL:https://embedding.d2s.vn/embedding}
+    api-key: ${EMBEDDING_API_KEY:d2s_llm_test}
+    model: ${EMBEDDING_MODEL:default}
+    connect-timeout-ms: ${EMBEDDING_CONNECT_TIMEOUT_MS:3000}
+    read-timeout-ms: ${EMBEDDING_READ_TIMEOUT_MS:30000}
+    batch-size: ${EMBEDDING_BATCH_SIZE:16}
   # Đăng nhập / vào họp bằng khuôn mặt (dịch vụ phụ face-service). Mặc định TẮT. Ngưỡng cần chỉnh bằng dữ liệu thật.
   face:
     enabled: ${FACE_ENABLED:false}

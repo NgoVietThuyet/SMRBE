@@ -39,7 +39,15 @@ public final class MeetingDocumentText {
             String text;
             if (ext.equals(".pdf")) {
                 try (PDDocument doc = Loader.loadPDF(bytes)) {
-                    text = new PDFTextStripper().getText(doc);
+                    // Mỗi trang kết thúc bằng form-feed để bước chỉ mục (RAG) cắt tài liệu theo trang.
+                    PDFTextStripper stripper = new PDFTextStripper();
+                    StringBuilder sb = new StringBuilder();
+                    for (int p = 1; p <= doc.getNumberOfPages(); p++) {
+                        stripper.setStartPage(p);
+                        stripper.setEndPage(p);
+                        sb.append(stripper.getText(doc)).append('\f');
+                    }
+                    text = sb.toString();
                 }
             } else if (ext.equals(".docx")) {
                 try (XWPFDocument doc = new XWPFDocument(new java.io.ByteArrayInputStream(bytes));

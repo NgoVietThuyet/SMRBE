@@ -62,7 +62,7 @@ public class MeetingRecordService {
     }
 
     /** Tài liệu cuộc họp (type=1) đọc được văn bản — nguồn bổ sung cho AI cùng transcript. */
-    static List<CmFile> readableDocs(CmFileRepository fileRepository, MeetingInfo meeting) {
+    public static List<CmFile> readableDocs(CmFileRepository fileRepository, MeetingInfo meeting) {
         if (fileRepository == null || meeting.getReferenceFileId() == null) return List.of();
         return fileRepository.findByTypeAndReferenceFileIdOrderByCreateDateDesc(1, meeting.getReferenceFileId()).stream()
                 .filter(f -> !f.isMinutesFile() && f.getObjectName() != null && MeetingDocumentText.supports(f.getExtension()))

@@ -153,7 +153,7 @@ public final class MinutesAiGenerator {
         return w;
     }
 
-    static JsonNode readJson(String raw, ObjectMapper mapper) {
+    public static JsonNode readJson(String raw, ObjectMapper mapper) {
         if (raw == null) throw new IllegalStateException("AI không trả về nội dung.");
         String s = raw.trim();
         int start = s.indexOf('{');
