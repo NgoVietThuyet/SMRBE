@@ -270,6 +270,30 @@ class FaceAuthServiceImplTest {
     }
 
     @Test
+    void enrollSkipsFramesWhereNoFaceIsDetectedAsLongAsEnoughFramesRemain() {
+        account("alice", "[]");
+
+        // "ghost" = ảnh nghiêng đầu quá mức, bộ dò không thấy mặt → bỏ qua; còn 2 ảnh dùng được.
+        FaceActionResult ok = service.enroll("alice", new FaceEnrollRequest("pw", true, List.of("alice", "ghost", "alice2")));
+        assertThat(ok.success()).isTrue();
+        assertThat(store).hasSize(2);
+
+        // Chỉ 1 ảnh dùng được → chưa đủ.
+        FaceActionResult tooFew = service.enroll("alice", new FaceEnrollRequest("pw", true, List.of("alice", "ghost", "ghost2")));
+        assertThat(tooFew.success()).isFalse();
+        assertThat(tooFew.message()).contains("khuôn mặt rõ");
+    }
+
+    @Test
+    void loginToleratesOneUndetectableFrameButStillNeedsOne() {
+        account("alice", "[]");
+        enrolled("alice", "alice");
+
+        assertThat(service.login(login("alice", "alice", "ghost"), IP).success()).isTrue();
+        assertThat(service.login(login("alice", "ghost", "ghost2"), IP).success()).isFalse();
+    }
+
+    @Test
     void adminCanEnrollFaceForANewAccountWithoutItsPasswordButNeedsConsentAndNotSuperAdmin() {
         account("newbie", "[]");
         account("root", "[\"SUPER_ADMIN\"]");

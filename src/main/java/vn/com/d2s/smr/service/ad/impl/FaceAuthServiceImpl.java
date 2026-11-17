@@ -56,6 +56,8 @@ public class FaceAuthServiceImpl implements FaceAuthService {
     static final String GENERIC = "Không xác thực được khuôn mặt. Hãy thử lại hoặc đăng nhập bằng mật khẩu.";
     private static final int MAX_FRAME_CHARS = 1_500_000;
     private static final int MIN_ENROLL_FRAMES = 3;
+    /** Số ảnh dùng được tối thiểu khi đăng ký (ảnh nghiêng quá mức bị bỏ qua nhưng vẫn phải đủ ảnh để so khớp tốt). */
+    private static final int MIN_ENROLL_USABLE = 2;
 
     /** Ảnh không đạt (chất lượng, số mặt, mặt giả...). counted=true: coi là một lần thử sai. */
     private static final class Reject extends RuntimeException {
@@ -262,21 +264,20 @@ public class FaceAuthServiceImpl implements FaceAuthService {
     /** Phân tích ảnh, kiểm tra cùng một người + không trùng tài khoản khác rồi lưu mẫu mã hóa (thay mẫu cũ). */
     private FaceActionResult storeEnrollment(AdAccount account, List<String> frames) {
         String userName = account.getUserName();
-        List<float[]> embeddings = new ArrayList<>();
-        double quality = 1;
-        String model = "";
-        int dim = 0;
+        List<float[]> embeddings;
+        double quality;
+        String model;
+        int dim;
         try {
             if (frames.size() < MIN_ENROLL_FRAMES || frames.size() > props.maxEnrollFrames()) {
                 return FaceActionResult.failure("Cần từ " + MIN_ENROLL_FRAMES + " đến " + props.maxEnrollFrames() + " ảnh khuôn mặt.");
             }
-            for (String f : frames) {
-                Probe p = analyze(List.of(f), 1, 1);
-                embeddings.add(p.embedding());
-                quality = Math.min(quality, p.quality());
-                model = p.model();
-                dim = p.dim();
-            }
+            // Ảnh nghiêng đầu nhiều có thể không dò được mặt: bỏ qua ảnh đó, chỉ cần tối thiểu MIN_ENROLL_USABLE ảnh dùng được.
+            Collected c = collect(frames, MIN_ENROLL_FRAMES, props.maxEnrollFrames(), MIN_ENROLL_USABLE);
+            embeddings = c.embeddings();
+            quality = c.quality();
+            model = c.model();
+            dim = c.dim();
         } catch (Reject r) {
             return FaceActionResult.failure(r.getMessage());
         } catch (FaceEngineException e) {
@@ -351,8 +352,25 @@ public class FaceAuthServiceImpl implements FaceAuthService {
         }
     }
 
+    private record Collected(List<float[]> embeddings, double quality, String model, int dim) {
+    }
+
     /** Phân tích các khung hình: đúng một mặt, mặt thật, đủ nét, các khung cùng một người → đặc trưng trung bình. */
     private Probe analyze(List<String> frames, int min, int max) {
+        Collected c = collect(frames, min, max, 1);
+        for (int i = 1; i < c.embeddings().size(); i++) {
+            if (FaceMath.similarity(c.embeddings().get(0), c.embeddings().get(i)) < props.sampleAgreement()) {
+                throw new Reject("Các khung hình không cùng một người.", true);
+            }
+        }
+        return new Probe(FaceMath.mean(c.embeddings()), c.quality(), c.model(), c.dim());
+    }
+
+    /**
+     * Phân tích từng ảnh. Ảnh KHÔNG dùng được vì lý do chất lượng (không thấy mặt, mờ) thì bỏ qua; ảnh bị nghi giả mạo thì
+     * từ chối ngay. Cần ít nhất {@code minUsable} ảnh dùng được, nếu không ném lý do của ảnh hỏng gần nhất.
+     */
+    private Collected collect(List<String> frames, int min, int max, int minUsable) {
         if (frames == null || frames.size() < min || frames.size() > max) {
             throw new Reject("Số ảnh gửi lên không hợp lệ.", false);
         }
@@ -360,16 +378,21 @@ public class FaceAuthServiceImpl implements FaceAuthService {
         double quality = 1;
         String model = "";
         int dim = 0;
+        Reject lastBad = null;
         for (String f : frames) {
             if (f == null || f.isBlank() || f.length() > MAX_FRAME_CHARS) {
                 throw new Reject("Ảnh không hợp lệ hoặc quá lớn.", false);
             }
             FaceAnalysis a = engine.analyze(f);
             if (a.faces() != 1 || a.embedding() == null || a.embedding().length == 0) {
-                throw new Reject("Cần đúng một khuôn mặt rõ trong khung hình.", false);
+                log.info("Bỏ qua ảnh: số mặt tìm thấy = {}", a.faces());
+                lastBad = new Reject("Cần đúng một khuôn mặt rõ trong khung hình.", false);
+                continue;
             }
             if (a.quality() < props.minQuality()) {
-                throw new Reject("Ảnh chưa đủ rõ. Hãy quét lại ở nơi đủ sáng, nhìn thẳng vào camera.", false);
+                log.info("Bỏ qua ảnh: chất lượng {} < {}", a.quality(), props.minQuality());
+                lastBad = new Reject("Ảnh chưa đủ rõ. Hãy quét lại ở nơi đủ sáng, nhìn thẳng vào camera.", false);
+                continue;
             }
             log.info("Kết quả nhận dạng: faces={}, mặt thật={}, điểm={}, chất lượng={} (ngưỡng điểm {})",
                     a.faces(), a.real(), a.antispoofScore(), a.quality(), props.minLiveness());
@@ -385,11 +408,9 @@ public class FaceAuthServiceImpl implements FaceAuthService {
             model = a.model();
             dim = a.dim() > 0 ? a.dim() : a.embedding().length;
         }
-        for (int i = 1; i < embeddings.size(); i++) {
-            if (FaceMath.similarity(embeddings.get(0), embeddings.get(i)) < props.sampleAgreement()) {
-                throw new Reject("Các khung hình không cùng một người.", true);
-            }
+        if (embeddings.size() < minUsable) {
+            throw lastBad != null ? lastBad : new Reject("Cần đúng một khuôn mặt rõ trong khung hình.", false);
         }
-        return new Probe(FaceMath.mean(embeddings), quality, model, dim);
+        return new Collected(embeddings, quality, model, dim);
     }
 }
