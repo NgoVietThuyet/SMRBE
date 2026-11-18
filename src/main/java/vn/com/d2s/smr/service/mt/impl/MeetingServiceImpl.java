@@ -131,6 +131,12 @@ public class MeetingServiceImpl implements MeetingService {
     private RoomAdmission admission;
 
     private vn.com.d2s.smr.config.AdminAccess adminAccess;
+    private vn.com.d2s.smr.service.mt.MeetingPurgeService purge;
+
+    @Autowired(required = false)
+    void setPurge(vn.com.d2s.smr.service.mt.MeetingPurgeService purge) {
+        this.purge = purge;
+    }
 
     @Autowired(required = false)
     void setAdminAccess(vn.com.d2s.smr.config.AdminAccess adminAccess) {
@@ -560,16 +566,12 @@ public class MeetingServiceImpl implements MeetingService {
         MeetingInfo meeting = meetingInfoRepository.findByIdAndDeletedFalse(meetingId)
                 .orElseThrow(() -> new IllegalArgumentException("Cuộc họp không tồn tại."));
 
-        List<MeetingPersonal> personals = meetingPersonalRepository.findByMeetingId(meetingId);
-        boolean isHost = personals.stream()
-                .anyMatch(p -> p.getUserName().equalsIgnoreCase(userName) && RoomAdmission.isModerator(p));
-        if (!isHost && !isSystemAdmin(userName)) {
-            throw new SecurityException("Bạn không có quyền xóa cuộc họp này.");
+        boolean isCreator = meeting.getCreateBy() != null && meeting.getCreateBy().equalsIgnoreCase(userName);
+        if (!isCreator && !isSystemAdmin(userName)) {
+            throw new SecurityException("Chỉ người tạo cuộc họp mới được xóa.");
         }
-
-        // Chỉ xóa bản nháp; cuộc họp đã gửi lời mời thì phải hủy (kèm lý do) để người được mời nhận thông báo.
-        if (meeting.getStatus() != 0 || meeting.getStartDate() != null) {
-            throw new IllegalStateException("Chỉ xóa được cuộc họp nháp. Cuộc họp đã gửi lời mời hãy dùng chức năng Hủy.");
+        if (meeting.getStatus() == 2) {
+            throw new IllegalStateException("Cuộc họp đang diễn ra, hãy kết thúc trước khi xóa.");
         }
 
         LocalDateTime now = LocalDateTime.now(clock);
@@ -577,6 +579,8 @@ public class MeetingServiceImpl implements MeetingService {
         meeting.setUpdateBy(userName);
         meeting.setUpdateDate(now);
         meetingInfoRepository.save(meeting);
+        // Xóa kèm biên bản, bản ghi hình, transcript và dữ liệu phân tích của cuộc họp.
+        if (purge != null) purge.purge(meeting);
 
         saveAuditLog(meetingId, "DELETE", userName, meeting.getVersion() + 1, "Xóa cuộc họp.");
     }
@@ -1165,8 +1169,15 @@ public class MeetingServiceImpl implements MeetingService {
                 meeting.getJoinUrl(),
                 personals.size(),
                 isHost,
-                hostName
+                hostName,
+                canDeleteMeeting(meeting, userName)
         );
+    }
+
+    /** Người tạo cuộc họp (hoặc quản trị viên) xóa được khi cuộc họp không đang diễn ra. */
+    private boolean canDeleteMeeting(MeetingInfo meeting, String userName) {
+        if (meeting.getStatus() == 2) return false;
+        return (meeting.getCreateBy() != null && meeting.getCreateBy().equalsIgnoreCase(userName)) || isSystemAdmin(userName);
     }
 
     private MeetingDetailResponse toDetailResponse(MeetingInfo meeting, List<MeetingPersonal> personals, String userName) {
@@ -1228,7 +1239,8 @@ public class MeetingServiceImpl implements MeetingService {
                 rowVersionHex,
                 isHost,
                 meeting.getStartDate(),
-                meeting.getEndDate()
+                meeting.getEndDate(),
+                canDeleteMeeting(meeting, userName)
         );
     }
 

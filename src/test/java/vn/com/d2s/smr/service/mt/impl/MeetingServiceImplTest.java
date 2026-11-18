@@ -253,17 +253,18 @@ class MeetingServiceImplTest {
     }
 
     @Test
-    void deleteMeetingSoftDeletesMeeting() {
-        MeetingInfo meeting = sampleMeeting("m1", 0);
-        MeetingPersonal host = samplePersonal("m1", "user1", 1, true);
-
+    void deleteMeetingByCreatorRemovesMinutesAndRecordings() {
+        MeetingInfo meeting = sampleMeeting("m1", 3);
+        meeting.setCreateBy("User1");
+        var purge = org.mockito.Mockito.mock(vn.com.d2s.smr.service.mt.MeetingPurgeService.class);
+        meetingService.setPurge(purge);
         when(meetingInfoRepository.findByIdAndDeletedFalse("m1")).thenReturn(Optional.of(meeting));
-        when(meetingPersonalRepository.findByMeetingId("m1")).thenReturn(List.of(host));
 
         meetingService.deleteMeeting("user1", "m1");
 
         assertThat(meeting.isDeleted()).isTrue();
         verify(meetingInfoRepository).save(meeting);
+        verify(purge).purge(meeting);
     }
 
     @Test
@@ -484,14 +485,18 @@ class MeetingServiceImplTest {
     }
 
     @Test
-    void deleteMeetingRejectsPublishedMeeting() {
-        MeetingInfo meeting = sampleMeeting("m1", 1);
-        when(meetingInfoRepository.findByIdAndDeletedFalse("m1")).thenReturn(Optional.of(meeting));
-        when(meetingPersonalRepository.findByMeetingId("m1")).thenReturn(List.of(samplePersonal("m1", "user1", 1, true)));
+    void deleteMeetingRejectsNonCreatorAndOngoingMeeting() {
+        MeetingInfo other = sampleMeeting("m1", 1);
+        other.setCreateBy("someone");
+        when(meetingInfoRepository.findByIdAndDeletedFalse("m1")).thenReturn(Optional.of(other));
+        assertThatThrownBy(() -> meetingService.deleteMeeting("user1", "m1")).isInstanceOf(SecurityException.class);
+        assertThat(other.isDeleted()).isFalse();
 
-        assertThatThrownBy(() -> meetingService.deleteMeeting("user1", "m1"))
-                .isInstanceOf(IllegalStateException.class);
-        assertThat(meeting.isDeleted()).isFalse();
+        MeetingInfo live = sampleMeeting("m2", 2);
+        live.setCreateBy("user1");
+        when(meetingInfoRepository.findByIdAndDeletedFalse("m2")).thenReturn(Optional.of(live));
+        assertThatThrownBy(() -> meetingService.deleteMeeting("user1", "m2")).isInstanceOf(IllegalStateException.class);
+        assertThat(live.isDeleted()).isFalse();
     }
 
     @Test

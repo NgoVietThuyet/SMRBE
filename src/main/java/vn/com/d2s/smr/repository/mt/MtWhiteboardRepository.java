@@ -8,4 +8,6 @@ import java.util.Optional;
 public interface MtWhiteboardRepository extends JpaRepository<MtWhiteboard, String> {
 
     Optional<MtWhiteboard> findFirstByMeetingId(String meetingId);
+
+    void deleteByMeetingId(String meetingId);
 }

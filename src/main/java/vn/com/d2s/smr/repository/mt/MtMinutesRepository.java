@@ -18,4 +18,6 @@ public interface MtMinutesRepository extends JpaRepository<MtMinutes, String> {
     Optional<MtMinutes> findFirstByMeetingIdAndStatusOrderByVersionDesc(String meetingId, int status);
 
     List<MtMinutes> findByMeetingIdIn(Collection<String> meetingIds);
+
+    void deleteByMeetingId(String meetingId);
 }

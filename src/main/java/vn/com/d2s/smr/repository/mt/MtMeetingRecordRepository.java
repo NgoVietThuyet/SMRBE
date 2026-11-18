@@ -8,4 +8,6 @@ import java.util.Optional;
 public interface MtMeetingRecordRepository extends JpaRepository<MtMeetingRecord, String> {
 
     Optional<MtMeetingRecord> findByMeetingId(String meetingId);
+
+    void deleteByMeetingId(String meetingId);
 }
