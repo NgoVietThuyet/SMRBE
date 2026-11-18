@@ -28,16 +28,100 @@ public final class MinutesDocxRenderer {
     }
 
     public static byte[] render(InputStream template, Map<String, String> values) {
+        return render(template, values, null);
+    }
+
+    /**
+     * @param actionRows các dòng bảng việc cần làm (STT, tên công việc, người phụ trách, deadline); khác rỗng thì đoạn chỉ chứa
+     *                   {{action_items}} được thay bằng bảng 4 cột. Mẫu mặc định luôn dùng Times New Roman cỡ 13.
+     */
+    public static byte[] render(InputStream template, Map<String, String> values, List<String[]> actionRows) {
         try (XWPFDocument doc = template != null ? new XWPFDocument(template) : defaultDocument();
              ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            if (actionRows != null && !actionRows.isEmpty()) replaceActionsWithTable(doc, actionRows, template == null);
             replaceIn(doc.getParagraphs(), values);
             for (XWPFTable t : doc.getTables()) replaceInTable(t, values);
             for (XWPFHeaderFooter h : doc.getHeaderList()) replaceIn(h.getParagraphs(), values);
             for (XWPFHeaderFooter f : doc.getFooterList()) replaceIn(f.getParagraphs(), values);
+            if (template == null) applyFont(doc);
             doc.write(out);
             return out.toByteArray();
         } catch (IOException e) {
             throw new UncheckedIOException("Không tạo được file DOCX.", e);
+        }
+    }
+
+    static final String FONT = "Times New Roman";
+    static final int FONT_SIZE = 13;
+    private static final String[] ACTION_HEADERS = {"STT", "Tên công việc", "Người phụ trách", "Deadline"};
+    private static final int[] ACTION_WIDTHS = {700, 4700, 2000, 1600};
+
+    /** Thay đoạn chỉ gồm {{action_items}} bằng bảng có viền. */
+    private static void replaceActionsWithTable(XWPFDocument doc, List<String[]> rows, boolean styled) {
+        for (XWPFParagraph p : new ArrayList<>(doc.getParagraphs())) {
+            String text = p.getText();
+            if (text == null || !text.trim().equals("{{action_items}}")) continue;
+            org.apache.xmlbeans.XmlCursor cursor = p.getCTP().newCursor();
+            XWPFTable table = doc.insertNewTbl(cursor);
+            cursor.dispose();
+            table.setWidth("100%");
+            table.setTableAlignment(org.apache.poi.xwpf.usermodel.TableRowAlign.CENTER);
+            table.setInsideHBorder(org.apache.poi.xwpf.usermodel.XWPFTable.XWPFBorderType.SINGLE, 4, 0, "000000");
+            table.setInsideVBorder(org.apache.poi.xwpf.usermodel.XWPFTable.XWPFBorderType.SINGLE, 4, 0, "000000");
+            table.setTopBorder(org.apache.poi.xwpf.usermodel.XWPFTable.XWPFBorderType.SINGLE, 4, 0, "000000");
+            table.setBottomBorder(org.apache.poi.xwpf.usermodel.XWPFTable.XWPFBorderType.SINGLE, 4, 0, "000000");
+            table.setLeftBorder(org.apache.poi.xwpf.usermodel.XWPFTable.XWPFBorderType.SINGLE, 4, 0, "000000");
+            table.setRightBorder(org.apache.poi.xwpf.usermodel.XWPFTable.XWPFBorderType.SINGLE, 4, 0, "000000");
+            XWPFTableRow header = table.getRow(0);
+            while (header.getTableCells().size() < 4) header.addNewTableCell();
+            for (int c = 0; c < 4; c++) fillCell(header.getCell(c), ACTION_HEADERS[c], true, c != 1, ACTION_WIDTHS[c]);
+            for (String[] r : rows) {
+                XWPFTableRow row = table.createRow();
+                while (row.getTableCells().size() < 4) row.addNewTableCell();
+                for (int c = 0; c < 4; c++) fillCell(row.getCell(c), c < r.length && r[c] != null ? r[c] : "", false, c == 0, ACTION_WIDTHS[c]);
+            }
+            int pos = doc.getPosOfParagraph(p);
+            doc.removeBodyElement(pos);
+            return;
+        }
+    }
+
+    private static void fillCell(XWPFTableCell cell, String text, boolean bold, boolean center, int width) {
+        cell.setWidth(String.valueOf(width));
+        XWPFParagraph para = cell.getParagraphs().isEmpty() ? cell.addParagraph() : cell.getParagraphs().get(0);
+        para.setAlignment(center ? ParagraphAlignment.CENTER : ParagraphAlignment.LEFT);
+        for (int i = para.getRuns().size() - 1; i >= 0; i--) para.removeRun(i);
+        XWPFRun run = para.createRun();
+        run.setBold(bold);
+        String[] lines = text.split("\n", -1);
+        for (int i = 0; i < lines.length; i++) {
+            if (i > 0) run.addBreak();
+            run.setText(lines[i]);
+        }
+    }
+
+    /** Ép Times New Roman cỡ 13 cho mọi run (cả ascii, hAnsi, cs, eastAsia để tiếng Việt không đổi font). */
+    private static void applyFont(XWPFDocument doc) {
+        for (XWPFParagraph p : doc.getParagraphs()) fontParagraph(p);
+        for (XWPFTable t : doc.getTables()) {
+            for (XWPFTableRow row : t.getRows()) {
+                for (XWPFTableCell cell : row.getTableCells()) {
+                    for (XWPFParagraph p : cell.getParagraphs()) fontParagraph(p);
+                }
+            }
+        }
+    }
+
+    private static void fontParagraph(XWPFParagraph p) {
+        for (XWPFRun r : p.getRuns()) {
+            r.setFontFamily(FONT);
+            r.setFontSize(FONT_SIZE);
+            org.openxmlformats.schemas.wordprocessingml.x2006.main.CTRPr rPr = r.getCTR().isSetRPr() ? r.getCTR().getRPr() : r.getCTR().addNewRPr();
+            org.openxmlformats.schemas.wordprocessingml.x2006.main.CTFonts fonts = rPr.sizeOfRFontsArray() > 0 ? rPr.getRFontsArray(0) : rPr.addNewRFonts();
+            fonts.setAscii(FONT);
+            fonts.setHAnsi(FONT);
+            fonts.setCs(FONT);
+            fonts.setEastAsia(FONT);
         }
     }
 
@@ -82,7 +166,7 @@ public final class MinutesDocxRenderer {
         title.setAlignment(ParagraphAlignment.CENTER);
         XWPFRun t = title.createRun();
         t.setBold(true);
-        t.setFontSize(16);
+        t.setFontSize(FONT_SIZE);
         t.setText("BIÊN BẢN CUỘC HỌP");
         add(doc, "Cuộc họp: ", "{{meeting_name}}");
         add(doc, "Thời gian: ", "{{time}}");

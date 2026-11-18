@@ -270,7 +270,7 @@ class MinutesServiceImplTest {
         service.generate("sec", MID);
         assertThatThrownBy(() -> service.exportDocx("mem", MID, 1)).isInstanceOf(SecurityException.class);
         MinutesService.ExportedDocx file = service.exportDocx("sec", MID, 1);
-        assertThat(file.fileName()).startsWith("BienBan_ABC123_").endsWith("_v1.docx");
+        assertThat(file.fileName()).endsWith(".docx");
         try (var doc = new org.apache.poi.xwpf.usermodel.XWPFDocument(new java.io.ByteArrayInputStream(file.content()))) {
             String text = doc.getParagraphs().stream().map(p -> p.getText()).reduce("", (a, b) -> a + "\n" + b);
             assertThat(text).contains("Họp giao ban").contains("Ra mắt vào thứ Hai").contains("Thành Viên").doesNotContain("{{");

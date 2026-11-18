@@ -727,17 +727,17 @@ public class MinutesServiceImpl implements MinutesService {
         }
         if (template.isPresent()) {
             try (InputStream in = storage.download(template.get())) {
-                bytes = MinutesDocxRenderer.render(in, values);
+                bytes = MinutesDocxRenderer.render(in, values, MinutesExportServiceImpl.actionRows(content));
             } catch (Exception e) {
                 log.warn("Không dùng được mẫu biên bản {}: {} — dùng mẫu mặc định", template.get(), e.getMessage());
-                bytes = MinutesDocxRenderer.render(null, values);
+                bytes = MinutesDocxRenderer.render(null, values, MinutesExportServiceImpl.actionRows(content));
             }
         } else {
-            bytes = MinutesDocxRenderer.render(null, values);
+            bytes = MinutesDocxRenderer.render(null, values, MinutesExportServiceImpl.actionRows(content));
         }
         String date = c.meeting().getStartDate() == null ? "" : "_" + c.meeting().getStartDate().atOffset(ZoneOffset.UTC)
                 .atZoneSameInstant(BusinessTime.ZONE).format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-        return new ExportedDocx("BienBan_" + c.meeting().getRoomCode() + date + "_v" + version + ".docx", bytes);
+        return new ExportedDocx(MinutesExportServiceImpl.fileName(c.meeting().getName()), bytes);
     }
 
     private Map<String, String> placeholders(Ctx c, MinutesContent content) {
@@ -766,7 +766,7 @@ public class MinutesServiceImpl implements MinutesService {
                 "{{meeting_name}}", meeting.getName(),
                 "{{time}}", (start == null ? "" : vn(start)) + (end == null ? "" : " – " + vn(end)),
                 "{{participants}}", participants,
-                "{{summary}}", content.summary(),
+                "{{summary}}", MinutesExportServiceImpl.summaryText(content),
                 "{{decisions}}", decisions.isEmpty() ? "Không có" : decisions.toString().trim(),
                 "{{action_items}}", actions.isEmpty() ? "Không có" : actions.toString().trim());
     }

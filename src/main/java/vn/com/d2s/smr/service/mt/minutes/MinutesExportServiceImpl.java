@@ -368,7 +368,7 @@ public class MinutesExportServiceImpl implements MinutesExportService {
             LocalDateTime start = startOf(meeting);
             String date = start == null ? "" : "_" + start.atOffset(ZoneOffset.UTC).atZoneSameInstant(BusinessTime.ZONE)
                     .format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-            fileRepository.save(newFile(fileId, "BienBan_" + meeting.getRoomCode() + date + ".docx", docx.length, DOCX_MIME, ".docx",
+            fileRepository.save(newFile(fileId, fileName(meeting.getName()), docx.length, DOCX_MIME, ".docx",
                     FILE_TYPE_EXPORT, meetingId, objectName, job.getCreatedBy()));
 
             job.setStatus(SyBackgroundJob.DONE);
@@ -417,18 +417,18 @@ public class MinutesExportServiceImpl implements MinutesExportService {
                         ? MinutesTemplateRenderer.fillDocx(bytes, template, sections, note)
                         : MinutesTemplateRenderer.buildNew(template, "BIÊN BẢN CUỘC HỌP", sections, note);
             }
-            return MinutesDocxRenderer.render(new ByteArrayInputStream(bytes), placeholderValues(meeting, people, content, note));
+            return MinutesDocxRenderer.render(new ByteArrayInputStream(bytes), placeholderValues(meeting, people, content, note), actionRows(content));
         }
         Map<String, String> values = placeholderValues(meeting, people, content, note);
         Optional<String> system = systemTemplateObject(meeting);
         if (system.isPresent()) {
             try (InputStream in = storage.download(system.get())) {
-                return MinutesDocxRenderer.render(in, values);
+                return MinutesDocxRenderer.render(in, values, actionRows(content));
             } catch (Exception e) {
                 log.warn("Không dùng được mẫu hệ thống {}: {} — dùng bố cục dựng sẵn", system.get(), e.getMessage());
             }
         }
-        return MinutesDocxRenderer.render(null, values);
+        return MinutesDocxRenderer.render(null, values, actionRows(content));
     }
 
     /**
@@ -471,7 +471,7 @@ public class MinutesExportServiceImpl implements MinutesExportService {
         values.put("{{meeting_name}}", meeting.getName());
         values.put("{{time}}", timeText(meeting));
         values.put("{{participants}}", participantsText(people, false));
-        values.put("{{summary}}", (content.summary().isBlank() ? MinutesTemplateRenderer.NO_INFO : content.summary()) + "\n\n" + note);
+        values.put("{{summary}}", summaryText(content) + "\n\n" + note);
         values.put("{{decisions}}", decisionsText(content));
         values.put("{{action_items}}", actionsText(content));
         return values;
@@ -550,6 +550,37 @@ public class MinutesExportServiceImpl implements MinutesExportService {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < c.decisions().size(); i++) sb.append(i + 1).append(". ").append(c.decisions().get(i).text()).append('\n');
         return sb.toString().trim();
+    }
+
+    /** Tóm tắt kèm diễn biến thảo luận theo từng chủ đề để văn bản chi tiết hơn. */
+    static String summaryText(MinutesContent c) {
+        StringBuilder sb = new StringBuilder(c.summary().isBlank() ? MinutesTemplateRenderer.NO_INFO : c.summary().trim());
+        for (MinutesContent.Discussion d : c.discussion()) {
+            if (d.text() == null || d.text().isBlank()) continue;
+            sb.append("\n\n");
+            if (d.topic() != null && !d.topic().isBlank()) sb.append(d.topic().trim()).append(": ");
+            sb.append(d.text().trim());
+        }
+        return sb.toString();
+    }
+
+    /** Các dòng bảng việc cần làm: STT, tên công việc, người phụ trách, deadline. */
+    static List<String[]> actionRows(MinutesContent c) {
+        List<String[]> rows = new java.util.ArrayList<>();
+        for (int i = 0; i < c.actions().size(); i++) {
+            MinutesContent.ActionItem a = c.actions().get(i);
+            String who = a.assigneeName() != null ? a.assigneeName() : a.assignee() != null ? a.assignee() : "Chưa xác định";
+            String due = a.dueDate() != null ? LocalDate.parse(a.dueDate()).format(VN_DATE) : "Chưa xác định";
+            rows.add(new String[]{String.valueOf(i + 1), a.text(), who, due});
+        }
+        return rows;
+    }
+
+    /** Tên file = tên cuộc họp (bỏ ký tự cấm trong tên file). */
+    static String fileName(String meetingName) {
+        String n = meetingName == null ? "" : meetingName.replaceAll("[\\\\/:*?\"<>|\\p{Cntrl}]+", " ").replaceAll("\\s+", " ").trim();
+        if (n.length() > 100) n = n.substring(0, 100).trim();
+        return (n.isEmpty() ? "Bien ban cuoc hop" : n) + ".docx";
     }
 
     static String actionsText(MinutesContent c) {
