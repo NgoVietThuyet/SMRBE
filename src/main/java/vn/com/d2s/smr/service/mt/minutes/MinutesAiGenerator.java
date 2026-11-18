@@ -43,6 +43,23 @@ public final class MinutesAiGenerator {
         }
     }
 
+    /** Quy tắc dùng kết quả biểu quyết, dùng chung cho các prompt lập biên bản. */
+    public static final String POLL_RULES = """
+            BIỂU QUYẾT: mục "KẾT QUẢ BIỂU QUYẾT" (nếu có) là ý kiến tập thể chính thức của cuộc họp.
+              - Biểu quyết đã đóng có phương án nhiều phiếu nhất thì đó là quyết định của cuộc họp về câu hỏi đó: đưa vào quyết định cuối cùng,
+                ghi kèm "(Biểu quyết: X/Y phiếu)". Kết quả biểu quyết được ưu tiên hơn lời nói riêng lẻ ở cùng chủ đề, kể cả lời của chủ trì.
+              - Hòa phiếu, không ai bỏ phiếu hoặc biểu quyết chưa đóng thì KHÔNG coi là quyết định; chỉ nêu trong diễn biến là chưa có kết luận.
+              - Chỉ có số phiếu từng phương án, không có tên người bỏ phiếu: không suy đoán ai chọn gì.
+            """;
+
+    /** Mục "KẾT QUẢ BIỂU QUYẾT" trong prompt; rỗng nếu không có biểu quyết nào. */
+    public static String pollsText(List<vn.com.d2s.smr.dto.mt.poll.PollSummary> polls) {
+        if (polls == null || polls.isEmpty()) return "";
+        StringBuilder sb = new StringBuilder("\nKẾT QUẢ BIỂU QUYẾT (ý kiến tập thể chính thức của cuộc họp):\n");
+        polls.forEach(p -> sb.append(p.toPromptText()));
+        return sb.toString();
+    }
+
     /** Quy tắc trọng số vai trò, dùng chung cho mọi prompt lập biên bản. */
     public static final String ROLE_RULES = """
             TRỌNG SỐ VAI TRÒ: mỗi người nói được gắn nhãn vai trò ([CHỦ TRÌ], [ĐỒNG CHỦ TRÌ], [THƯ KÝ], [THÀNH VIÊN]).
@@ -104,6 +121,12 @@ public final class MinutesAiGenerator {
 
     public static Prompt build(String meetingName, LocalDateTime startUtc, List<Participant> participants,
                                List<MeetingTranscriptSegment> segments, List<Doc> docs) {
+        return build(meetingName, startUtc, participants, segments, docs, List.of());
+    }
+
+    public static Prompt build(String meetingName, LocalDateTime startUtc, List<Participant> participants,
+                               List<MeetingTranscriptSegment> segments, List<Doc> docs,
+                               List<vn.com.d2s.smr.dto.mt.poll.PollSummary> polls) {
         Map<String, String> codes = new LinkedHashMap<>();
         StringBuilder transcript = new StringBuilder();
         LocalDateTime base = startUtc != null ? startUtc : (segments.isEmpty() ? null : segments.get(0).getSpokenAt());
@@ -137,13 +160,15 @@ public final class MinutesAiGenerator {
                 5. "due_date": dạng YYYY-MM-DD khi transcript nêu rõ hạn; không rõ thì null.
                 6. Viết tiếng Việt, ngắn gọn, khách quan.
                 7. """ + ROLE_RULES + """
-                8. Trả về DUY NHẤT một đối tượng JSON hợp lệ, không có chữ nào khác, theo mẫu:
+                8. """ + POLL_RULES + """
+                9. Trả về DUY NHẤT một đối tượng JSON hợp lệ, không có chữ nào khác, theo mẫu:
                 {"summary":"...","summary_sources":["S1"],"decisions":[{"text":"...","sources":["S3"]}],"action_items":[{"text":"...","assignee":null,"due_date":null,"sources":["S5"]}]}
                 """;
         String user = "CUỘC HỌP: " + meetingName + "\n"
                 + (startUtc != null ? "BẮT ĐẦU: " + vn(startUtc) + " (giờ Việt Nam)\n" : "")
                 + "THÀNH VIÊN (userName: họ tên):\n" + people
                 + docsSection(docs)
+                + pollsText(polls)
                 + "\nTRANSCRIPT" + (truncated ? " (đã cắt bớt phần cuối do quá dài)" : "") + ":\n"
                 + (transcript.length() == 0 ? "(Không có transcript.)\n" : transcript);
         return new Prompt(system, user, codes);

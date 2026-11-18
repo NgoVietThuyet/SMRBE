@@ -71,6 +71,10 @@ public class MeetingRagServiceImpl implements MeetingRagService {
     private MtMinutesRepository minutesRepository;
     private MeetingIndexStore indexStore;
     private MeetingDocTextLoader docLoader;
+    private vn.com.d2s.smr.service.mt.PollService pollService;
+
+    @Autowired(required = false)
+    void setPollService(vn.com.d2s.smr.service.mt.PollService pollService) { this.pollService = pollService; }
     private EmbeddingClient embeddingClient;
     private ObjectMapper mapper = new ObjectMapper().findAndRegisterModules();
 
@@ -225,6 +229,20 @@ public class MeetingRagServiceImpl implements MeetingRagService {
                 } catch (Exception e) {
                     log.warn("Không đọc được biên bản {}: {}", m.getId(), e.getMessage());
                 }
+            }
+        }
+
+        // 4b. Kết quả biểu quyết: ý kiến tập thể, luôn đưa vào ngữ cảnh như biên bản đã chốt.
+        if (pollService != null) {
+            try {
+                java.util.List<vn.com.d2s.smr.dto.mt.poll.PollSummary> pollList = pollService.summaries(meetingId);
+                if (!pollList.isEmpty()) {
+                    StringBuilder sb = new StringBuilder("Kết quả biểu quyết trong cuộc họp (chỉ có số phiếu):\n");
+                    pollList.forEach(p -> sb.append(p.toPromptText()));
+                    chunks.add(new MeetingRagChunkDto("chunk-polls", "MINUTES", "Kết quả biểu quyết", null, sb.toString().trim(), null, 1.0));
+                }
+            } catch (RuntimeException e) {
+                log.warn("Không đọc được biểu quyết cuộc họp {}: {}", meetingId, e.getMessage());
             }
         }
 

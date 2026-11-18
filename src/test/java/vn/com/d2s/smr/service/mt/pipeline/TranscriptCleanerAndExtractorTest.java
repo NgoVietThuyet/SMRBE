@@ -117,9 +117,25 @@ class TranscriptCleanerAndExtractorTest {
                 .contains("[T3 05:00] Khách Lạ:")                      // khách không có vai trò → không gắn nhãn
                 .contains("- tu: Đức Tú — Chủ trì");
         assertThat(llm.systems.get(0)).contains("TRỌNG SỐ VAI TRÒ").contains("(Chủ trì chốt)");
-        assertThat(MeetingExtractor.PROMPT_VERSION).isEqualTo("minutes-v4");
+        assertThat(MeetingExtractor.PROMPT_VERSION).isEqualTo("minutes-v5");
         // Participant 2 tham số (không rõ vai trò) → không gắn nhãn.
         assertThat(MinutesAiGenerator.speakerTag(people, "duc", "Minh Đức")).isEmpty();
+    }
+
+    @Test
+    void pollResultsGoIntoPromptAsCountsOnly() {
+        var poll = new vn.com.d2s.smr.dto.mt.poll.PollSummary("Dùng Expo hay build app?", List.of("Expo", "Build app"), List.of(5, 2), 7, true);
+        FakeLlm llm = new FakeLlm((s, u) -> RESULT);
+
+        MeetingExtractor.extract("Họp", T0, people, turns(), List.of(), List.of(poll), llm, mapper, 40_000);
+
+        assertThat(llm.users.get(0)).contains("KẾT QUẢ BIỂU QUYẾT").contains("Dùng Expo hay build app?").contains("Expo: 5 phiếu")
+                .contains("Phương án nhiều phiếu nhất: Expo");
+        assertThat(llm.systems.get(0)).contains("BIỂU QUYẾT:").contains("(Biểu quyết: X/Y phiếu)");
+        // Không có biểu quyết → không có mục.
+        FakeLlm none = new FakeLlm((s, u) -> RESULT);
+        MeetingExtractor.extract("Họp", T0, people, turns(), List.of(), none, mapper, 40_000);
+        assertThat(none.users.get(0)).doesNotContain("KẾT QUẢ BIỂU QUYẾT");
     }
 
     @Test

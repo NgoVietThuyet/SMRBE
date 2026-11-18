@@ -22,8 +22,20 @@ public record MeetingRecordSnapshot(
         String agenda,
         List<Person> participants,
         List<Segment> segments,
-        List<Doc> docs
+        List<Doc> docs,
+        /** Kết quả biểu quyết trong cuộc họp (chỉ số phiếu, không tên người bỏ phiếu). Hồ sơ cũ không có → rỗng. */
+        List<vn.com.d2s.smr.dto.mt.poll.PollSummary> polls
 ) {
+    public MeetingRecordSnapshot {
+        polls = polls == null ? List.of() : polls;
+    }
+
+    public MeetingRecordSnapshot(String meetingName, String roomCode, String expectedStart, String expectedEnd, String actualStart,
+                                 String actualEnd, String content, String agenda, List<Person> participants, List<Segment> segments,
+                                 List<Doc> docs) {
+        this(meetingName, roomCode, expectedStart, expectedEnd, actualStart, actualEnd, content, agenda, participants, segments, docs, List.of());
+    }
+
     public record Person(String userName, String fullName, int type, boolean chairperson) {
     }
 

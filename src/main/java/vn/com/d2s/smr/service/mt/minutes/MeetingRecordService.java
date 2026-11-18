@@ -107,6 +107,13 @@ public class MeetingRecordService {
         return recordRepository.findByMeetingId(meetingId).map(r -> r.getRevision() + ":" + r.getSourceHash());
     }
 
+    private vn.com.d2s.smr.service.mt.PollService pollService;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    void setPollService(vn.com.d2s.smr.service.mt.PollService pollService) {
+        this.pollService = pollService;
+    }
+
     private MeetingRecordSnapshot build(MeetingInfo m) {
         List<MeetingPersonal> people = personalRepository.findByMeetingId(m.getId());
         List<MeetingTranscriptSegment> segs = segmentRepository.findByMeetingIdOrderBySpokenAtAsc(m.getId());
@@ -120,7 +127,8 @@ public class MeetingRecordService {
                 segs.stream().map(s -> new MeetingRecordSnapshot.Segment(s.getId(), s.getSpeakerUserName(), s.getSpeakerName(),
                         s.getText(), str(s.getSpokenAt()))).toList(),
                 docs.stream().sorted(Comparator.comparing(CmFile::getId))
-                        .map(f -> new MeetingRecordSnapshot.Doc(f.getId(), f.getFileName())).toList());
+                        .map(f -> new MeetingRecordSnapshot.Doc(f.getId(), f.getFileName())).toList(),
+                pollService == null ? List.of() : pollService.summaries(m.getId()));
     }
 
     private static String str(LocalDateTime t) {

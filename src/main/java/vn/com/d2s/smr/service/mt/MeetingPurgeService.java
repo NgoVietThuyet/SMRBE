@@ -39,6 +39,14 @@ public class MeetingPurgeService {
     private final MtWhiteboardRepository whiteboards;
     private final CmFileRepository files;
     private final ObjectStorageService storage;
+    private vn.com.d2s.smr.repository.mt.MtPollRepository polls;
+    private vn.com.d2s.smr.repository.mt.MtPollVoteRepository pollVotes;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    void setPolls(vn.com.d2s.smr.repository.mt.MtPollRepository polls, vn.com.d2s.smr.repository.mt.MtPollVoteRepository pollVotes) {
+        this.polls = polls;
+        this.pollVotes = pollVotes;
+    }
 
     public MeetingPurgeService(MtMinutesRepository minutes, MtMeetingRecordRepository records, MtMeetingAnalysisRepository analyses,
                                MtRagChunkRepository chunks, MeetingTranscriptSegmentRepository segments,
@@ -75,6 +83,11 @@ public class MeetingPurgeService {
         chunks.deleteByMeetingId(id);
         segments.deleteByMeetingId(id);
         whiteboards.deleteByMeetingId(id);
+        if (polls != null && pollVotes != null) {
+            List<String> pollIds = polls.findByMeetingIdOrderByCreatedAtAsc(id).stream().map(vn.com.d2s.smr.entity.mt.MtPoll::getId).toList();
+            if (!pollIds.isEmpty()) pollVotes.deleteByPollIdIn(pollIds);
+            polls.deleteByMeetingId(id);
+        }
         log.info("Đã xóa biên bản, bản ghi và dữ liệu liên quan của cuộc họp {} ({} file).", id, doomed.size());
     }
 }

@@ -167,6 +167,17 @@ public class MinutesServiceImpl implements MinutesService {
     /** Pipeline sau họp (làm sạch → diễn biến → quyết định → chỉ mục RAG); không có thì dùng luồng một lần gọi như cũ. */
     private vn.com.d2s.smr.service.mt.pipeline.MeetingPipelineService pipeline;
 
+    private vn.com.d2s.smr.service.mt.PollService pollService;
+
+    @Autowired(required = false)
+    void setPollService(vn.com.d2s.smr.service.mt.PollService pollService) { this.pollService = pollService; }
+
+    /** Kết quả biểu quyết: hồ sơ đã chốt thì lấy từ đó, chưa thì đọc dữ liệu sống. */
+    private List<vn.com.d2s.smr.dto.mt.poll.PollSummary> pollsOf(String meetingId, MeetingRecordSnapshot snap) {
+        if (snap != null) return snap.polls();
+        return pollService == null ? List.of() : pollService.summaries(meetingId);
+    }
+
     @Autowired(required = false)
     void setPipeline(vn.com.d2s.smr.service.mt.pipeline.MeetingPipelineService pipeline) { this.pipeline = pipeline; }
 
@@ -353,7 +364,7 @@ public class MinutesServiceImpl implements MinutesService {
             throw new IllegalStateException("Cuộc họp chưa có transcript hoặc tài liệu để AI tổng hợp.");
         }
 
-        String key = "MINUTES:" + meetingId + ":" + sourceHash(segs, docFiles);
+        String key = "MINUTES:" + meetingId + ":" + withPolls(sourceHash(segs, docFiles), pollsOf(meetingId, snap));
         Optional<SyBackgroundJob> existing = jobRepository.findByIdempotencyKey(key).map(this::expireIfStale);
         if (existing.isPresent() && existing.get().getStatus() != SyBackgroundJob.FAILED) {
             return toJob(existing.get(), true);
@@ -458,7 +469,8 @@ public class MinutesServiceImpl implements MinutesService {
             if (pipeline != null && !segs.isEmpty()) {
                 try {
                     content = pipeline.run(new vn.com.d2s.smr.service.mt.pipeline.MeetingPipelineService.Input(meeting.getId(),
-                            meeting.getName(), start, meeting.getAgenda(), participants, segs, docs, sourceHash));
+                            meeting.getName(), start, meeting.getAgenda(), participants, segs, docs, sourceHash,
+                            pollsOf(meeting.getId(), snap)));
                     promptVersion = vn.com.d2s.smr.service.mt.pipeline.MeetingExtractor.PROMPT_VERSION;
                 } catch (RuntimeException e) {
                     // Pipeline lỗi (AI trả sai định dạng...) → thử luồng một lần gọi như cũ để người dùng vẫn có bản nháp.
@@ -466,7 +478,7 @@ public class MinutesServiceImpl implements MinutesService {
                 }
             }
             if (content == null) {
-                MinutesAiGenerator.Prompt prompt = MinutesAiGenerator.build(meeting.getName(), start, participants, segs, docs);
+                MinutesAiGenerator.Prompt prompt = MinutesAiGenerator.build(meeting.getName(), start, participants, segs, docs, pollsOf(meeting.getId(), snap));
                 String raw = llm.generate(prompt.system(), prompt.user(), 0.2, 3000);
                 if (raw == null || raw.isBlank()) throw new IllegalStateException("Không kết nối được máy chủ AI. Hãy thử lại sau.");
                 content = MinutesAiGenerator.parse(raw, prompt.codeToSegment(), participants, mapper);
@@ -511,6 +523,19 @@ public class MinutesServiceImpl implements MinutesService {
             room.sendToUsers(members, "MinutesStatusChanged", payload);
         } catch (RuntimeException ignored) {
             // realtime lỗi không ảnh hưởng nghiệp vụ
+        }
+    }
+
+    /** Thêm kết quả biểu quyết vào mã nguồn: biểu quyết đổi thì cho phép sinh lại biên bản. */
+    private static String withPolls(String base, List<vn.com.d2s.smr.dto.mt.poll.PollSummary> polls) {
+        if (polls == null || polls.isEmpty()) return base;
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            md.update(base.getBytes(StandardCharsets.UTF_8));
+            polls.forEach(p -> md.update(p.toPromptText().getBytes(StandardCharsets.UTF_8)));
+            return HexFormat.of().formatHex(md.digest());
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException(e);
         }
     }
 

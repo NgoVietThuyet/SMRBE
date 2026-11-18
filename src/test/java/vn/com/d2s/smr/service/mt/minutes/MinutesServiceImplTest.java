@@ -421,7 +421,7 @@ class MinutesServiceImplTest {
         service.generate("sec", MID);
 
         assertThat(minutes).hasSize(1);
-        assertThat(minutes.get(0).getPromptVersion()).isEqualTo("minutes-v4");
+        assertThat(minutes.get(0).getPromptVersion()).isEqualTo("minutes-v5");
         MinutesVersionResponse v = service.detail("sec", MID, null).current();
         assertThat(v.content().discussion()).hasSize(1);
         assertThat(v.content().discussion().get(0).text()).contains("chốt thứ Hai");

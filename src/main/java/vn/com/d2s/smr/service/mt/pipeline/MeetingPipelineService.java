@@ -36,7 +36,17 @@ public class MeetingPipelineService {
 
     public record Input(String meetingId, String meetingName, LocalDateTime startUtc, String agenda,
                         List<MinutesAiGenerator.Participant> participants, List<MeetingTranscriptSegment> segments,
-                        List<MinutesAiGenerator.Doc> docs, String sourceHash) {
+                        List<MinutesAiGenerator.Doc> docs, String sourceHash,
+                        List<vn.com.d2s.smr.dto.mt.poll.PollSummary> polls) {
+        public Input {
+            polls = polls == null ? List.of() : polls;
+        }
+
+        public Input(String meetingId, String meetingName, LocalDateTime startUtc, String agenda,
+                     List<MinutesAiGenerator.Participant> participants, List<MeetingTranscriptSegment> segments,
+                     List<MinutesAiGenerator.Doc> docs, String sourceHash) {
+            this(meetingId, meetingName, startUtc, agenda, participants, segments, docs, sourceHash, List.of());
+        }
     }
 
     private final LlmClientService llm;
@@ -65,7 +75,7 @@ public class MeetingPipelineService {
                 in.meetingId(), in.segments().size(), turns.size(), glossary.terms().size(), digests.size());
 
         // 2. Diễn biến trước, chốt sau.
-        MinutesContent content = MeetingExtractor.extract(in.meetingName(), in.startUtc(), in.participants(), turns, digests, llm, mapper, singleCallChars);
+        MinutesContent content = MeetingExtractor.extract(in.meetingName(), in.startUtc(), in.participants(), turns, digests, in.polls(), llm, mapper, singleCallChars);
 
         // 3. Lưu bền + chỉ mục (không để lỗi ở đây làm hỏng biên bản).
         try {

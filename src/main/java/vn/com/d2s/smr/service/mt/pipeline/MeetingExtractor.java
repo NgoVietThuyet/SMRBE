@@ -28,7 +28,7 @@ import java.util.UUID;
 public final class MeetingExtractor {
 
     private static final Logger log = LoggerFactory.getLogger(MeetingExtractor.class);
-    public static final String PROMPT_VERSION = "minutes-v4";
+    public static final String PROMPT_VERSION = "minutes-v5";
     static final int WINDOW_CHARS = 20_000;
 
     static final String SYSTEM = """
@@ -47,7 +47,8 @@ public final class MeetingExtractor {
                "due_date": YYYY-MM-DD khi nêu rõ hạn; không rõ thì null.
             8. Viết tiếng Việt, khách quan. Không có quyết định hoặc việc cần làm thì trả mảng rỗng.
             9. """ + MinutesAiGenerator.ROLE_RULES + """
-            10. Trả về DUY NHẤT một đối tượng JSON hợp lệ, không có chữ nào khác, ĐÚNG THỨ TỰ TRƯỜNG sau:
+            10. """ + MinutesAiGenerator.POLL_RULES + """
+            11. Trả về DUY NHẤT một đối tượng JSON hợp lệ, không có chữ nào khác, ĐÚNG THỨ TỰ TRƯỜNG sau:
             {"dien_bien_thao_luan":[{"chu_de":"...","dien_bien":"...","sources":["T1"]}],"tom_tat":"...","tom_tat_sources":["T1"],"quyet_dinh_cuoi_cung":[{"text":"...","sources":["T3"]}],"action_items":[{"text":"...","assignee":null,"due_date":null,"sources":["T5"]}]}
             """;
 
@@ -55,6 +56,7 @@ public final class MeetingExtractor {
             Bạn hợp nhất kết quả từng PHẦN của CÙNG MỘT cuộc họp thành biên bản cuối cùng.
             QUY TẮC: nếu phần sau thay đổi hoặc bác bỏ một quyết định / việc của phần trước thì CHỈ giữ kết luận cuối cùng; không bịa thêm;
             giữ nguyên mã "sources" (dạng "T12"); gộp các chủ đề trùng nhau; "tom_tat" chi tiết 2-4 đoạn (150-300 từ).
+            Kết quả biểu quyết (mục KẾT QUẢ BIỂU QUYẾT) là ý kiến tập thể: giữ các quyết định "(Biểu quyết: X/Y phiếu)" từ các phần.
             Giữ trọng số vai trò: kết luận do chủ trì chốt (nhãn "(Chủ trì chốt)") được ưu tiên hơn ý kiến thành viên khi mâu thuẫn.
             Trả về DUY NHẤT một đối tượng JSON hợp lệ theo ĐÚNG THỨ TỰ TRƯỜNG:
             {"dien_bien_thao_luan":[{"chu_de":"...","dien_bien":"...","sources":["T1"]}],"tom_tat":"...","tom_tat_sources":["T1"],"quyet_dinh_cuoi_cung":[{"text":"...","sources":["T3"]}],"action_items":[{"text":"...","assignee":null,"due_date":null,"sources":["T5"]}]}
@@ -65,6 +67,13 @@ public final class MeetingExtractor {
 
     public static MinutesContent extract(String meetingName, LocalDateTime startUtc, List<MinutesAiGenerator.Participant> participants,
                                          List<CleanTurn> turns, List<DocDigest> digests, LlmClientService llm,
+                                         ObjectMapper mapper, int singleCallChars) {
+        return extract(meetingName, startUtc, participants, turns, digests, List.of(), llm, mapper, singleCallChars);
+    }
+
+    public static MinutesContent extract(String meetingName, LocalDateTime startUtc, List<MinutesAiGenerator.Participant> participants,
+                                         List<CleanTurn> turns, List<DocDigest> digests,
+                                         List<vn.com.d2s.smr.dto.mt.poll.PollSummary> polls, LlmClientService llm,
                                          ObjectMapper mapper, int singleCallChars) {
         if (turns.isEmpty() && (digests == null || digests.isEmpty())) {
             throw new IllegalStateException("Cuộc họp chưa có transcript hoặc tài liệu để AI tổng hợp.");
@@ -81,7 +90,8 @@ public final class MeetingExtractor {
         }
         String header = "CUỘC HỌP: " + meetingName + "\n"
                 + "THÀNH VIÊN (userName: họ tên):\n" + people(participants)
-                + digestsText(digests);
+                + digestsText(digests)
+                + MinutesAiGenerator.pollsText(polls);
 
         int total = lines.stream().mapToInt(String::length).sum();
         String json;
