@@ -273,6 +273,7 @@ class MinutesServiceImplTest {
         assertThat(file.fileName()).endsWith(".docx");
         try (var doc = new org.apache.poi.xwpf.usermodel.XWPFDocument(new java.io.ByteArrayInputStream(file.content()))) {
             String text = doc.getParagraphs().stream().map(p -> p.getText()).reduce("", (a, b) -> a + "\n" + b);
+            text += doc.getTables().stream().map(t -> t.getText()).reduce("", (a, b) -> a + "\n" + b);
             assertThat(text).contains("Họp giao ban").contains("Ra mắt vào thứ Hai").contains("Thành Viên").doesNotContain("{{");
         }
     }
@@ -420,7 +421,7 @@ class MinutesServiceImplTest {
         service.generate("sec", MID);
 
         assertThat(minutes).hasSize(1);
-        assertThat(minutes.get(0).getPromptVersion()).isEqualTo("minutes-v3");
+        assertThat(minutes.get(0).getPromptVersion()).isEqualTo("minutes-v4");
         MinutesVersionResponse v = service.detail("sec", MID, null).current();
         assertThat(v.content().discussion()).hasSize(1);
         assertThat(v.content().discussion().get(0).text()).contains("chốt thứ Hai");

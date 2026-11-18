@@ -103,6 +103,26 @@ class TranscriptCleanerAndExtractorTest {
     }
 
     @Test
+    void speakersAreTaggedWithRoleAndPromptWeighsChairperson() {
+        List<MinutesAiGenerator.Participant> roles = List.of(
+                new MinutesAiGenerator.Participant("duc", "Minh Đức", 4), new MinutesAiGenerator.Participant("tu", "Đức Tú", 1));
+        List<CleanTurn> withGuest = new ArrayList<>(turns());
+        withGuest.add(new CleanTurn(List.of("s9"), "Khách Lạ", "Em xin ý kiến.", "", T0.plusMinutes(5)));
+        FakeLlm llm = new FakeLlm((s, u) -> RESULT);
+
+        MeetingExtractor.extract("Họp", T0, roles, withGuest, List.of(), llm, mapper, 40_000);
+
+        String user = llm.users.get(0);
+        assertThat(user).contains("[T1 01:00] Minh Đức [THÀNH VIÊN]:").contains("[T2 03:00] Đức Tú [CHỦ TRÌ]:")
+                .contains("[T3 05:00] Khách Lạ:")                      // khách không có vai trò → không gắn nhãn
+                .contains("- tu: Đức Tú — Chủ trì");
+        assertThat(llm.systems.get(0)).contains("TRỌNG SỐ VAI TRÒ").contains("(Chủ trì chốt)");
+        assertThat(MeetingExtractor.PROMPT_VERSION).isEqualTo("minutes-v4");
+        // Participant 2 tham số (không rõ vai trò) → không gắn nhãn.
+        assertThat(MinutesAiGenerator.speakerTag(people, "duc", "Minh Đức")).isEmpty();
+    }
+
+    @Test
     void longMeetingIsSplitIntoWindowsThenMerged() {
         List<CleanTurn> many = new ArrayList<>();
         for (int i = 0; i < 80; i++) {

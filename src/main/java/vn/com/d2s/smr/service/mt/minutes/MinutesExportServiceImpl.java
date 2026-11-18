@@ -428,7 +428,7 @@ public class MinutesExportServiceImpl implements MinutesExportService {
                 log.warn("Không dùng được mẫu hệ thống {}: {} — dùng bố cục dựng sẵn", system.get(), e.getMessage());
             }
         }
-        return MinutesDocxRenderer.render(null, values, actionRows(content));
+        return MinutesDocxRenderer.renderDefault(MinutesDocModel.of(meeting.getName(), timeText(meeting), people, content, note));
     }
 
     /**

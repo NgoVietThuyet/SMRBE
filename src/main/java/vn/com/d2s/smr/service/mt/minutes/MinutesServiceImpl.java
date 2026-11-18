@@ -449,7 +449,7 @@ public class MinutesServiceImpl implements MinutesService {
                     : segmentRepository.findByMeetingIdOrderBySpokenAtAsc(meeting.getId());
             List<MinutesAiGenerator.Participant> participants = people.stream()
                     .filter(p -> !RoomAdmission.isGuest(p.getUserName()))
-                    .map(p -> new MinutesAiGenerator.Participant(p.getUserName(), p.getFullName())).toList();
+                    .map(p -> new MinutesAiGenerator.Participant(p.getUserName(), p.getFullName(), p.getType())).toList();
             LocalDateTime start = meeting.getStartDate() != null ? meeting.getStartDate() : meeting.getExpectedStartTime();
             List<MinutesAiGenerator.Doc> docs = readDocs(snap != null ? docsOf(snap) : docFiles(meeting));
             String sourceHash = job.getIdempotencyKey().substring(job.getIdempotencyKey().lastIndexOf(':') + 1);
@@ -730,14 +730,20 @@ public class MinutesServiceImpl implements MinutesService {
                 bytes = MinutesDocxRenderer.render(in, values, MinutesExportServiceImpl.actionRows(content));
             } catch (Exception e) {
                 log.warn("Không dùng được mẫu biên bản {}: {} — dùng mẫu mặc định", template.get(), e.getMessage());
-                bytes = MinutesDocxRenderer.render(null, values, MinutesExportServiceImpl.actionRows(content));
+                bytes = defaultDocx(c, values, content, m);
             }
         } else {
-            bytes = MinutesDocxRenderer.render(null, values, MinutesExportServiceImpl.actionRows(content));
+            bytes = defaultDocx(c, values, content, m);
         }
         String date = c.meeting().getStartDate() == null ? "" : "_" + c.meeting().getStartDate().atOffset(ZoneOffset.UTC)
                 .atZoneSameInstant(BusinessTime.ZONE).format(DateTimeFormatter.ofPattern("yyyyMMdd"));
         return new ExportedDocx(MinutesExportServiceImpl.fileName(c.meeting().getName()), bytes);
+    }
+
+    private static byte[] defaultDocx(Ctx c, Map<String, String> values, MinutesContent content, MtMinutes m) {
+        return MinutesDocxRenderer.renderDefault(MinutesDocModel.of(c.meeting().getName(), values.get("{{time}}"), c.people(), content,
+                "Biên bản " + (m.getStatus() == MtMinutes.PUBLISHED ? "đã phát hành" : m.getStatus() == MtMinutes.APPROVED ? "đã duyệt" : "bản nháp")
+                        + " (phiên bản " + m.getVersion() + ")."));
     }
 
     private Map<String, String> placeholders(Ctx c, MinutesContent content) {

@@ -36,7 +36,58 @@ public final class MinutesAiGenerator {
     private MinutesAiGenerator() {
     }
 
-    public record Participant(String userName, String fullName) {
+    /** role = MeetingPersonal.type (1 chủ trì, 2 đồng chủ trì, 3 thư ký, 4+ thành viên); 0 = không rõ. */
+    public record Participant(String userName, String fullName, int role) {
+        public Participant(String userName, String fullName) {
+            this(userName, fullName, 0);
+        }
+    }
+
+    /** Quy tắc trọng số vai trò, dùng chung cho mọi prompt lập biên bản. */
+    public static final String ROLE_RULES = """
+            TRỌNG SỐ VAI TRÒ: mỗi người nói được gắn nhãn vai trò ([CHỦ TRÌ], [ĐỒNG CHỦ TRÌ], [THƯ KÝ], [THÀNH VIÊN]).
+              - Lời kết luận, chốt, giao việc, đồng ý hoặc bác bỏ của [CHỦ TRÌ] / [ĐỒNG CHỦ TRÌ] là căn cứ chính cho quyết định cuối cùng và việc cần làm.
+                Nếu [THÀNH VIÊN] nói khác chủ trì ở cùng chủ đề thì theo chủ trì; ý kiến thành viên vẫn ghi trong diễn biến thảo luận.
+              - Thành viên đề xuất mà chủ trì chưa đồng ý hoặc chưa phản hồi chỉ là đề xuất (ghi trong diễn biến), chưa đưa vào quyết định
+                cuối cùng trừ khi có lời chốt rõ ràng. Chủ trì đã chốt thì đưa vào quyết định dù thành viên không nhắc lại.
+              - Việc chủ trì giao ghi đúng người được giao. Việc thành viên tự nhận vẫn ghi nếu chủ trì không bác bỏ.
+              - [THƯ KÝ] chỉ ghi nhận, không tăng trọng số. Không bỏ hẳn ý kiến của thành viên khỏi diễn biến.
+              - Khi kết luận do chủ trì chốt, ghi "(Chủ trì chốt)" ở cuối nội dung quyết định hoặc việc cần làm.
+            """;
+
+    /** Nhãn vai trò của người nói: khớp userName rồi họ tên (không phân biệt hoa thường). Không khớp (khách) → chuỗi rỗng. */
+    public static String speakerTag(List<Participant> participants, String userName, String speakerName) {
+        Participant found = null;
+        for (Participant p : participants) {
+            if (p.role() <= 0) continue;
+            if (userName != null && !userName.isBlank() && p.userName() != null && p.userName().equalsIgnoreCase(userName.trim())) {
+                found = p;
+                break;
+            }
+            if (found == null && speakerName != null && p.fullName() != null
+                    && normalize(p.fullName()).equals(normalize(speakerName))) {
+                found = p;
+            }
+        }
+        return found == null ? "" : " [" + roleLabel(found.role()).toUpperCase(java.util.Locale.ROOT) + "]";
+    }
+
+    private static String normalize(String s) {
+        return s.trim().replaceAll("\\s+", " ").toLowerCase(java.util.Locale.ROOT);
+    }
+
+    /** Tên vai trò theo MeetingPersonal.type. */
+    public static String roleLabel(int type) {
+        return switch (type) {
+            case 1 -> "Chủ trì";
+            case 2 -> "Đồng chủ trì";
+            case 3 -> "Thư ký";
+            default -> "Thành viên";
+        };
+    }
+
+    public static String personLine(Participant p) {
+        return "- " + p.userName() + ": " + p.fullName() + (p.role() > 0 ? " — " + roleLabel(p.role()) : "") + "\n";
     }
 
     /** Tài liệu đính kèm đã trích văn bản. */
@@ -62,6 +113,7 @@ public final class MinutesAiGenerator {
             String code = "S" + (i + 1);
             String line = "[" + code + " " + offset(base, s.getSpokenAt()) + "] "
                     + (s.getSpeakerName() == null || s.getSpeakerName().isBlank() ? "Người tham gia" : s.getSpeakerName())
+                    + speakerTag(participants, s.getSpeakerUserName(), s.getSpeakerName())
                     + ": " + s.getText().replace('\n', ' ') + "\n";
             if (transcript.length() + line.length() > MAX_TRANSCRIPT_CHARS) {
                 truncated = true;
@@ -72,7 +124,7 @@ public final class MinutesAiGenerator {
         }
 
         StringBuilder people = new StringBuilder();
-        participants.forEach(p -> people.append("- ").append(p.userName()).append(": ").append(p.fullName()).append('\n'));
+        participants.forEach(p -> people.append(personLine(p)));
 
         String system = """
                 Bạn là thư ký cuộc họp chuyên nghiệp. Nhiệm vụ: lập biên bản từ transcript được cung cấp.
@@ -84,7 +136,8 @@ public final class MinutesAiGenerator {
                 4. "assignee": chỉ ghi tên đăng nhập (userName) trong danh sách thành viên khi transcript nêu rõ người phụ trách; không rõ thì null.
                 5. "due_date": dạng YYYY-MM-DD khi transcript nêu rõ hạn; không rõ thì null.
                 6. Viết tiếng Việt, ngắn gọn, khách quan.
-                7. Trả về DUY NHẤT một đối tượng JSON hợp lệ, không có chữ nào khác, theo mẫu:
+                7. """ + ROLE_RULES + """
+                8. Trả về DUY NHẤT một đối tượng JSON hợp lệ, không có chữ nào khác, theo mẫu:
                 {"summary":"...","summary_sources":["S1"],"decisions":[{"text":"...","sources":["S3"]}],"action_items":[{"text":"...","assignee":null,"due_date":null,"sources":["S5"]}]}
                 """;
         String user = "CUỘC HỌP: " + meetingName + "\n"

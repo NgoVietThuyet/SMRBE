@@ -28,7 +28,7 @@ import java.util.UUID;
 public final class MeetingExtractor {
 
     private static final Logger log = LoggerFactory.getLogger(MeetingExtractor.class);
-    public static final String PROMPT_VERSION = "minutes-v3";
+    public static final String PROMPT_VERSION = "minutes-v4";
     static final int WINDOW_CHARS = 20_000;
 
     static final String SYSTEM = """
@@ -46,7 +46,8 @@ public final class MeetingExtractor {
             7. "assignee": chỉ ghi tên đăng nhập (userName) trong danh sách thành viên khi rõ người phụ trách; không rõ thì null.
                "due_date": YYYY-MM-DD khi nêu rõ hạn; không rõ thì null.
             8. Viết tiếng Việt, khách quan. Không có quyết định hoặc việc cần làm thì trả mảng rỗng.
-            9. Trả về DUY NHẤT một đối tượng JSON hợp lệ, không có chữ nào khác, ĐÚNG THỨ TỰ TRƯỜNG sau:
+            9. """ + MinutesAiGenerator.ROLE_RULES + """
+            10. Trả về DUY NHẤT một đối tượng JSON hợp lệ, không có chữ nào khác, ĐÚNG THỨ TỰ TRƯỜNG sau:
             {"dien_bien_thao_luan":[{"chu_de":"...","dien_bien":"...","sources":["T1"]}],"tom_tat":"...","tom_tat_sources":["T1"],"quyet_dinh_cuoi_cung":[{"text":"...","sources":["T3"]}],"action_items":[{"text":"...","assignee":null,"due_date":null,"sources":["T5"]}]}
             """;
 
@@ -54,6 +55,7 @@ public final class MeetingExtractor {
             Bạn hợp nhất kết quả từng PHẦN của CÙNG MỘT cuộc họp thành biên bản cuối cùng.
             QUY TẮC: nếu phần sau thay đổi hoặc bác bỏ một quyết định / việc của phần trước thì CHỈ giữ kết luận cuối cùng; không bịa thêm;
             giữ nguyên mã "sources" (dạng "T12"); gộp các chủ đề trùng nhau; "tom_tat" chi tiết 2-4 đoạn (150-300 từ).
+            Giữ trọng số vai trò: kết luận do chủ trì chốt (nhãn "(Chủ trì chốt)") được ưu tiên hơn ý kiến thành viên khi mâu thuẫn.
             Trả về DUY NHẤT một đối tượng JSON hợp lệ theo ĐÚNG THỨ TỰ TRƯỜNG:
             {"dien_bien_thao_luan":[{"chu_de":"...","dien_bien":"...","sources":["T1"]}],"tom_tat":"...","tom_tat_sources":["T1"],"quyet_dinh_cuoi_cung":[{"text":"...","sources":["T3"]}],"action_items":[{"text":"...","assignee":null,"due_date":null,"sources":["T5"]}]}
             """;
@@ -74,7 +76,8 @@ public final class MeetingExtractor {
             CleanTurn t = turns.get(i);
             String code = "T" + (i + 1);
             codeToSegments.put(code, t.segmentIds());
-            lines.add("[" + code + " " + MinutesAiGenerator.offset(base, t.at()) + "] " + t.speaker() + ": " + t.text().replace('\n', ' '));
+            lines.add("[" + code + " " + MinutesAiGenerator.offset(base, t.at()) + "] " + t.speaker()
+                    + MinutesAiGenerator.speakerTag(participants, null, t.speaker()) + ": " + t.text().replace('\n', ' '));
         }
         String header = "CUỘC HỌP: " + meetingName + "\n"
                 + "THÀNH VIÊN (userName: họ tên):\n" + people(participants)
@@ -124,7 +127,7 @@ public final class MeetingExtractor {
 
     private static String people(List<MinutesAiGenerator.Participant> participants) {
         StringBuilder sb = new StringBuilder();
-        participants.forEach(p -> sb.append("- ").append(p.userName()).append(": ").append(p.fullName()).append('\n'));
+        participants.forEach(p -> sb.append(MinutesAiGenerator.personLine(p)));
         return sb.toString();
     }
 

@@ -36,6 +36,29 @@ class MinutesDocxRendererTest {
     }
 
     @Test
+    void professionalLayoutHasLetterheadTablesAndSignatures() throws Exception {
+        var model = new MinutesDocModel("Công ty cổ phần phần mềm ABS", false, "Họp BTL", "22:01 13/11/2026",
+                "Ngô Việt Thuyết", "Lý Đức Tú",
+                List.of(new MinutesDocModel.Person("Ngô Việt Thuyết", "Chủ trì"), new MinutesDocModel.Person("Lý Đức Tú", "Thư ký")),
+                List.of("Đoạn một.", "Đoạn hai."), List.of(new MinutesDocModel.Discussion("Giao diện", "Chốt dùng Expo.")),
+                List.of("Ra mắt thứ Hai"), List.of(new MinutesDocModel.Action("Làm việc", "An", "Chưa xác định")), "Biên bản đã duyệt (phiên bản 1).");
+        byte[] bytes = MinutesDocxRenderer.renderDefault(model);
+        java.nio.file.Files.write(java.nio.file.Path.of("target", "sample-minutes.docx"), bytes);
+        try (XWPFDocument doc = new XWPFDocument(new ByteArrayInputStream(bytes))) {
+            // đầu trang, thông tin, thành phần, việc cần làm, chữ ký
+            assertThat(doc.getTables()).hasSize(5);
+            assertThat(doc.getTables().get(0).getRow(0).getCell(0).getText()).isEqualTo("CÔNG TY CỔ PHẦN PHẦN MỀM ABS");
+            assertThat(doc.getTables().get(2).getRows()).hasSize(3);
+            assertThat(doc.getTables().get(3).getRow(0).getCell(3).getText()).isEqualTo("Deadline");
+            assertThat(doc.getTables().get(4).getRow(0).getCell(0).getText()).contains("THƯ KÝ").contains("Lý Đức Tú");
+            assertThat(doc.getTables().get(4).getRow(0).getCell(1).getText()).contains("CHỦ TRÌ").contains("Ngô Việt Thuyết");
+            String text = doc.getParagraphs().stream().map(XWPFParagraph::getText).reduce("", (a, b) -> a + "\n" + b);
+            assertThat(text).contains("BIÊN BẢN CUỘC HỌP").contains("III. KẾT LUẬN VÀ QUYẾT ĐỊNH").contains("1. Giao diện: Chốt dùng Expo.");
+            assertThat(doc.getFooterList().get(0).getText()).contains("Công ty cổ phần phần mềm ABS");
+        }
+    }
+
+    @Test
     void fileNameIsMeetingName() {
         assertThat(MinutesExportServiceImpl.fileName("Họp: giao ban/tuần?")).isEqualTo("Biên bản Họp giao ban tuần.docx");
         assertThat(MinutesExportServiceImpl.fileName("  ")).endsWith(".docx");
