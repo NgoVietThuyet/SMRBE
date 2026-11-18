@@ -580,7 +580,7 @@ public class MinutesExportServiceImpl implements MinutesExportService {
     static String fileName(String meetingName) {
         String n = meetingName == null ? "" : meetingName.replaceAll("[\\\\/:*?\"<>|\\p{Cntrl}]+", " ").replaceAll("\\s+", " ").trim();
         if (n.length() > 100) n = n.substring(0, 100).trim();
-        return (n.isEmpty() ? "Bien ban cuoc hop" : n) + ".docx";
+        return (n.isEmpty() ? "Biên bản cuộc họp" : "Biên bản " + n) + ".docx";
     }
 
     static String actionsText(MinutesContent c) {

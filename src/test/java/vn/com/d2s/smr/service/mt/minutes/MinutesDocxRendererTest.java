@@ -37,7 +37,7 @@ class MinutesDocxRendererTest {
 
     @Test
     void fileNameIsMeetingName() {
-        assertThat(MinutesExportServiceImpl.fileName("Họp: giao ban/tuần?")).isEqualTo("Họp giao ban tuần.docx");
+        assertThat(MinutesExportServiceImpl.fileName("Họp: giao ban/tuần?")).isEqualTo("Biên bản Họp giao ban tuần.docx");
         assertThat(MinutesExportServiceImpl.fileName("  ")).endsWith(".docx");
     }
 }
