@@ -16,6 +16,8 @@ public interface MeetingPersonalRepository extends JpaRepository<MeetingPersonal
 
     int countByMeetingId(String meetingId);
 
+    List<MeetingPersonal> findByUserNameIgnoreCase(String userName);
+
     void deleteByMeetingId(String meetingId);
 
     void deleteByMeetingIdAndUserName(String meetingId, String userName);

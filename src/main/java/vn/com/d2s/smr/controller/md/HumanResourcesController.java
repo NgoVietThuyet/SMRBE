@@ -37,6 +37,9 @@ import vn.com.d2s.smr.dto.md.hr.TitleDetailResponse;
 import vn.com.d2s.smr.dto.md.hr.TitleRequest;
 import vn.com.d2s.smr.dto.md.hr.TitleResponse;
 import vn.com.d2s.smr.service.ad.EmployeeService;
+import vn.com.d2s.smr.service.ad.impl.AccountDeletionService;
+import vn.com.d2s.smr.dto.ad.employee.DeleteAccountRequest;
+import vn.com.d2s.smr.dto.ad.employee.OwnedMeetingResponse;
 import vn.com.d2s.smr.service.md.HumanResourceMasterDataService;
 
 import java.security.Principal;
@@ -48,6 +51,12 @@ public class HumanResourcesController {
 
     private final HumanResourceMasterDataService hrMasterDataService;
     private final EmployeeService employeeService;
+    private AccountDeletionService accountDeletion;
+
+    @org.springframework.beans.factory.annotation.Autowired
+    void setAccountDeletion(AccountDeletionService accountDeletion) {
+        this.accountDeletion = accountDeletion;
+    }
 
     public HumanResourcesController(
             HumanResourceMasterDataService hrMasterDataService,
@@ -214,6 +223,20 @@ public class HumanResourcesController {
             @Valid @RequestBody ChangeStatusRequest request
     ) {
         employeeService.changeEmployeeStatus(userName, request, principal.getName());
+    }
+
+    /** Cuộc họp chưa kết thúc mà tài khoản là chủ trì (để hỏi chuyển chủ trì trước khi xóa). */
+    @GetMapping("/employees/{userName}/owned-meetings")
+    public List<OwnedMeetingResponse> ownedMeetings(@PathVariable String userName) {
+        return accountDeletion.ownedMeetings(userName);
+    }
+
+    @Audited(category = "ACCOUNT", action = "DELETE", targetType = "ACCOUNT", targetPathVariable = "userName")
+    @DeleteMapping("/employees/{userName}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteEmployee(Principal principal, @PathVariable String userName,
+                               @RequestBody(required = false) DeleteAccountRequest request) {
+        accountDeletion.delete(userName, request == null ? new DeleteAccountRequest(null) : request, principal.getName());
     }
 
     @Audited(category = "ACCOUNT", action = "RESET_PASSWORD", targetType = "ACCOUNT", targetPathVariable = "userName")

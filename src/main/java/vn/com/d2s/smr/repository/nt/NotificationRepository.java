@@ -18,6 +18,8 @@ public interface NotificationRepository extends JpaRepository<Notification, Stri
 
     long countByRecipientUserNameAndReadFalse(String recipientUserName);
 
+    void deleteByRecipientUserName(String recipientUserName);
+
     @Modifying
     @Query("update Notification n set n.read = true, n.readAt = :now "
             + "where n.recipientUserName = :userName and n.read = false and n.createDate <= :before")
