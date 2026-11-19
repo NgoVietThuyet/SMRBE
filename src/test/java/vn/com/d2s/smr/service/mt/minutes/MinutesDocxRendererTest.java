@@ -37,7 +37,7 @@ class MinutesDocxRendererTest {
 
     @Test
     void professionalLayoutHasLetterheadTablesAndSignatures() throws Exception {
-        var model = new MinutesDocModel("Công ty cổ phần phần mềm ABS", false, "Họp BTL", "22:01 13/11/2026",
+        var model = new MinutesDocModel("Công ty cổ phần phần mềm ABS", true, "Họp BTL", "22:01 13/11/2026",
                 "Ngô Việt Thuyết", "Lý Đức Tú",
                 List.of(new MinutesDocModel.Person("Ngô Việt Thuyết", "Chủ trì"), new MinutesDocModel.Person("Lý Đức Tú", "Thư ký")),
                 List.of("Đoạn một.", "Đoạn hai."), List.of(new MinutesDocModel.Discussion("Giao diện", "Chốt dùng Expo.")),
@@ -47,7 +47,8 @@ class MinutesDocxRendererTest {
         try (XWPFDocument doc = new XWPFDocument(new ByteArrayInputStream(bytes))) {
             // đầu trang, thông tin, thành phần, việc cần làm, chữ ký
             assertThat(doc.getTables()).hasSize(5);
-            assertThat(doc.getTables().get(0).getRow(0).getCell(0).getText()).isEqualTo("CÔNG TY CỔ PHẦN PHẦN MỀM ABS");
+            assertThat(doc.getTables().get(0).getRow(0).getCell(0).getText()).startsWith("CÔNG TY CỔ PHẦN PHẦN MỀM ABS");
+            assertThat(doc.getTables().get(0).getRow(0).getCell(1).getText()).contains("CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM").contains("Độc lập – Tự do – Hạnh phúc");
             assertThat(doc.getTables().get(2).getRows()).hasSize(3);
             assertThat(doc.getTables().get(3).getRow(0).getCell(3).getText()).isEqualTo("Deadline");
             assertThat(doc.getTables().get(4).getRow(0).getCell(0).getText()).contains("THƯ KÝ").contains("Lý Đức Tú");

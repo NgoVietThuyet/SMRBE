@@ -42,14 +42,14 @@ public record MinutesDocModel(
     @Component
     static class Settings {
         Settings(@Value("${smr.minutes.company-name:Công ty cổ phần phần mềm ABS}") String company,
-                 @Value("${smr.minutes.national-header:false}") boolean national) {
+                 @Value("${smr.minutes.national-header:true}") boolean national) {
             MinutesDocModel.defaultCompany = company;
             MinutesDocModel.defaultNational = national;
         }
     }
 
     private static volatile String defaultCompany = "Công ty cổ phần phần mềm ABS";
-    private static volatile boolean defaultNational = false;
+    private static volatile boolean defaultNational = true;
 
     public static MinutesDocModel of(String meetingName, String time, List<MeetingPersonal> people, MinutesContent content, String footerNote) {
         List<Person> participants = new ArrayList<>();

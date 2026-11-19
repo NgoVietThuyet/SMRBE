@@ -54,7 +54,7 @@ public final class MinutesDocxRenderer {
     static final String FONT = "Times New Roman";
     static final int FONT_SIZE = 13;
     private static final String[] ACTION_HEADERS = {"STT", "Tên công việc", "Người phụ trách", "Deadline"};
-    private static final int[] ACTION_WIDTHS = {700, 4700, 2000, 1600};
+    private static final int[] ACTION_WIDTHS = {700, 4271, 2300, 1800};
 
     /** Thay đoạn chỉ gồm {{action_items}} bằng bảng có viền. */
     private static void replaceActionsWithTable(XWPFDocument doc, List<String[]> rows, boolean styled) {
@@ -184,7 +184,7 @@ public final class MinutesDocxRenderer {
                     MinutesDocModel.Person p = m.participants().get(i);
                     rows.add(new String[]{String.valueOf(i + 1), p.name(), p.role()});
                 }
-                gridTable(doc, new String[]{"STT", "Họ và tên", "Vai trò"}, new int[]{900, 5600, 2500}, new boolean[]{true, false, true}, rows);
+                gridTable(doc, new String[]{"STT", "Họ và tên", "Vai trò"}, new int[]{900, 5371, 2800}, new boolean[]{true, false, true}, rows);
             }
 
             heading(doc, "II. NỘI DUNG CUỘC HỌP");
@@ -284,6 +284,47 @@ public final class MinutesDocxRenderer {
         p.createRun().setText(text);
     }
 
+    /** Bảng bố cục cố định: tổng rộng = vùng chữ (9071 twips), lưới cột + lề ô (padding) rõ ràng để Word/WPS không tự co giãn. */
+    private static void layout(XWPFTable t, int[] widths, int padV, int padH) {
+        int total = 0;
+        for (int w : widths) total += w;
+        org.openxmlformats.schemas.wordprocessingml.x2006.main.CTTbl ct = t.getCTTbl();
+        org.openxmlformats.schemas.wordprocessingml.x2006.main.CTTblPr pr = ct.getTblPr() != null ? ct.getTblPr() : ct.addNewTblPr();
+        org.openxmlformats.schemas.wordprocessingml.x2006.main.CTTblWidth tw = pr.isSetTblW() ? pr.getTblW() : pr.addNewTblW();
+        tw.setType(org.openxmlformats.schemas.wordprocessingml.x2006.main.STTblWidth.DXA);
+        tw.setW(java.math.BigInteger.valueOf(total));
+        (pr.isSetTblLayout() ? pr.getTblLayout() : pr.addNewTblLayout())
+                .setType(org.openxmlformats.schemas.wordprocessingml.x2006.main.STTblLayoutType.FIXED);
+        org.openxmlformats.schemas.wordprocessingml.x2006.main.CTTblCellMar mar = pr.isSetTblCellMar() ? pr.getTblCellMar() : pr.addNewTblCellMar();
+        setMar(mar.isSetTop() ? mar.getTop() : mar.addNewTop(), padV);
+        setMar(mar.isSetBottom() ? mar.getBottom() : mar.addNewBottom(), padV);
+        setMar(mar.isSetLeft() ? mar.getLeft() : mar.addNewLeft(), padH);
+        setMar(mar.isSetRight() ? mar.getRight() : mar.addNewRight(), padH);
+        org.openxmlformats.schemas.wordprocessingml.x2006.main.CTTblGrid grid = ct.getTblGrid() != null ? ct.getTblGrid() : ct.addNewTblGrid();
+        while (grid.sizeOfGridColArray() > 0) grid.removeGridCol(0);
+        for (int w : widths) grid.addNewGridCol().setW(java.math.BigInteger.valueOf(w));
+        for (XWPFTableRow row : t.getRows()) {
+            for (int c = 0; c < widths.length && c < row.getTableCells().size(); c++) {
+                XWPFTableCell cell = row.getCell(c);
+                cell.setWidth(String.valueOf(widths[c]));
+                cell.setVerticalAlignment(XWPFTableCell.XWPFVertAlign.CENTER);
+            }
+        }
+    }
+
+    private static void setMar(org.openxmlformats.schemas.wordprocessingml.x2006.main.CTTblWidth w, int twips) {
+        w.setType(org.openxmlformats.schemas.wordprocessingml.x2006.main.STTblWidth.DXA);
+        w.setW(java.math.BigInteger.valueOf(twips));
+    }
+
+    private static void tight(XWPFTableCell cell) {
+        for (XWPFParagraph p : cell.getParagraphs()) {
+            p.setSpacingBefore(0);
+            p.setSpacingAfter(0);
+            p.setSpacingBetween(1.15);
+        }
+    }
+
     private static XWPFTable noBorderTable(XWPFDocument doc, int rows, int[] widths) {
         XWPFTable t = doc.createTable(rows, widths.length);
         t.setWidth("100%");
@@ -294,9 +335,7 @@ public final class MinutesDocxRenderer {
         t.setRightBorder(none, 0, 0, "FFFFFF");
         t.setInsideHBorder(none, 0, 0, "FFFFFF");
         t.setInsideVBorder(none, 0, 0, "FFFFFF");
-        for (XWPFTableRow row : t.getRows()) {
-            for (int c = 0; c < widths.length; c++) row.getCell(c).setWidth(String.valueOf(widths[c]));
-        }
+        layout(t, widths, 20, 0);
         return t;
     }
 
@@ -314,21 +353,36 @@ public final class MinutesDocxRenderer {
         }
     }
 
-    /** Đầu văn bản: tên công ty bên trái, quốc hiệu bên phải (nếu bật). */
+    /** Đầu văn bản: tên công ty bên trái, quốc hiệu + tiêu ngữ bên phải (mỗi khối có gạch chân ngắn). */
     private static void letterhead(XWPFDocument doc, MinutesDocModel m) {
-        XWPFTable t = noBorderTable(doc, 1, new int[]{4300, 4700});
+        XWPFTable t = noBorderTable(doc, 1, new int[]{3900, 5171});
         XWPFTableRow row = t.getRow(0);
+        row.getCell(0).setVerticalAlignment(XWPFTableCell.XWPFVertAlign.TOP);
+        row.getCell(1).setVerticalAlignment(XWPFTableCell.XWPFVertAlign.TOP);
         setCell(row.getCell(0), (m.company() == null ? "" : m.company()).toUpperCase(java.util.Locale.ROOT), true, false, ParagraphAlignment.CENTER);
+        ruleUnder(row.getCell(0), 600);
         if (m.nationalHeader()) {
-            setCell(row.getCell(1), "CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM\nĐộc lập – Tự do – Hạnh phúc", true, false, ParagraphAlignment.CENTER);
+            XWPFTableCell c = row.getCell(1);
+            setCell(c, "CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM", true, false, ParagraphAlignment.CENTER);
+            XWPFParagraph motto = c.addParagraph();
+            fillPara(motto, "Độc lập – Tự do – Hạnh phúc", true, false, ParagraphAlignment.CENTER, FONT_SIZE, 0);
+            ruleUnder(c, 1100);
         } else {
             setCell(row.getCell(1), "", false, false, ParagraphAlignment.CENTER);
         }
-        // Đường kẻ ngắn dưới tên công ty.
-        row.getCell(0).getCTTc().addNewTcPr();
-        org.openxmlformats.schemas.wordprocessingml.x2006.main.CTTcBorders b = row.getCell(0).getCTTc().getTcPr().addNewTcBorders();
-        b.addNewBottom().setVal(org.openxmlformats.schemas.wordprocessingml.x2006.main.STBorder.SINGLE);
         para(doc, "", false, false, ParagraphAlignment.LEFT, 8, 0);
+    }
+
+    /** Gạch ngang ngắn ở giữa, đặt dưới đoạn cuối của ô (đoạn rỗng có viền dưới, thụt hai bên). */
+    private static void ruleUnder(XWPFTableCell cell, int indent) {
+        XWPFParagraph last = cell.addParagraph();
+        XWPFRun r = last.createRun();
+        r.setFontSize(3);
+        r.setText(" ");
+        last.setBorderBottom(org.apache.poi.xwpf.usermodel.Borders.SINGLE);
+        last.setIndentationLeft(indent);
+        last.setIndentationRight(indent);
+        last.setSpacingAfter(0);
     }
 
     /** Thời gian, hình thức, chủ trì, thư ký: nhãn đậm, giá trị thường. */
@@ -338,17 +392,18 @@ public final class MinutesDocxRenderer {
         info.add(new String[]{"Hình thức:", "Họp trực tuyến"});
         if (notBlank(m.chair())) info.add(new String[]{"Chủ trì:", m.chair()});
         if (notBlank(m.secretary())) info.add(new String[]{"Thư ký:", m.secretary()});
-        XWPFTable t = noBorderTable(doc, info.size(), new int[]{1900, 7100});
+        XWPFTable t = noBorderTable(doc, info.size(), new int[]{1700, 7371});
         for (int i = 0; i < info.size(); i++) {
             setCell(t.getRow(i).getCell(0), info.get(i)[0], true, false, ParagraphAlignment.LEFT);
             setCell(t.getRow(i).getCell(1), info.get(i)[1], false, false, ParagraphAlignment.LEFT);
+            tight(t.getRow(i).getCell(0));
+            tight(t.getRow(i).getCell(1));
         }
     }
 
     /** Bảng có viền, hàng tiêu đề tô xám nhạt, cột đánh dấu {@code center} căn giữa. */
     private static void gridTable(XWPFDocument doc, String[] headers, int[] widths, boolean[] center, List<String[]> rows) {
         XWPFTable t = doc.createTable(rows.size() + 1, headers.length);
-        t.setWidth("100%");
         var single = XWPFTable.XWPFBorderType.SINGLE;
         t.setTopBorder(single, 4, 0, "000000");
         t.setBottomBorder(single, 4, 0, "000000");
@@ -374,15 +429,25 @@ public final class MinutesDocxRenderer {
                 setCell(cell, value, false, pending, center[c] ? ParagraphAlignment.CENTER : ParagraphAlignment.LEFT);
             }
         }
+        layout(t, widths, 60, 100);
+        for (XWPFTableRow row : t.getRows()) for (XWPFTableCell cell : row.getTableCells()) tight(cell);
+        for (XWPFTableRow row : t.getRows()) noSplit(row);
+        para(doc, "", false, false, ParagraphAlignment.LEFT, 6, 0);
     }
 
     /** Hai khối chữ ký: Thư ký (trái), Chủ trì (phải). */
     private static void signatures(XWPFDocument doc, MinutesDocModel m) {
-        XWPFTable t = noBorderTable(doc, 1, new int[]{4500, 4500});
+        XWPFTable t = noBorderTable(doc, 1, new int[]{4535, 4536});
         XWPFTableRow row = t.getRow(0);
         signBlock(row.getCell(0), "THƯ KÝ", m.secretary());
         signBlock(row.getCell(1), "CHỦ TRÌ", m.chair());
-        row.getCtRow().addNewTrPr().addNewCantSplit();
+        noSplit(row);
+    }
+
+    private static void noSplit(XWPFTableRow row) {
+        var ctRow = row.getCtRow();
+        var pr = ctRow.isSetTrPr() ? ctRow.getTrPr() : ctRow.addNewTrPr();
+        if (pr.sizeOfCantSplitArray() == 0) pr.addNewCantSplit();
     }
 
     private static void signBlock(XWPFTableCell cell, String title, String name) {

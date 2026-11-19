@@ -487,7 +487,7 @@ public class MinutesExportServiceImpl implements MinutesExportService {
 
     private String dataHash(Ctx c) {
         MeetingInfo m = c.meeting();
-        StringBuilder sb = new StringBuilder("EXPORT-V3").append('|'); // file chỉ đóng gói biên bản chính thức, không còn phụ thuộc transcript / AI
+        StringBuilder sb = new StringBuilder("EXPORT-V4").append('|'); // file chỉ đóng gói biên bản chính thức, không còn phụ thuộc transcript / AI
         sb.append(meetingTemplate(m.getId()).map(CmFile::getId).orElseGet(() -> systemTemplateObject(m).orElse("BUILTIN"))).append('|');
         sb.append(m.getName()).append('|').append(startOf(m)).append('|').append(m.getEndDate()).append('|');
         sb.append(records == null ? "-" : records.fingerprint(m.getId()).orElse("-")).append('|');
